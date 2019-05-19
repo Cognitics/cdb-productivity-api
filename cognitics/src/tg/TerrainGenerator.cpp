@@ -483,6 +483,7 @@ namespace cognitics
     {
         logger.init("TerrainGenerator");
         //InitODDBSQLite();            
+        rasterExtensions.insert("jp2");
         rasterExtensions.insert("tif");
         rasterExtensions.insert("sid");
         rasterExtensions.insert("ecw");
