@@ -256,6 +256,9 @@
     <ClCompile Include="..\src\lmfit\lmcurve_tyd.c" />
     <ClCompile Include="..\src\lmfit\lmmin.c" />
     <ClCompile Include="..\src\meshgen\meshgen.cpp" />
+    <ClCompile Include="..\src\ogr\Field.cpp" />
+    <ClCompile Include="..\src\ogr\File.cpp" />
+    <ClCompile Include="..\src\ogr\Layer.cpp" />
     <ClCompile Include="..\src\scenegraphflt\buildOpenFlightFromScene.cpp" />
     <ClCompile Include="..\src\scenegraphflt\buildSceneFromOpenFlight.cpp" />
     <ClCompile Include="..\src\scenegraph\buildSceneFromFeature.cpp" />
@@ -626,6 +629,11 @@
     <ClInclude Include="..\include\lmfit\lmcurve_tyd.h" />
     <ClInclude Include="..\include\lmfit\lmmin.h" />
     <ClInclude Include="..\include\lmfit\lmstruct.h" />
+    <ClInclude Include="..\include\ogr\Feature.h" />
+    <ClInclude Include="..\include\ogr\Field.h" />
+    <ClInclude Include="..\include\ogr\File.h" />
+    <ClInclude Include="..\include\ogr\Layer.h" />
+    <ClInclude Include="..\include\ogr\ogr.h" />
     <ClInclude Include="..\include\rapidjson\allocators.h" />
     <ClInclude Include="..\include\rapidjson\document.h" />
     <ClInclude Include="..\include\rapidjson\encodedstream.h" />

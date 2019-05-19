@@ -121,6 +121,12 @@
     <Filter Include="Header Files\ctl">
       <UniqueIdentifier>{502f0a33-da60-4ace-af9d-9b526cc4476b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\ogr">
+      <UniqueIdentifier>{216945c1-b513-4602-99cf-1fb61207a5b3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ogr">
+      <UniqueIdentifier>{cabfdfc1-cb91-46c8-ba35-e1ac2d778e92}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\cad\AttributeDictionary.cpp">
@@ -1100,6 +1106,15 @@
     </ClCompile>
     <ClCompile Include="..\src\flt\FltComment.cpp">
       <Filter>Source Files\flt</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ogr\Field.cpp">
+      <Filter>Source Files\ogr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ogr\File.cpp">
+      <Filter>Source Files\ogr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ogr\Layer.cpp">
+      <Filter>Source Files\ogr</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -2274,6 +2289,21 @@
     </ClInclude>
     <ClInclude Include="..\include\ctl\ConstraintMap.h">
       <Filter>Header Files\ctl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ogr\Field.h">
+      <Filter>Header Files\ogr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ogr\File.h">
+      <Filter>Header Files\ogr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ogr\Layer.h">
+      <Filter>Header Files\ogr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ogr\ogr.h">
+      <Filter>Header Files\ogr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ogr\Feature.h">
+      <Filter>Header Files\ogr</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
