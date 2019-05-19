@@ -1,4 +1,18 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LocalDebuggerCommandArguments>-elevation E:\CDB_Yemen_4.0.0\Tiles\N13\E044\001_Elevation\L06\U15\N13E044_D001_S001_T001_L06_U15_R63.tif -imagery E:\CDB_Yemen_4.0.0\Tiles\N13\E044\004_Imagery\L08\U61\N13E044_D004_S001_T001_L08_U61_R255.jp2 -bounds 13.2383 13.242 44.99877 44.9922</LocalDebuggerCommandArguments>
+    <LocalDebuggerWorkingDirectory>
+    </LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerEnvironment>PATH=$(PATH);C:\dev\cog_cdbmesh\ThirdParty\gdal204\bin
+$(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LocalDebuggerEnvironment>PATH=$(PATH);C:\dev\cog_cdbmesh\ThirdParty\gdal204\bin;
+$(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommandArguments>-elevation E:\CDB_Yemen_4.0.0\Tiles\N13\E044\001_Elevation\L06\U15\N13E044_D001_S001_T001_L06_U15_R63.tif -imagery E:\CDB_Yemen_4.0.0\Tiles\N13\E044\004_Imagery\L08\U61\N13E044_D004_S001_T001_L08_U61_R255.jp2 -bounds  13.242 13.2383 44.99877 44.9922 -output $(TargetDir)</LocalDebuggerCommandArguments>
+    <LocalDebuggerWorkingDirectory>$(TargetDir)</LocalDebuggerWorkingDirectory>
+  </PropertyGroup>
 </Project>

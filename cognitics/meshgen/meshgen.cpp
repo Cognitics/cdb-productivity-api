@@ -12,15 +12,11 @@ int usage(const std::string &error = std::string())
     std::cout << "usage: [options] <infile.shp>" << std::endl;
     std::cout << "\t-origin <lat> <lon>\tspecifies the origin" << std::endl;
     std::cout << "\t-bounds <north> <south> <east> <west>\tspecifies the bounding box" << std::endl;
-    std::cout << "\t-modelkits <path>\tspecifies the path to model kits" << std::endl;
-    std::cout << "\t-textures <path>\tspecifies the path to textures" << std::endl;
     std::cout << "\t-output <path>\tspecifies the path for OpenFlight output" << std::endl;
     std::cout << "\t-imagery <path>\tspecifies a path to imagery (multiple)" << std::endl;
     std::cout << "\t-elevation <filename>\tspecifies a DEM (multiple)" << std::endl;
-    std::cout << "\t-oddb <file.db>\tspecifies an OpenDRIVE database (multiple)" << std::endl;
     std::cout << "\t-texturesize <width> <height>\tspecifies the texture size (default: 1024x1024)" << std::endl;
     std::cout << "\t-texelsize <size>\tspecifies the texel size (default: 5)" << std::endl;
-    std::cout << "\t-rules <rules.xml>\tselect civil engineering rules XML file" << std::endl;
     std::cout << "\t-row <row>\tspecifies the row of tiles to generate" << std::endl;
     std::cout << "\t-col <col>\tspecifies the column of tiles to generate" << std::endl;
     if (error.size())
@@ -136,14 +132,6 @@ int main(int argc, char **argv)
             if (argi >= argc)
                 return usage("Missing elevation file");
             elevationFiles.insert(argv[argi]);
-            continue;
-        }
-        if (param == "-oddb")
-        {
-            ++argi;
-            if (argi >= argc)
-                return usage("Missing OpenDRIVE database file");
-            oddbFiles.insert(argv[argi]);
             continue;
         }
         if (param == "-texturesize")
