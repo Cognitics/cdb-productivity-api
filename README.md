@@ -10,7 +10,7 @@ This is the open-source version of Cognitics' libraries, including mesh generati
 |cts|Coordinate Transform|
 |dbi|SQL binding library, inspired by PERL DBI|
 |dbi_sqlite|dbi implemented for SQLite|
-|dom|SQL parser (not recommended for general purpose use)|
+|dom|XML parser (not recommended for general purpose use)|
 |elev|Elevation sampler|
 |flt|OpenFlight library|
 |ip|Image Processing Library|
