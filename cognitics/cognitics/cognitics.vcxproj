@@ -143,6 +143,7 @@
     <ClCompile Include="..\src\elev\DataSource_Raster_GDAL.cpp" />
     <ClCompile Include="..\src\elev\Elevation.cpp" />
     <ClCompile Include="..\src\elev\Elevation_DSM.cpp" />
+    <ClCompile Include="..\src\elev\SimpleDEMReader.cpp" />
     <ClCompile Include="..\src\flt\BinarySeparatingPlane.cpp" />
     <ClCompile Include="..\src\flt\BoundingBox.cpp" />
     <ClCompile Include="..\src\flt\BoundingConvexHull.cpp" />
@@ -258,7 +259,7 @@
     <ClCompile Include="..\src\meshgen\meshgen.cpp" />
     <ClCompile Include="..\src\ogr\Field.cpp" />
     <ClCompile Include="..\src\ogr\File.cpp" />
-    <ClCompile Include="..\src\ogr\Layer.cpp" />
+    <ClCompile Include="..\src\ogr\OGRLayer.cpp" />
     <ClCompile Include="..\src\scenegraphflt\buildOpenFlightFromScene.cpp" />
     <ClCompile Include="..\src\scenegraphflt\buildSceneFromOpenFlight.cpp" />
     <ClCompile Include="..\src\scenegraph\buildSceneFromFeature.cpp" />
@@ -513,6 +514,7 @@
     <ClInclude Include="..\include\elev\Elevation.h" />
     <ClInclude Include="..\include\elev\Elevation_DSM.h" />
     <ClInclude Include="..\include\elev\Line.h" />
+    <ClInclude Include="..\include\elev\SimpleDEMReader.h" />
     <ClInclude Include="..\include\flt\BinarySeparatingPlane.h" />
     <ClInclude Include="..\include\flt\BoundingBox.h" />
     <ClInclude Include="..\include\flt\BoundingConvexHull.h" />
@@ -632,7 +634,7 @@
     <ClInclude Include="..\include\ogr\Feature.h" />
     <ClInclude Include="..\include\ogr\Field.h" />
     <ClInclude Include="..\include\ogr\File.h" />
-    <ClInclude Include="..\include\ogr\Layer.h" />
+    <ClInclude Include="..\include\ogr\OGRLayer.h" />
     <ClInclude Include="..\include\ogr\ogr.h" />
     <ClInclude Include="..\include\rapidjson\allocators.h" />
     <ClInclude Include="..\include\rapidjson\document.h" />

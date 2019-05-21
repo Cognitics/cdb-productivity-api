@@ -47,7 +47,7 @@ namespace cognitics
         void setTextureSize(int width, int height);
         void setTexelSize(double texelSize);
         void generate(int row = -1, int col = -1);
-
+        void generateFixedGrid(const std::string &elevFile);
     private:
         ccl::ObjLog logger;
         cts::FlatEarthProjection flatEarth;
@@ -68,7 +68,7 @@ namespace cognitics
         dom::DocumentSP cerDocument;
 
         void generateRow(int row, int col = -1);
-        void generateRowColumn(int row, int col);
+        void generateRowColumn(int row, int col);        
         double getZ(double x, double y);
 
     };

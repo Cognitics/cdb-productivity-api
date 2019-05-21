@@ -1113,7 +1113,10 @@
     <ClCompile Include="..\src\ogr\File.cpp">
       <Filter>Source Files\ogr</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\ogr\Layer.cpp">
+    <ClCompile Include="..\src\elev\SimpleDEMReader.cpp">
+      <Filter>Source Files\elev</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ogr\OGRLayer.cpp">
       <Filter>Source Files\ogr</Filter>
     </ClCompile>
   </ItemGroup>
@@ -2296,13 +2299,16 @@
     <ClInclude Include="..\include\ogr\File.h">
       <Filter>Header Files\ogr</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\ogr\Layer.h">
-      <Filter>Header Files\ogr</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\ogr\ogr.h">
       <Filter>Header Files\ogr</Filter>
     </ClInclude>
     <ClInclude Include="..\include\ogr\Feature.h">
+      <Filter>Header Files\ogr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\elev\SimpleDEMReader.h">
+      <Filter>Header Files\elev</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ogr\OGRLayer.h">
       <Filter>Header Files\ogr</Filter>
     </ClInclude>
   </ItemGroup>

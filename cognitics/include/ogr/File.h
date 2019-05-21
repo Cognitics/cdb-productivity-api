@@ -28,7 +28,7 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 
-#include "ogr/Layer.h"
+#include "ogr/OGRLayer.h"
 
 #include <cts/cts.h>
 #include <sfa/File.h>

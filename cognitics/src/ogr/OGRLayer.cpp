@@ -22,7 +22,7 @@ DEALINGS IN THE SOFTWARE.
 
 //#pragma optimize("", off)
 
-#include "ogr/Layer.h"
+#include "ogr/OGRLayer.h"
 #include "sfa/Feature.h"
 #include <locale>
 #include <ogr/File.h>

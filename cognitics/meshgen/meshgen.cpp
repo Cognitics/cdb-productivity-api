@@ -4,6 +4,7 @@
 #include <ccl/LogStream.h>
 #include <ccl/Timer.h>
 #include <tg/TerrainGenerator.h>
+#include "elev/SimpleDEMReader.h"
 
 ccl::ObjLog logger;
 
@@ -197,7 +198,8 @@ int main(int argc, char **argv)
     terrainGenerator.setTextureSize(textureWidth, textureHeight);
     terrainGenerator.setTexelSize(texelSize);
 
-    terrainGenerator.generate(row, col);
+    //terrainGenerator.generate(row, col);
+    terrainGenerator.generateFixedGrid(*elevationFiles.begin());
 
     logger << "EXECUTION: " << execTimer.getElapsedTime() << " seconds" << logger.endl;
     return 0;

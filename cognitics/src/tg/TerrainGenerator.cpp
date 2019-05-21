@@ -37,6 +37,7 @@ DEALINGS IN THE SOFTWARE.
 
 #include <scenegraph/FlattenVisitor.h>
 #include <scenegraph/TransformVisitor.h>
+#include "elev/SimpleDEMReader.h"
 
 namespace cognitics
 {
@@ -137,6 +138,241 @@ namespace cognitics
             if((col == -1) || (col == c))
                 generateRowColumn(row, c);
         }
+    }
+
+
+    void TerrainGenerator::generateFixedGrid(const std::string &elevFile)
+    {
+        ccl::FileInfo fi(elevFile);
+        std::string tileName = fi.getBaseName(true);
+        std::string jpgFilename = ccl::joinPaths(outputPath, tileName + ".jpg");
+        std::string attrFilename = jpgFilename + ".attr";
+
+        OGRSpatialReference oSRS;
+        oSRS.SetWellKnownGeogCS("WGS84");
+        elev::SimpleDEMReader demReader(elevFile,oSRS);
+        demReader.Open();
+        int width = demReader.getWidth();
+        int height = demReader.getHeight();
+        std::vector<double> grid;
+        demReader.getMBR(north, south, east, west);
+        demReader.getGrid(grid);
+        flatEarth.setOrigin((north + south) / 2, (east + west) / 2);
+
+        double tileWorldNorth = north;
+        double tileWorldSouth = south;
+
+        double tileWorldWest = west;
+        double tileWorldEast = east;
+
+        localWest = flatEarth.convertGeoToLocalX(west);
+        localEast = flatEarth.convertGeoToLocalX(east);
+        localNorth = flatEarth.convertGeoToLocalY(north);
+        localSouth = flatEarth.convertGeoToLocalY(south);
+        logger << ccl::LINFO << "Using Elevation File MBR: N:" << north << "(" << localNorth << ") S:" << south << "(" << localSouth << ") W:" << west << "(" << localWest << ") E:" << east << "(" << localEast << ")" << logger.endl;
+
+        // create texture
+        {
+            gdalsampler::GeoExtents window;
+            window.north = tileWorldNorth;
+            window.south = tileWorldSouth;
+            window.west = tileWorldWest;
+            window.east = tileWorldEast;
+            window.filename = tileName;
+            window.width = textureWidth;
+            window.height = textureHeight;
+            int len = window.height * window.width * 3;
+            u_char *buf = new u_char[len];
+            memset(buf, 255, len);
+            ip::ImageInfo info;
+            info.width = window.width;
+            info.height = window.height;
+            info.depth = 3;
+            info.interleaved = true;
+            info.dataType = ip::ImageInfo::UBYTE;
+            ccl::binary buffer;
+            buffer.resize(len);
+            rasterSampler.Sample(window, buf);
+            for (int i = 0; i < len; ++i)
+                buffer[i] = buf[i];
+            ip::WriteJPG24(jpgFilename, info, buffer);
+            ip::attrFile attr;
+            attr.wrapMode = ip::attrFile::WRAP_CLAMP;
+            attr.wrapMode_u = ip::attrFile::WRAP_CLAMP;
+            attr.wrapMode_v = ip::attrFile::WRAP_CLAMP;
+            attr.Write(attrFilename);
+            delete buf;
+        }
+
+        ctl::PointList gamingArea;
+        {
+            double z = 0;
+            ctl::Point southwest(localWest, localSouth, grid[0]);
+            ctl::Point southeast(localEast, localSouth, grid[width]);
+            ctl::Point northeast(localEast, localNorth, grid[(width*(height-1))-1]);
+            ctl::Point northwest(localWest, localNorth, grid[(width*(height-2))]);
+            gamingArea.push_back(southwest);
+            gamingArea.push_back(southeast);
+            gamingArea.push_back(northeast);
+            gamingArea.push_back(northwest);
+        }
+        double spacingX = demReader.getPostSpacingX();
+        double spacingY = demReader.getPostSpacingY();
+
+        ctl::PointList boundaryPoints;
+        {
+            sfa::LineString boundaryLineString;
+            // Left boundary
+            int col = 0;
+            double lon = west;
+            double localPostX = flatEarth.convertGeoToLocalX(lon);
+            for (int row = 0; row < height; row++)
+            {   // Go from pixel space to geo
+                double lat = (row * spacingY) + south;                
+                // Go from geo to local                
+                double localPostY = flatEarth.convertGeoToLocalY(lat);
+                boundaryLineString.addPoint(sfa::Point(localPostX, localPostY, grid[(row*width)+col]));
+            }
+            // Right boundary
+            col = width - 1;
+            lon = east;
+            localPostX = flatEarth.convertGeoToLocalX(lon);
+            for (int row = 0; row < height; row++)
+            {   // Go from pixel space to geo
+                double lat = (row * spacingY) + south;
+                // Go from geo to local
+                double localPostY = flatEarth.convertGeoToLocalY(lat);
+                boundaryLineString.addPoint(sfa::Point(localPostX, localPostY, grid[(row*width) + col]));
+            }
+            // Top boundary
+            double lat = north;
+            double localPostY = flatEarth.convertGeoToLocalY(lat);
+            for (int col = 0; col < width; col++)
+            {   // Go from pixel space to geo
+                double lon = (col * spacingX) + west;
+                // Go from geo to local
+                double localPostX = flatEarth.convertGeoToLocalX(lon);
+                boundaryLineString.addPoint(sfa::Point(localPostX, localPostY, grid[(width*(height-1)) + col]));
+            }
+            // Bottom boundary
+            lat = south;
+            localPostY = flatEarth.convertGeoToLocalY(lat);
+            for (int col = 0; col < width; col++)
+            {   // Go from pixel space to geo
+                double lon = (col * spacingX) + west;
+                // Go from geo to local
+                double localPostX = flatEarth.convertGeoToLocalX(lon);
+                boundaryLineString.addPoint(sfa::Point(localPostX, localPostY, grid[col]));
+            }
+
+//            boundaryLineString.removeColinearPoints(0, 0.5);
+            for (int i = 0, c = boundaryLineString.getNumPoints(); i < c; ++i)
+            {
+                sfa::Point *p = boundaryLineString.getPointN(i);
+                boundaryPoints.push_back(ctl::Point(p->X(), p->Y(), p->Z()));
+            }
+        }
+
+        ctl::PointList workingPoints;
+        int delaunayResizeIncrement = 100;
+        {
+            for (int row = 1; row < height-2; ++row)
+            {
+                for (int col = 1; col < width - 2; ++col)
+                {
+                    // Go from pixel space to geo
+                    double lat = (row * spacingY) + south;
+                    double lon = (col * spacingX) + west;
+                    // Go from geo to local
+                    double localPostX = flatEarth.convertGeoToLocalX(lon);
+                    double localPostY = flatEarth.convertGeoToLocalY(lat);
+                    workingPoints.push_back(ctl::Point(localPostX, localPostY, grid[(row*width) + col]));
+                }
+            }
+
+            delaunayResizeIncrement = (height * width) / 8;
+        }
+
+        // TODO: Allocate this based on a polygon budget
+        ctl::DelaunayTriangulation *dt = new ctl::DelaunayTriangulation(gamingArea, delaunayResizeIncrement);
+
+        //Randomly the order of point insertions to avoid worst case performance of DelaunayTriangulation
+        std::random_shuffle(boundaryPoints.begin(), boundaryPoints.end());
+        std::random_shuffle(workingPoints.begin(), workingPoints.end());
+
+        {
+            //Alternate inserting boundary and working points to avoid worst case performance of DelaunayTriangulation
+            size_t i = 0;
+            size_t j = 0;
+            while (i < boundaryPoints.size() || j < workingPoints.size())
+            {
+                if (i < boundaryPoints.size())
+                    dt->InsertConstrainedPoint(boundaryPoints[i++]);
+                if (j < workingPoints.size())
+                    dt->InsertWorkingPoint(workingPoints[j++]);
+            }
+        }
+
+        //dt->Simplify(1, float(0.05));    // simplify based on coplanar points
+        //dt->Simplify(20000, 0.5);        // if we still have over 20k triangles, simplify using the triangle budget
+
+        ctl::TIN *tin = new ctl::TIN(dt);
+        scenegraph::Scene *scene = new scenegraph::Scene;
+        scene->faces.reserve(tin->triangles.size() / 3);
+        for (size_t i = 0, c = tin->triangles.size() / 3; i < c; ++i)
+        {
+            // get the triangle points from the ctl tin
+            ctl::Point pa = tin->verts[tin->triangles[i * 3 + 0]];
+            ctl::Point pb = tin->verts[tin->triangles[i * 3 + 1]];
+            ctl::Point pc = tin->verts[tin->triangles[i * 3 + 2]];
+            sfa::Point sfaA = sfa::Point(pa.x, pa.y, pa.z);
+            sfa::Point sfaB = sfa::Point(pb.x, pb.y, pb.z);
+            sfa::Point sfaC = sfa::Point(pc.x, pc.y, pc.z);
+
+            // get the normals from the ctl tin
+            ctl::Vector na = tin->normals[tin->triangles[i * 3 + 0]];
+            ctl::Vector nb = tin->normals[tin->triangles[i * 3 + 1]];
+            ctl::Vector nc = tin->normals[tin->triangles[i * 3 + 2]];
+            sfa::Point sfaAN = sfa::Point(na.x, na.y, na.z);
+            sfa::Point sfaBN = sfa::Point(nb.x, nb.y, nb.z);
+            sfa::Point sfaCN = sfa::Point(nc.x, nc.y, nc.z);
+
+            // create the new face
+            scenegraph::Face face;
+            face.verts.push_back(sfaA);
+            face.verts.push_back(sfaB);
+            face.verts.push_back(sfaC);
+            face.vertexNormals.push_back(sfaAN);
+            face.vertexNormals.push_back(sfaBN);
+            face.vertexNormals.push_back(sfaCN);
+
+            face.primaryColor = scenegraph::Color(1.0f, 1.0f, 1.0f, 1.0f);
+            face.alternateColor = scenegraph::Color(1.0f, 1.0f, 1.0f, 1.0f);
+
+            // Add texturing
+            scenegraph::MappedTexture mt;
+            mt.SetTextureName(jpgFilename);
+            // Each texture should map to the tile extents directly
+            // So create a transform from the tile boundaries to local coordinates
+            mt.uvs.push_back(sfa::Point((sfaA.X() - localWest) / width, (localNorth - sfaA.Y()) / height));
+            mt.uvs.push_back(sfa::Point((sfaB.X() - localWest) / width, (localNorth - sfaB.Y()) / height));
+            mt.uvs.push_back(sfa::Point((sfaC.X() - localWest) / width, (localNorth - sfaC.Y()) / height));
+            face.textures.push_back(mt);
+
+            scene->faces.push_back(face);
+        }
+
+        std::string fltfilename = ccl::joinPaths(outputPath, tileName + std::string(".flt"));
+        logger << "Writing " << fltfilename << "..." << logger.endl;
+        scenegraph::buildOpenFlightFromScene(fltfilename, scene);
+        scenegraph::ExternalReference ext;
+        ext.scale = sfa::Point(1.0, 1.0, 1.0);
+        ext.filename = fltfilename;
+        master.externalReferences.push_back(ext);
+
+        delete scene;
+        delete tin;
+        delete dt;
     }
 
     void TerrainGenerator::generateRowColumn(int row, int col)
