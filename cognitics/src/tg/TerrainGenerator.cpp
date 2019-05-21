@@ -216,6 +216,8 @@ namespace cognitics
         localEast = flatEarth.convertGeoToLocalX(east);
         localNorth = flatEarth.convertGeoToLocalY(north);
         localSouth = flatEarth.convertGeoToLocalY(south);
+        double localWidth = localEast - localWest;
+        double localHeight = localNorth - localSouth;
         logger << ccl::LINFO << "Using Elevation File MBR: N:" << north << "(" << localNorth << ") S:" << south << "(" << localSouth << ") W:" << west << "(" << localWest << ") E:" << east << "(" << localEast << ")" << logger.endl;
 
         // create texture
@@ -402,9 +404,9 @@ namespace cognitics
             mt.SetTextureName(jpgFilename);
             // Each texture should map to the tile extents directly
             // So create a transform from the tile boundaries to local coordinates
-            mt.uvs.push_back(sfa::Point((sfaA.X() - localWest) / width, (localNorth - sfaA.Y()) / height));
-            mt.uvs.push_back(sfa::Point((sfaB.X() - localWest) / width, (localNorth - sfaB.Y()) / height));
-            mt.uvs.push_back(sfa::Point((sfaC.X() - localWest) / width, (localNorth - sfaC.Y()) / height));
+            mt.uvs.push_back(sfa::Point((sfaA.X() - localWest) / localWidth, (localNorth - sfaA.Y()) / localHeight));
+            mt.uvs.push_back(sfa::Point((sfaB.X() - localWest) / localWidth, (localNorth - sfaB.Y()) / localHeight));
+            mt.uvs.push_back(sfa::Point((sfaC.X() - localWest) / localWidth, (localNorth - sfaC.Y()) / localHeight));
             face.textures.push_back(mt);
 
             scene->faces.push_back(face);
