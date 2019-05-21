@@ -254,10 +254,10 @@ namespace cognitics
         ctl::PointList gamingArea;
         {
             double z = 0;
-            ctl::Point southwest(localWest, localSouth, grid[0]);
-            ctl::Point southeast(localEast, localSouth, grid[width]);
-            ctl::Point northeast(localEast, localNorth, grid[(width*(height-1))-1]);
-            ctl::Point northwest(localWest, localNorth, grid[(width*(height-2))]);
+            ctl::Point southwest(localWest, localSouth, grid[(width*(height - 2))]);
+            ctl::Point southeast(localEast, localSouth, grid[(width*(height - 1)) - 1]);
+            ctl::Point northeast(localEast, localNorth, grid[width]);
+            ctl::Point northwest(localWest, localNorth, grid[0]);
             gamingArea.push_back(southwest);
             gamingArea.push_back(southeast);
             gamingArea.push_back(northeast);
