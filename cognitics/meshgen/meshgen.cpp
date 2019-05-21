@@ -199,7 +199,9 @@ int main(int argc, char **argv)
     terrainGenerator.setTexelSize(texelSize);
 
     //terrainGenerator.generate(row, col);
-    terrainGenerator.generateFixedGrid(*elevationFiles.begin());
+    //terrainGenerator.generateFixedGrid(*elevationFiles.begin());
+    terrainGenerator.generateFixedGrid(*elevationFiles.begin(),128);
+    
 
     logger << "EXECUTION: " << execTimer.getElapsedTime() << " seconds" << logger.endl;
     return 0;

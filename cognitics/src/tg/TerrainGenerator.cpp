@@ -141,16 +141,63 @@ namespace cognitics
     }
 
 
-    void TerrainGenerator::generateFixedGrid(const std::string &elevFile)
+    void TerrainGenerator::generateFixedGrid(const std::string &elevFile, int tileSize)
     {
         ccl::FileInfo fi(elevFile);
+        std::string tileName = fi.getBaseName(true);
+        std::string fltFilename = ccl::joinPaths(outputPath, tileName + ".flt");
+        int width = 0;
+        int height = 0;
+        {
+            OGRSpatialReference oSRS;
+            oSRS.SetWellKnownGeogCS("WGS84");
+            elev::SimpleDEMReader demReader(elevFile, oSRS);
+            demReader.Open();
+            width = demReader.getWidth();
+            height = demReader.getHeight();
+        }
+        int windowTop = 0; 
+        int windowBottom = 0;
+        int windowRight = 0;
+        int windowLeft = 0;
+        if (tileSize == 0)
+        {
+            generateFixedGrid(elevFile, fltFilename, 0, height, width, 0);
+        }
+        else
+        {
+            int rows = ceil(height / tileSize);
+            int cols = ceil(width / tileSize);
+            for (int row = 0; row < rows; row++)
+            {
+                for (int col = 0; col < cols; col++)
+                {
+                    std::stringstream ss;
+                    ss << tileName  << "_" << row << "_" << col << ".flt";
+                    fltFilename = ccl::joinPaths(outputPath, ss.str());
+
+                    generateFixedGrid(elevFile, fltFilename, 
+                        row * tileSize,
+                        (row+1) * (tileSize),
+                        (col + 1) * tileSize,
+                        col * tileSize);
+                }
+            }
+        }
+        scenegraph::buildOpenFlightFromScene(ccl::joinPaths(outputPath, "master.flt"), &master);
+        master.externalReferences.clear();
+    }
+
+    void TerrainGenerator::generateFixedGrid(const std::string &elevFile, const std::string &outputName, int windowTop, int windowBottom, int windowRight, int windowLeft)
+    {
+        ccl::FileInfo fi(outputName);
         std::string tileName = fi.getBaseName(true);
         std::string jpgFilename = ccl::joinPaths(outputPath, tileName + ".jpg");
         std::string attrFilename = jpgFilename + ".attr";
 
         OGRSpatialReference oSRS;
         oSRS.SetWellKnownGeogCS("WGS84");
-        elev::SimpleDEMReader demReader(elevFile,oSRS);
+        elev::SimpleDEMReader demReader(elevFile,oSRS, windowTop,windowBottom,windowRight,windowLeft);
         demReader.Open();
         int width = demReader.getWidth();
         int height = demReader.getHeight();
@@ -228,7 +275,7 @@ namespace cognitics
             double localPostX = flatEarth.convertGeoToLocalX(lon);
             for (int row = 0; row < height; row++)
             {   // Go from pixel space to geo
-                double lat = (row * spacingY) + south;                
+                double lat = (row * spacingY) + north;
                 // Go from geo to local                
                 double localPostY = flatEarth.convertGeoToLocalY(lat);
                 boundaryLineString.addPoint(sfa::Point(localPostX, localPostY, grid[(row*width)+col]));
@@ -239,13 +286,13 @@ namespace cognitics
             localPostX = flatEarth.convertGeoToLocalX(lon);
             for (int row = 0; row < height; row++)
             {   // Go from pixel space to geo
-                double lat = (row * spacingY) + south;
+                double lat = (row * spacingY) + north;
                 // Go from geo to local
                 double localPostY = flatEarth.convertGeoToLocalY(lat);
                 boundaryLineString.addPoint(sfa::Point(localPostX, localPostY, grid[(row*width) + col]));
             }
-            // Top boundary
-            double lat = north;
+            // Bottom boundary
+            double lat = south;
             double localPostY = flatEarth.convertGeoToLocalY(lat);
             for (int col = 0; col < width; col++)
             {   // Go from pixel space to geo
@@ -254,8 +301,8 @@ namespace cognitics
                 double localPostX = flatEarth.convertGeoToLocalX(lon);
                 boundaryLineString.addPoint(sfa::Point(localPostX, localPostY, grid[(width*(height-1)) + col]));
             }
-            // Bottom boundary
-            lat = south;
+            // Top boundary
+            lat = north;
             localPostY = flatEarth.convertGeoToLocalY(lat);
             for (int col = 0; col < width; col++)
             {   // Go from pixel space to geo
@@ -278,10 +325,11 @@ namespace cognitics
         {
             for (int row = 1; row < height-2; ++row)
             {
+                printf("");
                 for (int col = 1; col < width - 2; ++col)
                 {
                     // Go from pixel space to geo
-                    double lat = (row * spacingY) + south;
+                    double lat = (row * spacingY) + north;
                     double lon = (col * spacingX) + west;
                     // Go from geo to local
                     double localPostX = flatEarth.convertGeoToLocalX(lon);
@@ -362,12 +410,12 @@ namespace cognitics
             scene->faces.push_back(face);
         }
 
-        std::string fltfilename = ccl::joinPaths(outputPath, tileName + std::string(".flt"));
-        logger << "Writing " << fltfilename << "..." << logger.endl;
-        scenegraph::buildOpenFlightFromScene(fltfilename, scene);
+        
+        logger << "Writing " << outputName << "..." << logger.endl;
+        scenegraph::buildOpenFlightFromScene(outputName, scene);
         scenegraph::ExternalReference ext;
         ext.scale = sfa::Point(1.0, 1.0, 1.0);
-        ext.filename = fltfilename;
+        ext.filename = outputName;
         master.externalReferences.push_back(ext);
 
         delete scene;

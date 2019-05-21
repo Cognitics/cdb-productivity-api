@@ -46,6 +46,8 @@ namespace elev
         int windowLeft;
         int windowRight;
         bool windowedMode;
+        int windowHeight;
+        int windowWidth;
         double spacing_x;                    //!< coordinate distance between post x-values
         double spacing_y;                    //!< coordinate distance between post y-values
         double rotation_x;                    //!< rotation between post x-values

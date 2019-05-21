@@ -47,7 +47,8 @@ namespace cognitics
         void setTextureSize(int width, int height);
         void setTexelSize(double texelSize);
         void generate(int row = -1, int col = -1);
-        void generateFixedGrid(const std::string &elevFile);
+        void generateFixedGrid(const std::string &elevFile, int tileSize=0);
+        void generateFixedGrid(const std::string &elevFile, const std::string &outputName, int windowTop, int windowBottom, int windowRight, int windowLeft);
     private:
         ccl::ObjLog logger;
         cts::FlatEarthProjection flatEarth;

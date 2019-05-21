@@ -12,6 +12,8 @@ namespace elev {
     SimpleDEMReader::SimpleDEMReader(const std::string &filename, 
         OGRSpatialReference destinationSRS, int windowTop, int windowBottom, int windowRight, int windowLeft)
     {
+        //Bear in mind that the windowTop=0 is row 0 in the raster, not the top row geographically
+        //since the DEM is inverted spatially from the row
         windowedMode = true;
         this->windowTop = windowTop;
         this->windowBottom = windowBottom;
@@ -34,6 +36,8 @@ namespace elev {
         this->filename = filename;
 }
 
+
+#if 0
     bool SimpleDEMReader::Open()
     {
 #ifdef DEBUG
@@ -157,32 +161,200 @@ namespace elev {
 
         return true;
     }
+#endif
+
+
+    bool SimpleDEMReader::Open()
+    {
+#ifdef DEBUG
+        log << ccl::LDEBUG << "Open()" << log.endl;
+#endif
+        gdal_dataset = (GDALDataset *)GDALOpen(this->filename.c_str(), GA_ReadOnly);
+        if (!gdal_dataset)
+            return false;
+
+        if (gdal_dataset->GetProjectionRef() == NULL)
+        {
+            log << ccl::LERR << "Open(): GetProjectionRef() failed." << log.endl;
+            GDALClose((GDALDatasetH)gdal_dataset);
+            gdal_dataset = NULL;
+            return false;
+        }
+
+        width = gdal_dataset->GetRasterXSize();
+        height = gdal_dataset->GetRasterYSize();
+        if (windowedMode)
+        {
+            windowHeight = windowBottom - windowTop;
+            windowWidth = windowRight - windowLeft;
+#ifdef DEBUG
+            log << ccl::LDEBUG << "Open(): window width = " << windowWidth << log.endl;
+            log << ccl::LDEBUG << "Open(): window height = " << windowHeight << log.endl;
+#endif
+        }
+        else
+        {
+#ifdef DEBUG
+            log << ccl::LDEBUG << "Open(): width = " << width << log.endl;
+            log << ccl::LDEBUG << "Open(): height = " << height << log.endl;
+#endif
+        }
+        depth = gdal_dataset->GetRasterCount();
+#ifdef DEBUG
+        log << ccl::LDEBUG << "Open(): depth = " << depth << log.endl;
+#endif
+
+        char *wkt = new char[8192];
+        strncpy(wkt, gdal_dataset->GetProjectionRef(), 8192);
+        wkt[8191] = 0;
+        if (!strlen(wkt))
+        {
+            std::string prj_filename = filename.substr(0, filename.size() - 3) + "prj";
+            FILE *PRJ = fopen(prj_filename.c_str(), "r");
+            if (PRJ)
+            {
+                fgets(wkt, 8192, PRJ);
+                fclose(PRJ);
+            }
+        }
+        wkt[8191] = 0;
+
+        if (!strlen(wkt))
+        {
+            OGRSpatialReference oSRS;
+            oSRS.SetWellKnownGeogCS("WGS84");
+            char *wktp = NULL;
+            oSRS.exportToWkt(&wktp);
+            strncpy(wkt, wktp, 8191);
+            CPLFree(wktp);
+            log << ccl::LERR << "Open(): missing projection in " << filename << " assuming geographic." << log.endl;
+
+        }
+        if (!strlen(wkt))
+        {
+            log << ccl::LERR << "Open(): missing projection wkt." << log.endl;
+            GDALClose((GDALDatasetH)gdal_dataset);
+            gdal_dataset = NULL;
+            delete[] wkt;
+            return false;
+        }
+
+        char *pwkt = wkt;
+        file_srs = new OGRSpatialReference;
+        OGRErr err = file_srs->importFromWkt((char **)&wkt);
+        delete[] pwkt;
+        if (err != OGRERR_NONE)
+        {
+            log << ccl::LERR << "Open(): unable to parse projection information." << log.endl;
+            GDALClose((GDALDatasetH)gdal_dataset);
+            gdal_dataset = NULL;
+            return false;
+        }
+
+        double geotransform[6];
+        if (gdal_dataset->GetGeoTransform(geotransform) != CE_None)
+        {
+            GDALClose((GDALDatasetH)gdal_dataset);
+            gdal_dataset = NULL;
+            return false;
+        }
+
+        this->BuildCoordinateTransformations();
+
+        spacing_x = geotransform[1];
+        bound_x_low = geotransform[0];
+        rotation_x = geotransform[2];
+
+        spacing_y = geotransform[5];
+        bound_y_low = geotransform[3];
+        rotation_y = geotransform[4];
+
+        // a post is in the middle of the space, regardless of area_or_point
+        bound_x_low = bound_x_low + (spacing_x / 2);
+        bound_y_low = bound_y_low + (spacing_y / 2);
+        bound_x_high = bound_x_low + (geotransform[1] * (width - 1));
+        bound_y_high = bound_y_low + (geotransform[5] * (height - 1));
+
+        // make geographic versions of the bounds
+        geo_bound_x_low = bound_x_low;
+        geo_bound_y_low = bound_y_low;
+        geo_bound_x_high = bound_x_high;
+        geo_bound_y_high = bound_y_high;
+        if (app_ct)
+        {
+            app_ct->Transform(1, &geo_bound_x_low, &geo_bound_y_low);
+            app_ct->Transform(1, &geo_bound_x_high, &geo_bound_y_high);
+        }
+
+#ifdef DEBUG
+        log << ccl::LDEBUG << "Open(): geotransform = [" << geotransform[0] << ", "
+            << geotransform[1] << ", " << geotransform[2] << ", "
+            << geotransform[3] << ", " << geotransform[4] << ", "
+            << geotransform[5] << ", " << "]" << log.endl;
+        log << ccl::LDEBUG << "Open(): spacing_x = " << spacing_x << log.endl;
+        log << ccl::LDEBUG << "Open(): spacing_y = " << spacing_y << log.endl;
+        log << ccl::LDEBUG << "Open(): bound_x_low = " << bound_x_low << log.endl;
+        log << ccl::LDEBUG << "Open(): bound_x_high = " << bound_x_high << log.endl;
+        log << ccl::LDEBUG << "Open(): bound_y_low = " << bound_y_low << log.endl;
+        log << ccl::LDEBUG << "Open(): bound_y_high = " << bound_y_high << log.endl;
+#endif
+
+        return true;
+    }
+
+
 
     int SimpleDEMReader::getWidth() const
     {
+        if (windowedMode)
+            return windowWidth;
         return width;
     }
 
     int SimpleDEMReader::getHeight() const
     {
+        if (windowedMode)
+            return windowHeight;
         return height;
     }
     void SimpleDEMReader::getMBR(double &north, double &south, double &east, double &west)
     {
-        north = geo_bound_y_high;
-        south = geo_bound_y_low;
-        east = geo_bound_x_high;
-        west = geo_bound_x_low;
+        if (windowedMode)
+        {
+            west = geo_bound_x_low + (windowLeft * spacing_x);
+            east = geo_bound_x_low + (windowRight * spacing_x);
+            north = geo_bound_y_low + (windowTop * spacing_y);
+            south = geo_bound_y_low + (windowBottom * spacing_y);
+        }
+        else
+        {
+            north = geo_bound_y_high;
+            south = geo_bound_y_low;
+            east = geo_bound_x_high;
+            west = geo_bound_x_low;
+        }
         return;
     }
     // Convert each post to a double value and return it as an array
     bool SimpleDEMReader::getGrid(std::vector<double> &grid)
     {
+        int offsetX = 0;
+        int offsetY = 0;
+        int readWidth = width;
+        int readHeight = height;
         int len = width * height;
+        if (windowedMode)
+        {
+            offsetX = windowLeft;
+            offsetY = windowBottom;
+            readWidth = windowRight - windowLeft;
+            readHeight = windowBottom - windowTop;
+            len = readWidth * readHeight;
+        }
         double *fgrid = new double[len];
         GDALRasterBand *poBand = gdal_dataset->GetRasterBand(1);
-        poBand->RasterIO(GF_Read, 0, 0, width, height,
-            fgrid, width, height, GDT_Float64,
+        poBand->RasterIO(GF_Read, offsetX, offsetY, readWidth, readHeight,
+            fgrid, readWidth, readHeight, GDT_Float64,
             0, 0);
         grid.resize(len);
         for (int i = 0; i < len; i++)
