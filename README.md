@@ -35,3 +35,4 @@ Currently, the solution is expecting the following libraries in this directory:
 - lpng154
 
 Binaries of all these can be downloaded here: [http://cdb.cognitics.net/ThirdParty.7z](http://cdb.cognitics.net/ThirdParty.7z)
+
