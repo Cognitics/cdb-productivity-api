@@ -1,6 +1,6 @@
 # cdbmesh
 
-This is the open-source version of Cognitics' libraries, including mesh generation. 
+This is the open-source version of Cognitics' libraries with emerging support for the OGC CDB, including mesh generation of CDB content. 
 
 |Library|Description                              |
 |-------|-----------------------------------------|
