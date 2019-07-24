@@ -32,6 +32,7 @@ DEALINGS IN THE SOFTWARE.
 #include <typeinfo>
 #include <map>
 #include <list>
+#include <unordered_set>
 
 #undef min
 #undef max
@@ -1159,7 +1160,7 @@ namespace ctl {
             maxy = std::max<double>(maxy, polygon[i].y);
         }
 
-        std::set<Edge*> processedEdges;
+        std::unordered_set<Edge*> processedEdges;
         std::vector<Edge*> edges;
 
         edges.reserve(subdivision_->getMaxEdges()*2);

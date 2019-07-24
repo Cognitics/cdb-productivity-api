@@ -159,6 +159,15 @@ bool GDALRasterSampler::AddFile(std::string file)
 // Add all the files in the specified directory that match the specified filter
 bool GDALRasterSampler::AddDirectory(std::string dir, std::set<std::string> extensions)
 {
+    std::vector<std::string> lowerExtensions;
+    std::set<std::string>::iterator ext_iter = extensions.begin();
+    while (ext_iter != extensions.end())
+    {
+        std::string ext = *ext_iter++;
+        std::string lowerext = ToLower(ext);
+        lowerExtensions.push_back(lowerext);
+    }
+
     bool ret = false;
     std::string searchpath = ccl::joinPaths(dir,"*.*");
     log << ccl::LINFO << "Scanning " << dir << " and subdirectories for imagery files..." << log.endl;
@@ -167,11 +176,10 @@ bool GDALRasterSampler::AddDirectory(std::string dir, std::set<std::string> exte
     {    
         std::string file = fi.getFileName();
         std::string fileext = fi.getSuffix();
-        std::set<std::string>::iterator ext_iter = extensions.begin();
-        while(ext_iter!=extensions.end())
+        std::vector<std::string>::iterator ext_iter = lowerExtensions.begin();
+        while(ext_iter!= lowerExtensions.end())
         {
-            std::string ext = *ext_iter++;
-            std::string lowerext = ToLower(ext);
+            std::string lowerext = *ext_iter++;
             if (ToLower(fileext) == lowerext)
             {
                 m_reader.AddFile(file);

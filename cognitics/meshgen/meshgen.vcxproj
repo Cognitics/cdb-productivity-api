@@ -160,6 +160,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="meshgen.cpp" />
+    <ClCompile Include="ws\WebServices.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ws\WebServices.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

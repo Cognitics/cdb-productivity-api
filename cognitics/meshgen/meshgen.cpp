@@ -5,8 +5,15 @@
 #include <ccl/Timer.h>
 #include <tg/TerrainGenerator.h>
 #include "elev/SimpleDEMReader.h"
+#include "ws/WebServices.h"
+#include <fstream>
+#include <filesystem>
 
 ccl::ObjLog logger;
+
+void RecordStatsForTileSize(const std::string& sOutputPath, int nTileSize, cognitics::TerrainGenerator& terrainGenerator, const std::set<std::string>& elevationFiles, std::string outputFormat);
+void TestAllTileSizes(const std::string& sOutputPath, cognitics::TerrainGenerator& terrainGenerator, const std::set<std::string>& elevationFiles, std::string outputFormat);
+void DeleteDirectory(const std::string &dir);
 
 int usage(const std::string &error = std::string())
 {
@@ -44,16 +51,19 @@ int main(int argc, char **argv)
     std::string modelKitPath("modelkits/");
     std::string texturePath("textures/");
     std::string outputPath("output");
+	  std::string outputTmpPath("tmp/");
     std::set<std::string> imageryPaths;
     std::set<std::string> oddbFiles;
     std::set<std::string> elevationFiles;
-    int textureWidth = 1024;
-    int textureHeight = 1024;
+    int textureWidth = 512;
+    int textureHeight = 512;
     double texelSize = 5.0f;
     bool originSet = false;
     std::string rulesFilename;
     int row = -1;
     int col = -1;
+	std::string outputFormat = ".gltf";
+	bool useWebServices = false;
 
     if (argc <= 1)
         return usage();
@@ -169,6 +179,23 @@ int main(int argc, char **argv)
             texelSize = atof(argv[argi]);
             continue;
         }
+		if (param == "-format")
+		{
+			++argi;
+			if (argi >= argc)
+				return usage("Missing format");
+			/*if (argv[argi] == "gltf")
+			{
+				outputGltf = true;
+			}*/
+			outputFormat = argv[argi];
+			continue;
+		}
+		if (param == "-ws")
+		{
+			useWebServices = true;
+			continue;
+		}
 
         if (param == "-text")
             return usage("Invalid parameters");
@@ -182,28 +209,116 @@ int main(int argc, char **argv)
 
     // TODO: projInfo.txt for origin
     // TODO: use files to determine bounds
-
+	
     logger << ccl::LINFO;
     logger << "CDB Mesh Generator" << logger.endl;
 
     cognitics::TerrainGenerator terrainGenerator;
-    terrainGenerator.setOrigin(originLat, originLon);
-    terrainGenerator.setBounds(north, south, west, east);
-    terrainGenerator.setOutputPath(outputPath);
-    for (std::set<std::string>::iterator it = imageryPaths.begin(), end = imageryPaths.end(); it != end; ++it)
-        terrainGenerator.addImageryPath(*it);
-    for (std::set<std::string>::iterator it = elevationFiles.begin(), end = elevationFiles.end(); it != end; ++it)
-        terrainGenerator.addElevationFile(*it);
+	if (useWebServices)
+	{
+		std::cout << "using Web Services..." << std::endl;
 
-    terrainGenerator.setTextureSize(textureWidth, textureHeight);
-    terrainGenerator.setTexelSize(texelSize);
+		ws::GetDataWithGDAL(terrainGenerator, elevationFiles, outputTmpPath, north, south, east, west, textureWidth, textureHeight, originLat, originLon, outputFormat);
+		terrainGenerator.setOrigin(originLat, originLon);
+		terrainGenerator.setBounds(north, south, west, east);
+		terrainGenerator.setOutputPath(outputPath);
+
+		terrainGenerator.setTextureSize(textureWidth, textureHeight);
+		terrainGenerator.setTexelSize(texelSize);
+	}
+	else
+	{
+		terrainGenerator.setOrigin(originLat, originLon);
+		terrainGenerator.setBounds(north, south, west, east);
+		terrainGenerator.setOutputPath(outputPath);
+		for (std::set<std::string>::iterator it = imageryPaths.begin(), end = imageryPaths.end(); it != end; ++it)
+			terrainGenerator.addImageryPath(*it);
+		for (std::set<std::string>::iterator it = elevationFiles.begin(), end = elevationFiles.end(); it != end; ++it)
+			terrainGenerator.addElevationFile(*it);
+
+		terrainGenerator.setTextureSize(textureWidth, textureHeight);
+		terrainGenerator.setTexelSize(texelSize);
+	}
 
     //terrainGenerator.generate(row, col);
     //terrainGenerator.generateFixedGrid(*elevationFiles.begin());
-    terrainGenerator.generateFixedGrid(*elevationFiles.begin(),128);
-    
+	//terrainGenerator.generateFixedGrid(*elevationFiles.begin(), 128);
+	//terrainGenerator.generateFixedGrid(*elevationFiles.begin(), outputFormat, 0);        
+
+    terrainGenerator.generateFixedGrid(*elevationFiles.begin(), outputFormat, 64);
+
+    //TestAllTileSizes(outputPath, terrainGenerator, elevationFiles, outputFormat);
+
+	//DeleteDirectory(outputTmpPath);
 
     logger << "EXECUTION: " << execTimer.getElapsedTime() << " seconds" << logger.endl;
     return 0;
 }
 
+void DeleteDirectory(const std::string &dir)
+{
+	std::string name = dir;
+	std::uintmax_t n = std::experimental::filesystem::remove_all(dir);	
+
+	if (_rmdir(dir.c_str()) == 0)
+	{
+		logger << "Did not delete all the files in " << name << logger.endl;
+	}
+	else
+	{
+		logger << "Deleted " << n << " files or directories in " << name << logger.endl;
+	}
+}
+
+void TestAllTileSizes(const std::string& sOutputPath, cognitics::TerrainGenerator& terrainGenerator, const std::set<std::string>& elevationFiles, std::string outputFormat)
+{
+    for (int nTileSize = 1024; nTileSize >= 16; nTileSize /= 2)
+    {
+        RecordStatsForTileSize(sOutputPath, nTileSize, terrainGenerator, elevationFiles, outputFormat);
+    }
+}
+
+void RecordStatsForTileSize(const std::string& sOutputPath, int nTileSize, cognitics::TerrainGenerator& terrainGenerator, const std::set<std::string>& elevationFiles, std::string outputFormat)
+{
+    ccl::Timer timer;
+    timer.startTimer();
+
+    std::stringstream sstream;
+    sstream << sOutputPath << "\\" << nTileSize;
+    std::string sTileSizeOutput = sstream.str();
+
+    if (!std::experimental::filesystem::exists(sTileSizeOutput))
+    {
+        std::experimental::filesystem::create_directory(sTileSizeOutput);
+    }
+
+    terrainGenerator.setOutputPath(sTileSizeOutput);
+
+    terrainGenerator.generateFixedGrid(*elevationFiles.begin(), outputFormat, nTileSize);
+
+    std::ofstream fout(sOutputPath + "\\stats.csv", std::ofstream::out | std::ofstream::app);
+    int nNumOBJs = 0;
+    int nTotalFileSize = 0;
+
+    std::string path = sTileSizeOutput;
+    for (const auto& entry : std::experimental::filesystem::directory_iterator(path))
+    {
+        //std::cout << entry.path() << std::endl;
+        if (entry.path().extension() == ".obj")
+        {
+            ++nNumOBJs;
+
+            nTotalFileSize += std::experimental::filesystem::file_size(entry.path());
+        }
+        else if (entry.path().extension() == ".jpg" /*|| entry.path().extension() == ".attr"*/)
+        {
+            nTotalFileSize += std::experimental::filesystem::file_size(entry.path());
+        }
+    }
+
+    nTotalFileSize /= static_cast<float>(1024 * 1024);//get total file size in MB
+
+    fout << nTileSize << "\t" << nNumOBJs << "\t" << nTotalFileSize / static_cast<float>(nNumOBJs) << "\t" << timer.getElapsedTime() / static_cast<float>(nNumOBJs) << "\t" << nTotalFileSize << "\t" << timer.getElapsedTime() << std::endl;
+
+    fout.close();
+}

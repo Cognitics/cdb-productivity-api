@@ -1,6 +1,6 @@
 
 #include "elev/SimpleDEMReader.h"
-
+#include "gdalwarper.h"
 
 namespace elev {
     SimpleDEMReader::~SimpleDEMReader()
@@ -261,6 +261,14 @@ namespace elev {
 
         this->BuildCoordinateTransformations();
 
+		//skarasevich - if image is rotated, spacing will be 0 resulting in bounds generating incorrectly
+		//https://gis.stackexchange.com/questions/281132/why-doesnt-gdalinfo-report-pixel-size
+		if (geotransform[1] == 0.0 && geotransform[5] == 0.0)
+		{
+			geotransform[1] = sqrt(geotransform[1] * geotransform[1] + geotransform[4] * geotransform[4]);
+			geotransform[5] = sqrt(geotransform[2] * geotransform[2] + geotransform[5] * geotransform[5]);
+		}
+
         spacing_x = geotransform[1];
         bound_x_low = geotransform[0];
         rotation_x = geotransform[2];
@@ -268,6 +276,7 @@ namespace elev {
         spacing_y = geotransform[5];
         bound_y_low = geotransform[3];
         rotation_y = geotransform[4];
+
 
         // a post is in the middle of the space, regardless of area_or_point
         bound_x_low = bound_x_low + (spacing_x / 2);
@@ -346,16 +355,22 @@ namespace elev {
         if (windowedMode)
         {
             offsetX = windowLeft;
-            offsetY = windowBottom;
+            offsetY = windowTop;
             readWidth = windowRight - windowLeft;
             readHeight = windowBottom - windowTop;
             len = readWidth * readHeight;
         }
         double *fgrid = new double[len];
         GDALRasterBand *poBand = gdal_dataset->GetRasterBand(1);
-        poBand->RasterIO(GF_Read, offsetX, offsetY, readWidth, readHeight,
+
+        CPLErr error = poBand->RasterIO(GF_Read, offsetX, offsetY, readWidth, readHeight,
             fgrid, readWidth, readHeight, GDT_Float64,
             0, 0);
+        if (error != CPLErr::CE_None)
+        {
+            std::cout << "RasterIO Error" << std::endl;
+        }
+
         grid.resize(len);
         for (int i = 0; i < len; i++)
         {

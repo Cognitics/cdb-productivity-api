@@ -32,12 +32,17 @@ DEALINGS IN THE SOFTWARE.
 #include <boost/lexical_cast.hpp>
 #include <ctl/ctl.h>
 
+#include <scenegraphgltf\scenegraphgltf.h>
 #include <scenegraphflt/scenegraphflt.h>
+#include <scenegraphobj/scenegraphobj.h>
 #include <scenegraph/SceneCropper.h>
 
 #include <scenegraph/FlattenVisitor.h>
 #include <scenegraph/TransformVisitor.h>
 #include "elev/SimpleDEMReader.h"
+
+#include <fstream>
+
 
 namespace cognitics
 {
@@ -139,13 +144,15 @@ namespace cognitics
                 generateRowColumn(row, c);
         }
     }
-
-
-    void TerrainGenerator::generateFixedGrid(const std::string &elevFile, int tileSize)
+	
+	void TerrainGenerator::generateFixedGrid(const std::string &elevFile, std::string format, int tileSize)
     {
         ccl::FileInfo fi(elevFile);
         std::string tileName = fi.getBaseName(true);
-        std::string fltFilename = ccl::joinPaths(outputPath, tileName + ".flt");
+        std::string filename = ccl::joinPaths(outputPath, tileName + format);
+		std::string tileInfoName = ccl::joinPaths(outputPath, "tileInfo.txt");
+		std::ofstream tileInfo(tileInfoName);
+		tileInfo << tileName << "\n";
         int width = 0;
         int height = 0;
         {
@@ -162,21 +169,28 @@ namespace cognitics
         int windowLeft = 0;
         if (tileSize == 0)
         {
-            generateFixedGrid(elevFile, fltFilename, 0, height, width, 0);
+			tileInfo << "1 1\n";
+			tileInfo.close();
+			std::stringstream stringstream;
+			stringstream << tileName << "_0_0" << format;
+			filename = ccl::joinPaths(outputPath, stringstream.str());
+            generateFixedGrid(elevFile, filename, 0, height, width, 0);
         }
         else
         {
             int rows = ceil(height / tileSize);
             int cols = ceil(width / tileSize);
+			tileInfo << rows << " " << cols << "\n";
+			tileInfo.close();
             for (int row = 0; row < rows; row++)
             {
                 for (int col = 0; col < cols; col++)
                 {
                     std::stringstream ss;
-                    ss << tileName  << "_" << row << "_" << col << ".flt";
-                    fltFilename = ccl::joinPaths(outputPath, ss.str());
+                    ss << tileName  << "_" << row << "_" << col << format;
+                    filename = ccl::joinPaths(outputPath, ss.str());
 
-                    generateFixedGrid(elevFile, fltFilename, 
+                    generateFixedGrid(elevFile, filename, 
                         row * tileSize,
                         (row+1) * (tileSize),
                         (col + 1) * tileSize,
@@ -184,9 +198,68 @@ namespace cognitics
                 }
             }
         }
-        scenegraph::buildOpenFlightFromScene(ccl::joinPaths(outputPath, "master.flt"), &master);
+		if (format == ".gltf" || format == ".glb" || format == ".b3dm" || format == "tileset")
+		{
+			scenegraph::buildTilesetFromScene(ccl::joinPaths(outputPath, "tileset.json"), &master);
+		}
+		else if (format == ".obj")
+		{
+			;
+		}
+		else
+		{
+			scenegraph::buildOpenFlightFromScene(ccl::joinPaths(outputPath, "master.flt"), &master);
+		}
+		      
         master.externalReferences.clear();
     }
+	/*
+	void TerrainGenerator::generateFixedGrid(const std::string &elevFile, int tileSize)
+	{
+		ccl::FileInfo fi(elevFile);
+		std::string tileName = fi.getBaseName(true);
+		std::string fltFilename = ccl::joinPaths(outputPath, tileName + ".flt");
+		int width = 0;
+		int height = 0;
+		{
+			OGRSpatialReference oSRS;
+			oSRS.SetWellKnownGeogCS("WGS84");
+			elev::SimpleDEMReader demReader(elevFile, oSRS);
+			demReader.Open();
+			width = demReader.getWidth();
+			height = demReader.getHeight();
+		}
+		int windowTop = 0;
+		int windowBottom = 0;
+		int windowRight = 0;
+		int windowLeft = 0;
+		if (tileSize == 0)
+		{
+			generateFixedGrid(elevFile, fltFilename, 0, height, width, 0);
+		}
+		else
+		{
+			int rows = ceil(height / tileSize);
+			int cols = ceil(width / tileSize);
+			for (int row = 0; row < rows; row++)
+			{
+				for (int col = 0; col < cols; col++)
+				{
+					std::stringstream ss;
+					ss << tileName << "_" << row << "_" << col << ".flt";
+					fltFilename = ccl::joinPaths(outputPath, ss.str());
+
+					generateFixedGrid(elevFile, fltFilename,
+						row * tileSize,
+						(row + 1) * (tileSize),
+						(col + 1) * tileSize,
+						col * tileSize);
+				}
+			}
+		}
+		scenegraph::buildOpenFlightFromScene(ccl::joinPaths(outputPath, "master.flt"), &master);
+		master.externalReferences.clear();
+	}*/
 
     void TerrainGenerator::generateFixedGrid(const std::string &elevFile, const std::string &outputName, int windowTop, int windowBottom, int windowRight, int windowLeft)
     {
@@ -194,6 +267,7 @@ namespace cognitics
         std::string tileName = fi.getBaseName(true);
         std::string jpgFilename = ccl::joinPaths(outputPath, tileName + ".jpg");
         std::string attrFilename = jpgFilename + ".attr";
+		std::string format = fi.getSuffix();
 
         OGRSpatialReference oSRS;
         oSRS.SetWellKnownGeogCS("WGS84");
@@ -219,6 +293,14 @@ namespace cognitics
         double localWidth = localEast - localWest;
         double localHeight = localNorth - localSouth;
         logger << ccl::LINFO << "Using Elevation File MBR: N:" << north << "(" << localNorth << ") S:" << south << "(" << localSouth << ") W:" << west << "(" << localWest << ") E:" << east << "(" << localEast << ")" << logger.endl;
+		
+		double minElev = grid[0];
+		double maxElev = grid[0];
+		for (int i = 0; i < grid.size(); ++i)
+		{
+			minElev = min(grid[i], minElev);
+			maxElev = max(grid[i], maxElev);
+		}
 
         // create texture
         {
@@ -242,14 +324,26 @@ namespace cognitics
             ccl::binary buffer;
             buffer.resize(len);
             rasterSampler.Sample(window, buf);
-            for (int i = 0; i < len; ++i)
-                buffer[i] = buf[i];
+			int counter = 0;
+			for (int i = 0; i < window.height; ++i)
+			{
+				int rowIndex = (window.height - i - 1) * (window.width * 3);
+				for (int j = 0; j < window.width * 3; j++)
+				{
+					buffer[rowIndex++] = buf[counter++];
+				}
+			}
             ip::WriteJPG24(jpgFilename, info, buffer);
-            ip::attrFile attr;
-            attr.wrapMode = ip::attrFile::WRAP_CLAMP;
-            attr.wrapMode_u = ip::attrFile::WRAP_CLAMP;
-            attr.wrapMode_v = ip::attrFile::WRAP_CLAMP;
-            attr.Write(attrFilename);
+
+			if (format == "flt")
+			{
+				ip::attrFile attr;
+				attr.wrapMode = ip::attrFile::WRAP_CLAMP;
+				attr.wrapMode_u = ip::attrFile::WRAP_CLAMP;
+				attr.wrapMode_v = ip::attrFile::WRAP_CLAMP;
+				attr.Write(attrFilename);
+			}
+            
             delete buf;
         }
 
@@ -258,7 +352,7 @@ namespace cognitics
             double z = 0;
             ctl::Point southwest(localWest, localSouth, grid[(width*(height - 2))]);
             ctl::Point southeast(localEast, localSouth, grid[(width*(height - 1)) - 1]);
-            ctl::Point northeast(localEast, localNorth, grid[width]);
+            ctl::Point northeast(localEast, localNorth, grid[width-1]);
             ctl::Point northwest(localWest, localNorth, grid[0]);
             gamingArea.push_back(southwest);
             gamingArea.push_back(southeast);
@@ -412,12 +506,33 @@ namespace cognitics
             scene->faces.push_back(face);
         }
 
-        
         logger << "Writing " << outputName << "..." << logger.endl;
-        scenegraph::buildOpenFlightFromScene(outputName, scene);
+
+		if (format == "gltf" || format == "glb" || format == "b3dm" || format == "tileset")
+		{
+			scenegraph::buildGltfFromScene(outputName, scene, north, south, east, west);
+		}
+		else if (format == "obj")
+		{
+			scenegraph::buildObjFromScene(outputName, dt, localWest, localNorth, localWidth, localHeight);
+		}
+		else
+		{
+			scenegraph::buildOpenFlightFromScene(outputName, scene);
+		}
+
         scenegraph::ExternalReference ext;
         ext.scale = sfa::Point(1.0, 1.0, 1.0);
         ext.filename = outputName;
+		if (format == "b3dm")
+		{
+			ext.position.setX(west);
+			ext.position.setY(south);
+			ext.position.setZ(minElev);
+			ext.scale.setX(east - west);
+			ext.scale.setY(north - south);
+			ext.scale.setZ(minElev - maxElev);
+		}
         master.externalReferences.push_back(ext);
 
         delete scene;
@@ -472,14 +587,26 @@ namespace cognitics
             ccl::binary buffer;
             buffer.resize(len);
             rasterSampler.Sample(window,buf);
-            for(int i = 0; i < len; ++i) 
-                buffer[i] = buf[i];
+			int counter = 0;
+			for (int i = 0; i < window.height; ++i)
+			{
+				int rowIndex = (window.height - i - 1) * (window.width * 3);
+				for (int j = 0; j < window.width * 3; j++)
+				{
+					buffer[rowIndex++] = buf[counter++];
+				}
+			}
             ip::WriteJPG24(jpgFilename, info, buffer);
-            ip::attrFile attr;
-            attr.wrapMode = ip::attrFile::WRAP_CLAMP;
-            attr.wrapMode_u = ip::attrFile::WRAP_CLAMP;
-            attr.wrapMode_v = ip::attrFile::WRAP_CLAMP;
-            attr.Write(attrFilename);
+
+			/*if (format == "flt")
+			{*/
+				ip::attrFile attr;
+				attr.wrapMode = ip::attrFile::WRAP_CLAMP;
+				attr.wrapMode_u = ip::attrFile::WRAP_CLAMP;
+				attr.wrapMode_v = ip::attrFile::WRAP_CLAMP;
+				attr.Write(attrFilename);
+			//}
+            
             delete buf;
         }
 

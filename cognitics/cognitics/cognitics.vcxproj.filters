@@ -127,6 +127,30 @@
     <Filter Include="Header Files\ogr">
       <UniqueIdentifier>{cabfdfc1-cb91-46c8-ba35-e1ac2d778e92}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\scenegraphgltf">
+      <UniqueIdentifier>{f5df8d26-464d-4cee-8991-02299c7a0b15}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\scenegraphgltf">
+      <UniqueIdentifier>{28ed1f97-2a75-4c70-a29a-6c2fa3238878}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\gltf">
+      <UniqueIdentifier>{f645e191-41ef-4e21-a5ab-defd32b5fff9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\gltf">
+      <UniqueIdentifier>{513c8607-0f0f-4555-a362-edcc098e081c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\scenegraphobj">
+      <UniqueIdentifier>{0b04b036-b4c1-438a-ac70-4ced731f94a7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\scenegraphobj">
+      <UniqueIdentifier>{a2715740-b280-41c6-914e-5ab344511b1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\b64">
+      <UniqueIdentifier>{7de35891-367f-4f42-9dca-e63fca996a54}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\b64">
+      <UniqueIdentifier>{b277aaa5-fdd5-4e1a-995d-88d32bf87573}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\cad\AttributeDictionary.cpp">
@@ -1118,6 +1142,27 @@
     </ClCompile>
     <ClCompile Include="..\src\ogr\OGRLayer.cpp">
       <Filter>Source Files\ogr</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gltf\GltfData.cpp">
+      <Filter>Source Files\gltf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gltf\GltfInfo.cpp">
+      <Filter>Source Files\gltf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gltf\GltfJson.cpp">
+      <Filter>Source Files\gltf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\gltf\Tileset.cpp">
+      <Filter>Source Files\gltf</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\scenegraphgltf\buildGltfFromScene.cpp">
+      <Filter>Source Files\scenegraphgltf</Filter>
+    </ClCompile>
+    <ClCompile Include="buildObjFromScene.cpp">
+      <Filter>Source Files\scenegraphobj</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\b64\base64.cpp">
+      <Filter>Source Files\b64</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -2310,6 +2355,27 @@
     </ClInclude>
     <ClInclude Include="..\include\ogr\OGRLayer.h">
       <Filter>Header Files\ogr</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gltf\GltfData.h">
+      <Filter>Header Files\gltf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gltf\GltfInfo.h">
+      <Filter>Header Files\gltf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gltf\GltfJson.h">
+      <Filter>Header Files\gltf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\gltf\Tileset.h">
+      <Filter>Header Files\gltf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\scenegraphgltf\scenegraphgltf.h">
+      <Filter>Header Files\scenegraphgltf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\scenegraphobj\scenegraphobj.h">
+      <Filter>Header Files\scenegraphobj</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\b64\base64.h">
+      <Filter>Header Files\b64</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

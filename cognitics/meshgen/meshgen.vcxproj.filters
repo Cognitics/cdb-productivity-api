@@ -18,5 +18,13 @@
     <ClCompile Include="meshgen.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ws\WebServices.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ws\WebServices.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

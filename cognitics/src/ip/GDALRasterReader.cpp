@@ -727,17 +727,23 @@ namespace gdalsampler
                             r, xsize,ysize, GDT_Byte, 
                             0, 0 ))
             {
-                //printf("Error: Failed RGB Read x/y: %d/%d w/h: %d/%d\n",xoffset,yoffset,xsize,ysize);
+                printf("Error: Failed RGB Read x/y: %d/%d w/h: %d/%d\n",xoffset,yoffset,xsize,ysize);
                 //log << ccl::LERR << "Error: Failed RGB Read x/y: " << xoffset << "/" << yoffset << "w/h: " << xsize << "/" << ysize << l
             }
             poBand = poDataset->GetRasterBand(2);// Green...
-            poBand->RasterIO( GF_Read, xoffset, yoffset, xsize, ysize, 
-                            g, xsize,ysize, GDT_Byte, 
-                            0, 0 );
+            if (CE_None != poBand->RasterIO(GF_Read, xoffset, yoffset, xsize, ysize,
+                g, xsize, ysize, GDT_Byte,
+                0, 0))
+            {
+                printf("Error: Failed RGB Read x/y: %d/%d w/h: %d/%d\n", xoffset, yoffset, xsize, ysize);
+            }
             poBand = poDataset->GetRasterBand(3);// Blue...
-            poBand->RasterIO( GF_Read, xoffset, yoffset, xsize, ysize, 
-                            b, xsize,ysize, GDT_Byte, 
-                            0, 0 );
+            if (CE_None != poBand->RasterIO(GF_Read, xoffset, yoffset, xsize, ysize,
+                b, xsize, ysize, GDT_Byte,
+                0, 0))
+            {
+                printf("Error: Failed RGB Read x/y: %d/%d w/h: %d/%d\n", xoffset, yoffset, xsize, ysize);
+            }
             g_GDALProtMutex.unlock();
         }
         else if(hasColorTable)

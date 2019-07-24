@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\b64\base64.cpp" />
     <ClCompile Include="..\src\cad\AttributeDictionary.cpp" />
     <ClCompile Include="..\src\ccl\Action.cpp" />
     <ClCompile Include="..\src\ccl\AttributeContainer.cpp" />
@@ -245,6 +246,10 @@
     <ClCompile Include="..\src\flt\VertexWithColorNormal.cpp" />
     <ClCompile Include="..\src\flt\VertexWithColorNormalUV.cpp" />
     <ClCompile Include="..\src\flt\VertexWithColorUV.cpp" />
+    <ClCompile Include="..\src\gltf\GltfData.cpp" />
+    <ClCompile Include="..\src\gltf\GltfInfo.cpp" />
+    <ClCompile Include="..\src\gltf\GltfJson.cpp" />
+    <ClCompile Include="..\src\gltf\Tileset.cpp" />
     <ClCompile Include="..\src\ip\attr_file.cpp" />
     <ClCompile Include="..\src\ip\GDALRasterReader.cpp" />
     <ClCompile Include="..\src\ip\GDALRasterSampler.cpp" />
@@ -262,6 +267,7 @@
     <ClCompile Include="..\src\ogr\OGRLayer.cpp" />
     <ClCompile Include="..\src\scenegraphflt\buildOpenFlightFromScene.cpp" />
     <ClCompile Include="..\src\scenegraphflt\buildSceneFromOpenFlight.cpp" />
+    <ClCompile Include="..\src\scenegraphgltf\buildGltfFromScene.cpp" />
     <ClCompile Include="..\src\scenegraph\buildSceneFromFeature.cpp" />
     <ClCompile Include="..\src\scenegraph\Color.cpp" />
     <ClCompile Include="..\src\scenegraph\CoordinateTransformVisitor.cpp" />
@@ -349,6 +355,7 @@
     <ClCompile Include="..\src\sfa\Surface.cpp" />
     <ClCompile Include="..\src\sfa_file_factory\sfa_file_factory.cpp" />
     <ClCompile Include="..\src\tg\TerrainGenerator.cpp" />
+    <ClCompile Include="buildObjFromScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\include\rapidjson\license.txt" />
@@ -356,6 +363,7 @@
     <Text Include="..\src\cts\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\b64\base64.h" />
     <ClInclude Include="..\include\cad\AttributeDictionary.h" />
     <ClInclude Include="..\include\ccl\Action.h" />
     <ClInclude Include="..\include\ccl\AttributeContainer.h" />
@@ -617,6 +625,10 @@
     <ClInclude Include="..\include\flt\VertexWithColorNormal.h" />
     <ClInclude Include="..\include\flt\VertexWithColorNormalUV.h" />
     <ClInclude Include="..\include\flt\VertexWithColorUV.h" />
+    <ClInclude Include="..\include\gltf\GltfData.h" />
+    <ClInclude Include="..\include\gltf\GltfInfo.h" />
+    <ClInclude Include="..\include\gltf\GltfJson.h" />
+    <ClInclude Include="..\include\gltf\Tileset.h" />
     <ClInclude Include="..\include\ip\attr.h" />
     <ClInclude Include="..\include\ip\GDALRasterReader.h" />
     <ClInclude Include="..\include\ip\GDALRasterSampler.h" />
@@ -660,6 +672,8 @@
     <ClInclude Include="..\include\rapidxml\rapidxml_print.hpp" />
     <ClInclude Include="..\include\rapidxml\rapidxml_utils.hpp" />
     <ClInclude Include="..\include\scenegraphflt\scenegraphflt.h" />
+    <ClInclude Include="..\include\scenegraphgltf\scenegraphgltf.h" />
+    <ClInclude Include="..\include\scenegraphobj\scenegraphobj.h" />
     <ClInclude Include="..\include\scenegraph\Color.h" />
     <ClInclude Include="..\include\scenegraph\CoordinateTransformVisitor.h" />
     <ClInclude Include="..\include\scenegraph\DrapeVisitor.h" />
