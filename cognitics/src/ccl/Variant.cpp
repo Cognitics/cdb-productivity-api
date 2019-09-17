@@ -92,10 +92,12 @@ namespace ccl
         virtual int32_t as_int(void) const = 0;
         virtual int64_t as_bigint(void) const = 0;
         virtual double as_double(void) const = 0;
+        /*
         virtual TIMESTAMP_STRUCT as_datetime(void) const = 0;
         virtual DATE_STRUCT as_date(void) const = 0;
         virtual TIME_STRUCT as_time(void) const = 0;
-        virtual SQL_INTERVAL_STRUCT as_interval(void) const = 0;
+        virtual SQL_INTERVAL_STRUCT as_interval(void) const = 0;        
+        */
         virtual binary as_binary(uint8_t byteOrder) const = 0;
     };
 
@@ -107,11 +109,11 @@ namespace ccl
     public:
         virtual ~VariantUUID(void) { }
         VariantUUID(const boost::uuids::uuid &value) : value(value) { }
-
+/*
         VariantUUID(const SQLGUID &value)
         {
             memcpy(&this->value, &value, sizeof(SQLGUID));
-        }
+        }*/
 
         virtual uint8_t type(void) const
         {
@@ -167,7 +169,7 @@ namespace ccl
         {
             throw VariantException("uuid", "double");
         }
-
+/*
         virtual TIMESTAMP_STRUCT as_datetime(void) const
         {
             throw VariantException("uuid", "datetime");
@@ -187,7 +189,7 @@ namespace ccl
         {
             throw VariantException("uuid", "interval");
         }
-
+*/
         virtual binary as_binary(uint8_t byteOrder) const
         {
             binary result;
@@ -266,7 +268,7 @@ namespace ccl
             double result;
             return (is >> result) ? result : 0;
         }
-
+/*
         virtual TIMESTAMP_STRUCT as_datetime(void) const
         {
             TIMESTAMP_STRUCT result;
@@ -301,7 +303,7 @@ namespace ccl
         {
             throw VariantException("string", "interval");
         }
-
+*/
         virtual binary as_binary(uint8_t byteOrder) const
         {
             if(value.size() == 0)
@@ -382,7 +384,7 @@ namespace ccl
             double result;
             return (is >> result) ? result : 0;
         }
-
+/*
         virtual TIMESTAMP_STRUCT as_datetime(void) const
         {
             TIMESTAMP_STRUCT result;
@@ -417,7 +419,7 @@ namespace ccl
         {
             throw VariantException("wstring", "interval");
         }
-
+*/
         virtual binary as_binary(uint8_t byteOrder) const
         {
             binary result;
@@ -494,7 +496,7 @@ namespace ccl
         {
             return value;
         }
-
+/*
         virtual TIMESTAMP_STRUCT as_datetime(void) const
         {
             time_t v = value;
@@ -523,7 +525,7 @@ namespace ccl
         {
             throw VariantException("int", "interval");
         }
-
+*/
         virtual binary as_binary(uint8_t byteOrder) const
         {
             LittleEndian<int32_t> l(value);
@@ -599,7 +601,7 @@ namespace ccl
         {
             return value;
         }
-
+/*
         virtual TIMESTAMP_STRUCT as_datetime(void) const
         {
             time_t v = value;
@@ -628,7 +630,7 @@ namespace ccl
         {
             throw VariantException("bigint", "interval");
         }
-
+*/
         virtual binary as_binary(uint8_t byteOrder) const
         {
             LittleEndian<int64_t> l(value);
@@ -708,7 +710,7 @@ namespace ccl
         {
             return value;
         }
-
+/*
         virtual TIMESTAMP_STRUCT as_datetime(void) const
         {
             time_t v = value;
@@ -737,14 +739,14 @@ namespace ccl
         {
             throw VariantException("double", "interval");
         }
-
+*/
         virtual binary as_binary(uint8_t byteOrder) const
         {
             LittleEndian<double> v(value);
             return v.as_binary();
         }
     };
-
+/*
     class VariantDateTime : public VariantType
     {
     private:
@@ -1144,7 +1146,7 @@ namespace ccl
             return result;
         }
     };
-
+*/
     class VariantBinary : public VariantType
     {
     private:
@@ -1229,7 +1231,7 @@ namespace ccl
             LittleEndian<double> v(0);
             return (v.from_binary(value)) ? double(v) : 0;
         }
-
+/*
         virtual TIMESTAMP_STRUCT as_datetime(void) const
         {
             if(value.size() < sizeof(int32_t))
@@ -1265,7 +1267,7 @@ namespace ccl
             memcpy(&result, &(value[0]), sizeof(SQL_INTERVAL_STRUCT));
             return result;
         }
-
+*/
         virtual binary as_binary(uint8_t byteOrder) const
         {
             return value;
@@ -1284,7 +1286,7 @@ namespace ccl
     Variant::Variant(void) : content(NULL) { }
     Variant::Variant(const Variant &value) : content(value.clone()) { }
     Variant::Variant(const boost::uuids::uuid &value) : content(new VariantUUID(value)) { }
-    Variant::Variant(const SQLGUID &value) : content(new VariantUUID(value)) { }
+    //Variant::Variant(const SQLGUID &value) : content(new VariantUUID(value)) { }
     Variant::Variant(const char *value) : content(new VariantString(std::string(value))) { }
     Variant::Variant(const std::string &value) : content(new VariantString(value)) { }
     Variant::Variant(const wchar_t *value) : content(new VariantWideString(std::wstring(value))) { }
@@ -1301,10 +1303,10 @@ namespace ccl
     Variant::Variant(const float &value) : content(new VariantDouble(value)) { }
     Variant::Variant(const double &value) : content(new VariantDouble(value)) { }
     Variant::Variant(const long double &value) : content(new VariantDouble(value)) { }
-    Variant::Variant(const TIMESTAMP_STRUCT &value) : content(new VariantDateTime(value)) { }
-    Variant::Variant(const DATE_STRUCT &value) : content(new VariantDate(value)) { }
-    Variant::Variant(const TIME_STRUCT &value) : content(new VariantTime(value)) { }
-    Variant::Variant(const SQL_INTERVAL_STRUCT &value) : content(new VariantInterval(value)) { }
+    //Variant::Variant(const TIMESTAMP_STRUCT &value) : content(new VariantDateTime(value)) { }
+   // Variant::Variant(const DATE_STRUCT &value) : content(new VariantDate(value)) { }
+   // Variant::Variant(const TIME_STRUCT &value) : content(new VariantTime(value)) { }
+   // Variant::Variant(const SQL_INTERVAL_STRUCT &value) : content(new VariantInterval(value)) { }
     Variant::Variant(const binary &value) : content(new VariantBinary(value)) { }
 
     Variant &Variant::operator=(const Variant &value)
@@ -1320,13 +1322,13 @@ namespace ccl
         content = new VariantUUID(value);
         return *this;
     }
-
+/*
     Variant &Variant::operator=(const SQLGUID &value)
     {
         delete content;
         content = new VariantUUID(value);
         return *this;
-    }
+    }*/
 
     Variant &Variant::operator=(const char *value)
     {
@@ -1439,7 +1441,7 @@ namespace ccl
         content = new VariantDouble(value);
         return *this;
     }
-
+/*
     Variant &Variant::operator=(const TIMESTAMP_STRUCT &value)
     {
         delete content;
@@ -1467,7 +1469,7 @@ namespace ccl
         content = new VariantInterval(value);
         return *this;
     }
-
+*/
     Variant &Variant::operator=(const binary &value)
     {
         delete content;
@@ -1590,10 +1592,10 @@ namespace ccl
             case TYPE_INT:            return Variant(as_int());
             case TYPE_BIGINT:        return Variant(as_bigint());
             case TYPE_DOUBLE:        return Variant(as_double());
-            case TYPE_DATETIME:        return Variant(as_datetime());
-            case TYPE_DATE:            return Variant(as_date());
-            case TYPE_TIME:            return Variant(as_time());
-            case TYPE_INTERVAL:        return Variant(as_interval());
+            //case TYPE_DATETIME:        return Variant(as_datetime());
+            //case TYPE_DATE:            return Variant(as_date());
+            //case TYPE_TIME:            return Variant(as_time());
+            //case TYPE_INTERVAL:        return Variant(as_interval());
             case TYPE_BINARY:        return Variant(as_binary());
         }
         return Variant();
@@ -1613,6 +1615,7 @@ namespace ccl
             return convert(TYPE_BIGINT);
         if(type == "double")
             return convert(TYPE_DOUBLE);
+            /*
         if(type == "datetime")
             return convert(TYPE_DATETIME);
         if(type == "date")
@@ -1621,6 +1624,7 @@ namespace ccl
             return convert(TYPE_TIME);
         if(type == "interval")
             return convert(TYPE_INTERVAL);
+            */
         if(type == "binary")
             return convert(TYPE_BINARY);
         return Variant();
@@ -1675,7 +1679,7 @@ namespace ccl
     {
         return content ? content->as_double() : 0;
     }
-    
+    /*
     TIMESTAMP_STRUCT Variant::as_datetime(void) const
     {
         return content ? content->as_datetime() : TIMESTAMP_STRUCT();
@@ -1695,7 +1699,7 @@ namespace ccl
     {
         return content ? content->as_interval() : SQL_INTERVAL_STRUCT();
     }
-
+*/
     binary Variant::as_binary(uint8_t byteOrder) const
     {
         if(!content)
@@ -1791,8 +1795,8 @@ namespace ccl
                         return Variant(double(value));
                     }
                     */
-                case Variant::TYPE_DATETIME:
-                    return Variant(binValue.as_datetime());
+                //case Variant::TYPE_DATETIME:
+                //   return Variant(binValue.as_datetime());
                     /*
                     {
                         binarystringstream bs(binValue.as_binary());
@@ -1807,8 +1811,8 @@ namespace ccl
                         return Variant(Variant(int64_t(value)).as_datetime());
                     }
                     */
-                case Variant::TYPE_DATE:
-                    return Variant(binValue.as_date());
+                //case Variant::TYPE_DATE:
+                //    return Variant(binValue.as_date());
                     /*
                     {
                         binarystringstream bs(binValue.as_binary());
@@ -1823,8 +1827,8 @@ namespace ccl
                         return Variant(Variant(int64_t(value)).as_date());
                     }
                     */
-                case Variant::TYPE_TIME:
-                    return Variant(binValue.as_time());
+                //case Variant::TYPE_TIME:
+                //    return Variant(binValue.as_time());
                     /*
                     {
                         binarystringstream bs(binValue.as_binary());
@@ -1839,8 +1843,8 @@ namespace ccl
                         return Variant(Variant(int64_t(value)).as_time());
                     }
                     */
-                case Variant::TYPE_INTERVAL:
-                    return Variant(binValue.as_interval());
+                //case Variant::TYPE_INTERVAL:
+                //    return Variant(binValue.as_interval());
                 case Variant::TYPE_BINARY:
                     return binValue;
             }

@@ -21,7 +21,7 @@ DEALINGS IN THE SOFTWARE.
 ****************************************************************************/
 
 #include "ccl/sem.h"
-#include <sem.h> 
+//#include <sem.h> 
 #include <semaphore.h>
 
 namespace ccl

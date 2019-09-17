@@ -1,6 +1,6 @@
-#include "gltf\GltfInfo.h"
-#include "gltf\Tileset.h"
-#include "rapidjson\prettywriter.h"
+#include "gltf/GltfInfo.h"
+#include "gltf/Tileset.h"
+#include "rapidjson/prettywriter.h"
 
 namespace gltf
 {

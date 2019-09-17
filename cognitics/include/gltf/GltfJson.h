@@ -1,5 +1,5 @@
 #pragma once
-#include "gltf\GltfData.h"
+#include "gltf/GltfData.h"
 
 namespace gltf
 {

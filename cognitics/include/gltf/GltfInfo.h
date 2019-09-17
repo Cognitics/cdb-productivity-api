@@ -1,6 +1,6 @@
 #pragma once
-#include "rapidjson\writer.h"
-#include "rapidjson\filewritestream.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/filewritestream.h"
 #include <string>
 #include <scenegraph/Scene.h>
 #include "ogr_spatialref.h"

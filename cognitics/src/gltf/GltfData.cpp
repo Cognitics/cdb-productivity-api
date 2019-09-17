@@ -1,5 +1,5 @@
-#include "gltf\GltfData.h"
-#include "b64\base64.h"
+#include "gltf/GltfData.h"
+#include "b64/base64.h"
 
 namespace gltf
 {

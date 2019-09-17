@@ -45,11 +45,13 @@ namespace dbi
         {
             switch(value.type())
             {
+                /*
                 case ccl::Variant::TYPE_UUID:
                     ctype = SQL_C_GUID;
                     sqltype = SQL_GUID;
                     size = sizeof(SQLGUID);
                     break;
+                    */
                 case ccl::Variant::TYPE_STRING:
                     ctype = SQL_C_CHAR;
                     sqltype = SQL_VARCHAR;
@@ -76,6 +78,7 @@ namespace dbi
                     ctype = SQL_C_DOUBLE;
                     sqltype = SQL_DOUBLE;
                     break;
+                    /*
                 case ccl::Variant::TYPE_DATETIME:
                     ctype = SQL_C_TYPE_TIMESTAMP;
                     sqltype = SQL_TYPE_TIMESTAMP;
@@ -93,6 +96,7 @@ namespace dbi
                     break;
                 case ccl::Variant::TYPE_INTERVAL:
                     throw std::runtime_error("SQL_INTERVAL_STRUCT not currently supported as a bind parameter");
+                */
                 case ccl::Variant::TYPE_BINARY:
                     ctype = SQL_C_BINARY;
                     sqltype = SQL_LONGVARBINARY;
@@ -190,6 +194,7 @@ namespace dbi
                             data[colInfo.name] = value;
                     }
                     break;
+                /*
                 case SQL_GUID:
                     {
                         boost::uuids::uuid value;
@@ -198,6 +203,7 @@ namespace dbi
                             data[colInfo.name] = value;
                     }
                     break;
+                
                 case SQL_TYPE_TIMESTAMP:        // this is datetime, the mssql timestamp is a binary column
                     {
                         TIMESTAMP_STRUCT value;
@@ -242,6 +248,7 @@ namespace dbi
                             data[colInfo.name] = value;
                     }
                     break;
+                    */
                 case SQL_WCHAR:
                 case SQL_WVARCHAR:
                 case SQL_WLONGVARCHAR:

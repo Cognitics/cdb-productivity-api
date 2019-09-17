@@ -114,8 +114,8 @@ namespace ogr
 					field = addOGRField(fieldName, OFTString);
 				else if(value.typeinfo() == typeid(std::string))
 					field = addOGRField(fieldName, OFTString);
-				else if(value.typeinfo() == typeid(SQLGUID))
-					field = addOGRField(fieldName, OFTString);
+				//else if(value.typeinfo() == typeid(SQLGUID))
+				//	field = addOGRField(fieldName, OFTString);
 				else if(value.typeinfo() == typeid(bool))
 					field = addOGRField(fieldName, OFTInteger);
 				else if(value.typeinfo() == typeid(char))
@@ -132,12 +132,14 @@ namespace ogr
 					field = addOGRField(fieldName, OFTReal);
 				else if(value.typeinfo() == typeid(long double))
 					field = addOGRField(fieldName, OFTReal);
+				/*
 				else if(value.typeinfo() == typeid(TIMESTAMP_STRUCT))
 					field = addOGRField(fieldName, OFTDateTime);
 				else if(value.typeinfo() == typeid(DATE_STRUCT))
 					field = addOGRField(fieldName, OFTDate);
 				else if(value.typeinfo() == typeid(TIME_STRUCT))
 					field = addOGRField(fieldName, OFTTime);
+				*/
 				else
 					field = addOGRField(fieldName, OFTString);
 			}
@@ -195,6 +197,7 @@ namespace ogr
 				case OFTReal:
 					ogrFeature->SetField(fieldIndex, value.as_double());
 					break;
+					/*
 				case OFTDateTime:
 					{
 						TIMESTAMP_STRUCT data = value.as_datetime();
@@ -213,6 +216,7 @@ namespace ogr
 						ogrFeature->SetField(fieldIndex, 0, 0, 0, data.hour, data.minute, data.second);
 					}
 					break;
+					*/
 				case OFTIntegerList:
 				case OFTRealList:
 				case OFTString:
@@ -280,6 +284,7 @@ namespace ogr
 					// TODO
 					feature->attributes.setAttribute(field->getName(), std::string(ogr_feature->GetFieldAsString(i)));
 					break;
+				/*
 				case OFTDate:
 					{
 						DATE_STRUCT data;
@@ -319,6 +324,7 @@ namespace ogr
 						feature->attributes.setAttribute(field->getName(),var);
 					}
 					break;
+				*/
 				default:
 					feature->attributes.setAttribute(field->getName(), std::string(ogr_feature->GetFieldAsString(i)));
 					break;

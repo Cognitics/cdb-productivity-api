@@ -1,4 +1,4 @@
-#include "gltf\GltfInfo.h"
+#include "gltf/GltfInfo.h"
 
 namespace gltf
 {

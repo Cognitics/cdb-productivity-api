@@ -12,6 +12,7 @@ Copyright (c) 2016 Cognitics, Inc.
 #include <set>
 #include <deque>
 #include <algorithm>
+#include <float.h>
 
 /*
 The JobManager maintains a set of worker threads.
