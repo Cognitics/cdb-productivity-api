@@ -31,7 +31,6 @@ namespace dbi
     namespace sqlite
     {
 
-
         typedef ccl::Variant Variant;
         typedef ccl::VariantList VariantList;
         typedef ccl::VariantMap VariantMap;
@@ -50,12 +49,12 @@ namespace dbi
             int nullable;
         };
 
-
+        class File;
         class Statement
         {
-            friend class File;
+            //friend class File;
             ccl::ObjLog log;
-            dbi::sqlite::File *file;//weak
+            File *file;//weak
             sqlite3_stmt *statement;//strong
             //std::vector<BindData> bindList;
             int col;//The current col binding to

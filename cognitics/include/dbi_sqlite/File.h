@@ -30,7 +30,7 @@ namespace dbi
 {
     namespace sqlite
     {
-        
+        class Statement;
         class File
         {
             
@@ -58,9 +58,9 @@ namespace dbi
             /*! \brief Create a Statement object.
             \return The new Statement object, or NULL if failed.
             */
-            Statement *createStatement();
+            dbi::sqlite::Statement *createStatement();
 
-            void destroyStatement(Statement *stmt);
+            void destroyStatement(dbi::sqlite::Statement *stmt);
 
             std::string getErrorMessage()
             {

@@ -128,7 +128,7 @@ namespace gdalsampler
 
     };
 
-    static HINSTANCE g_ProjDLL = NULL; 
+    //static HINSTANCE g_ProjDLL = NULL; 
 
     #define projPJ void *
     typedef struct { double u, v; } projUV; 
@@ -568,9 +568,9 @@ namespace gdalsampler
     class CacheManager
     {        
         ccl::mutex _cacheLock;
-        static const int MAX_CACHE_ENTRIES = 5;
-        static const int CACHE_BLOCK_HEIGHT = 3000;
-        static const int CACHE_BLOCK_WIDTH = 3000;
+        static const int MAX_CACHE_ENTRIES;
+        static const int CACHE_BLOCK_HEIGHT;
+        static const int CACHE_BLOCK_WIDTH;
         CachedRasterBlockList _blockCache; // This block cache uses the pointers to manage the cache
 
         static tl_ptr<CacheManager> theInstance;

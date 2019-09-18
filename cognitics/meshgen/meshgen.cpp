@@ -3,11 +3,12 @@
 #include <ccl/ObjLog.h>
 #include <ccl/LogStream.h>
 #include <ccl/Timer.h>
+#include <ccl/FileInfo.h>
 #include <tg/TerrainGenerator.h>
 #include "elev/SimpleDEMReader.h"
 #include "ws/WebServices.h"
 #include <fstream>
-#include <filesystem>
+
 
 ccl::ObjLog logger;
 
@@ -258,9 +259,9 @@ int main(int argc, char **argv)
 void DeleteDirectory(const std::string &dir)
 {
 	std::string name = dir;
-	std::uintmax_t n = std::experimental::filesystem::remove_all(dir);	
-
-	if (_rmdir(dir.c_str()) == 0)
+	//std::uintmax_t n = std::experimental::filesystem::remove_all(dir);	
+    int n = 0;
+	if (rmdir(dir.c_str()) == 0)
 	{
 		logger << "Did not delete all the files in " << name << logger.endl;
 	}
@@ -286,12 +287,16 @@ void RecordStatsForTileSize(const std::string& sOutputPath, int nTileSize, cogni
     std::stringstream sstream;
     sstream << sOutputPath << "\\" << nTileSize;
     std::string sTileSizeOutput = sstream.str();
-
+#if 0
     if (!std::experimental::filesystem::exists(sTileSizeOutput))
     {
         std::experimental::filesystem::create_directory(sTileSizeOutput);
     }
-
+#endif
+    if(!ccl::directoryExists(sTileSizeOutput))
+    {
+        ccl::makeDirectory(sTileSizeOutput,true);
+    }
     terrainGenerator.setOutputPath(sTileSizeOutput);
 
     terrainGenerator.generateFixedGrid(*elevationFiles.begin(), outputFormat, nTileSize);
@@ -301,6 +306,23 @@ void RecordStatsForTileSize(const std::string& sOutputPath, int nTileSize, cogni
     int nTotalFileSize = 0;
 
     std::string path = sTileSizeOutput;
+    std::vector<ccl::FileInfo> files = ccl::FileInfo::getAllFiles(path,"*.*", true);
+    for (auto&& fi : files)
+    {
+        //ext does NOT include the dot (.)
+        std::string ext = fi.getSuffix();
+        if (ext == "obj")
+        {
+            ++nNumOBJs;
+
+            nTotalFileSize += ccl::getFileSize(fi.getFileName());//std::experimental::filesystem::file_size(entry.path());
+        }
+        else if (ext == "jpg" /*|| ext == "attr"*/)
+        {
+            nTotalFileSize += ccl::getFileSize(fi.getFileName());
+        }
+    }
+#if 0
     for (const auto& entry : std::experimental::filesystem::directory_iterator(path))
     {
         //std::cout << entry.path() << std::endl;
@@ -315,7 +337,7 @@ void RecordStatsForTileSize(const std::string& sOutputPath, int nTileSize, cogni
             nTotalFileSize += std::experimental::filesystem::file_size(entry.path());
         }
     }
-
+#endif
     nTotalFileSize /= static_cast<float>(1024 * 1024);//get total file size in MB
 
     fout << nTileSize << "\t" << nNumOBJs << "\t" << nTotalFileSize / static_cast<float>(nNumOBJs) << "\t" << timer.getElapsedTime() / static_cast<float>(nNumOBJs) << "\t" << nTotalFileSize << "\t" << timer.getElapsedTime() << std::endl;

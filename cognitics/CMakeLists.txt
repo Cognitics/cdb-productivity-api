@@ -3,9 +3,13 @@
 cmake_minimum_required(VERSION 2.8)
 project (cognitics)
 
+set(CMAKE_CXX_FLAGS "-lstdc++fs")
+
 include_directories("./include")
 include_directories("./include/ccl/Unix")
 include_directories("./../ThirdParty/boost_1_69_0")
+include_directories("./../ThirdParty/gdal/include")
+include_directories("./../ThirdParty/linux_x64/include")
 
 
 set(COG_HEADERS
@@ -63,14 +67,14 @@ set(COG_HEADERS
     ./include/gltf/Tileset.h
     ./include/gltf/GltfInfo.h
     ./include/gltf/GltfJson.h
-    ./include/dbi/Diag.h
-    ./include/dbi/ScopedTransaction.h
-    ./include/dbi/dbi.h
-    ./include/dbi/Environment.h
-    ./include/dbi/Statement.h
-    ./include/dbi/InsertQueue.h
-    ./include/dbi/Handle.h
-    ./include/dbi/Connection.h
+#    ./include/dbi/Diag.h
+#    ./include/dbi/ScopedTransaction.h
+#    ./include/dbi/dbi.h
+#    ./include/dbi/Environment.h
+#    ./include/dbi/Statement.h
+#    ./include/dbi/InsertQueue.h
+#    ./include/dbi/Handle.h
+#    ./include/dbi/Connection.h
     ./include/elev/SimpleDEMReader.h
     ./include/elev/DataSource_Raster.h
     ./include/elev/DataSource.h
@@ -433,7 +437,7 @@ set(COG_SOURCES
     ./src/ccl/AttributeContainer.cpp
     ./src/ccl/time.cpp
     ./src/ccl/LogBuffer.cpp
-#    ./src/ccl/Action.cpp
+    ./src/ccl/Action.cpp
     ./src/ccl/config.cpp
     ./src/ccl/Key.cpp
     ./src/ccl/Endian.cpp
@@ -457,7 +461,7 @@ set(COG_SOURCES
     ./src/ccl/object.cpp
     ./src/ccl/inspection.cpp
     ./src/ccl/FileInfo.cpp
-#./src/ccl/Expression.cpp
+    ./src/ccl/Expression.cpp
 #    ./src/ccl/Win32/Runnable.cpp
 #    ./src/ccl/Win32/mutex.cpp
 #    ./src/ccl/Win32/sem.cpp
@@ -472,13 +476,13 @@ set(COG_SOURCES
     ./src/gltf/GltfInfo.cpp
     ./src/gltf/GltfData.cpp
     ./src/gltf/Tileset.cpp
-    ./src/dbi/ScopedTransaction.cpp
-    ./src/dbi/Diag.cpp
-    ./src/dbi/Connection.cpp
-    ./src/dbi/Handle.cpp
-    ./src/dbi/DBIStatement.cpp
-    ./src/dbi/Environment.cpp
-    ./src/dbi/InsertQueue.cpp
+#    ./src/dbi/ScopedTransaction.cpp
+#    ./src/dbi/Diag.cpp
+#    ./src/dbi/Connection.cpp
+#    ./src/dbi/Handle.cpp
+#    ./src/dbi/DBIStatement.cpp
+#    ./src/dbi/Environment.cpp
+#    ./src/dbi/InsertQueue.cpp
     ./src/elev/Elevation.cpp
     ./src/elev/Cache.cpp
     ./src/elev/CacheEntry.cpp
@@ -550,8 +554,8 @@ set(COG_SOURCES
     ./src/scenegraph/SceneCropper.cpp
     ./src/scenegraph/Relationship.cpp
     ./src/scenegraph/MappedTextureMatrix.cpp
-    ./src/md5/md5cpp.cpp
-    ./src/md5/md5.cpp
+#    ./src/md5/md5cpp.cpp
+#    ./src/md5/md5.cpp
     ./src/flt/PopExtension.cpp
     ./src/flt/FltText.cpp
     ./src/flt/MultiTexture.cpp
@@ -772,10 +776,17 @@ set(COG_SOURCES
     ./meshgen/meshgen.cpp
     ./meshgen/ws/WebServices.cpp
     ./include/sqlite/sqlite3.c
-    ./include/sqlite/shell.c
+#    ./include/sqlite/shell.c
     ./src/lmfit/lmmin.c
     ./src/lmfit/lmcurve.c
     ./src/lmfit/lmcurve_tyd.c
 )
 
+
 add_executable(meshgen ${COG_SOURCES} ${COG_HEADERS} )
+target_link_libraries(meshgen "dl")
+target_link_libraries(meshgen "pthread")
+target_link_libraries(meshgen "/home/kbentley/cognitics/ThirdParty/gdal/lib/libgdal.so")
+
+target_link_libraries(meshgen "/home/kbentley/cognitics/ThirdParty/linux_x64/lib/libpng15.so")
+target_link_libraries(meshgen "/home/kbentley/cognitics/ThirdParty/linux_x64/lib/libjpeg.so")

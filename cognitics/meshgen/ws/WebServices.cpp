@@ -1,6 +1,6 @@
-#pragma once
 #include "WebServices.h"
-#include "ip\GDALRasterSampler.h"
+#include "ip/GDALRasterSampler.h"
+#include "ccl/FileInfo.h"
 #include <fstream>
 #include <vector>
 #include <iomanip>
@@ -8,11 +8,12 @@
 #include <iterator>
 #include <iostream>
 #include <string>
-#include "b64\base64.h"
+#include "b64/base64.h"
 #include <cctype>
 #include "gdal_utils.h"
 #include <string>
-#include <direct.h>
+
+//#include <direct.h>
 
 
 namespace ws
@@ -162,7 +163,8 @@ namespace ws
 
 		std::string elevationName = SetName(originLon, originLat, textureHeight, textureWidth, outputPath, format, ".tif");
 		std::string path = outputPath + elevationName;
-		int directoryError = _mkdir(outputPath.c_str());
+        ccl::makeDirectory(outputPath.c_str(),true);
+		//int directoryError = _mkdir(outputPath.c_str());
 		poDstDS = poDriver->Create(path.c_str(), textureWidth, textureHeight, 1, GDT_Float32, papszOptions);
 
 		double adfGeoTransform[6];
@@ -288,7 +290,8 @@ namespace ws
 		std::string pngName = SetName(originLon, originLat, textureHeight, textureWidth, outputPath, format, ".png");
 		std::string pngPath = outputPath + "img/";
 		std::string pngOutputFile = pngPath + pngName;
-		int createDirError = _mkdir(pngPath.c_str());
+		//int createDirError = _mkdir(pngPath.c_str());
+        ccl::makeDirectory(pngPath.c_str(),true);
 		GDALDataset* ImageDatasetPNG = pngDriver->CreateCopy(pngOutputFile.c_str(), datasetPNG, FALSE, NULL, NULL, NULL);
 		if (ImageDatasetPNG == NULL)
 		{

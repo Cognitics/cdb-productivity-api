@@ -138,12 +138,12 @@ namespace gltf
 				*currentVertexPointer++ = x;
 				*currentVertexPointer++ = y;
 				*currentVertexPointer++ = z;
-				info.maxVertexValues[0] = max(info.maxVertexValues[0], x);
-				info.maxVertexValues[1] = max(info.maxVertexValues[1], y);
-				info.maxVertexValues[2] = max(info.maxVertexValues[2], z);
-				info.minVertexValues[0] = min(info.minVertexValues[0], x);
-				info.minVertexValues[1] = min(info.minVertexValues[1], y);
-				info.minVertexValues[2] = min(info.minVertexValues[2], z);
+				info.maxVertexValues[0] = std::max(info.maxVertexValues[0], x);
+				info.maxVertexValues[1] = std::max(info.maxVertexValues[1], y);
+				info.maxVertexValues[2] = std::max(info.maxVertexValues[2], z);
+				info.minVertexValues[0] = std::min(info.minVertexValues[0], x);
+				info.minVertexValues[1] = std::min(info.minVertexValues[1], y);
+				info.minVertexValues[2] = std::min(info.minVertexValues[2], z);
 
 
 				x = static_cast<float>(scene->faces[i].vertexNormals[j].X());
@@ -152,22 +152,22 @@ namespace gltf
 				*currentNormalsPointer++ = x;
 				*currentNormalsPointer++ = y;
 				*currentNormalsPointer++ = z;
-				info.maxNormalValues[0] = max(info.maxNormalValues[0], x);
-				info.maxNormalValues[1] = max(info.maxNormalValues[1], y);
-				info.maxNormalValues[2] = max(info.maxNormalValues[2], z);
-				info.minNormalValues[0] = min(info.minNormalValues[0], x);
-				info.minNormalValues[1] = min(info.minNormalValues[1], y);
-				info.minNormalValues[2] = min(info.minNormalValues[2], z);
+				info.maxNormalValues[0] = std::max(info.maxNormalValues[0], x);
+				info.maxNormalValues[1] = std::max(info.maxNormalValues[1], y);
+				info.maxNormalValues[2] = std::max(info.maxNormalValues[2], z);
+				info.minNormalValues[0] = std::min(info.minNormalValues[0], x);
+				info.minNormalValues[1] = std::min(info.minNormalValues[1], y);
+				info.minNormalValues[2] = std::min(info.minNormalValues[2], z);
 
 				sfa::Point uv = scene->faces[i].getUVForVertex(scene->faces[i].verts[j], 0);
 				x = static_cast<float>(uv.X());
 				y = static_cast<float>(uv.Y());
 				*currentUvPointer++ = x;
 				*currentUvPointer++ = y;
-				info.maxUvValues[0] = max(info.maxUvValues[0], x);
-				info.maxUvValues[1] = max(info.maxUvValues[1], y);
-				info.minUvValues[0] = min(info.minUvValues[0], x);
-				info.minUvValues[1] = min(info.minUvValues[1], y);
+				info.maxUvValues[0] = std::max(info.maxUvValues[0], x);
+				info.maxUvValues[1] = std::max(info.maxUvValues[1], y);
+				info.minUvValues[0] = std::min(info.minUvValues[0], x);
+				info.minUvValues[1] = std::min(info.minUvValues[1], y);
 
 				*currentBatchPointer++ = 0;
 			}

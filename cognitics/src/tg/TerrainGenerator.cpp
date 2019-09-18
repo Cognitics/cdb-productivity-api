@@ -32,7 +32,7 @@ DEALINGS IN THE SOFTWARE.
 #include <boost/lexical_cast.hpp>
 #include <ctl/ctl.h>
 
-#include <scenegraphgltf\scenegraphgltf.h>
+#include <scenegraphgltf/scenegraphgltf.h>
 #include <scenegraphflt/scenegraphflt.h>
 #include <scenegraphobj/scenegraphobj.h>
 #include <scenegraph/SceneCropper.h>
@@ -298,8 +298,8 @@ namespace cognitics
 		double maxElev = grid[0];
 		for (int i = 0; i < grid.size(); ++i)
 		{
-			minElev = min(grid[i], minElev);
-			maxElev = max(grid[i], maxElev);
+			minElev = std::min(grid[i], minElev);
+			maxElev = std::max(grid[i], maxElev);
 		}
 
         // create texture

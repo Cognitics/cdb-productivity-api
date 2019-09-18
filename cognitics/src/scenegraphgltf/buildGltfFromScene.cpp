@@ -1,7 +1,7 @@
 
-#include "scenegraphgltf\scenegraphgltf.h"
-#include "gltf\GltfJson.h"
-#include "gltf\Tileset.h"
+#include "scenegraphgltf/scenegraphgltf.h"
+#include "gltf/GltfJson.h"
+#include "gltf/Tileset.h"
 
 namespace scenegraph
 {

@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "scenegraph\Scene.h"
+#include "scenegraph/Scene.h"
 
 namespace gltf
 {
