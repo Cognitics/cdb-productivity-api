@@ -261,7 +261,11 @@ void DeleteDirectory(const std::string &dir)
 	std::string name = dir;
 	//std::uintmax_t n = std::experimental::filesystem::remove_all(dir);	
     int n = 0;
-	if (rmdir(dir.c_str()) == 0)
+#ifndef LINUX
+	if (_rmdir(dir.c_str()) == 0)
+#else 
+    if (rmdir(dir.c_str()) == 0)
+#endif // !LINUX
 	{
 		logger << "Did not delete all the files in " << name << logger.endl;
 	}

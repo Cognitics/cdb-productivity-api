@@ -28,13 +28,10 @@ DEALINGS IN THE SOFTWARE.
 
 #include <ccl/FileInfo.h>
 
-#ifdef IPP_ENABLED
 #define USE_IPP_LIBRARY 1
-#endif
 
-#ifdef USE_IPP_LIBRARY
 #include "ipp.h"
-#endif
+
 
 #include <sfa/File.h>
 

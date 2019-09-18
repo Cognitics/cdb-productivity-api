@@ -23,7 +23,7 @@ DEALINGS IN THE SOFTWARE.
 //#pragma optimize("", off)
 
 #pragma warning (disable : 4996)
-
+#include <algorithm>
 #include "tg/TerrainGenerator.h"
 #include <ccl/FileInfo.h>
 #include <ip/pngwrapper.h>
@@ -298,8 +298,8 @@ namespace cognitics
 		double maxElev = grid[0];
 		for (int i = 0; i < grid.size(); ++i)
 		{
-			minElev = std::min(grid[i], minElev);
-			maxElev = std::max(grid[i], maxElev);
+			minElev = std::min<double>(grid[i], minElev);
+			maxElev = std::max<double>(grid[i], maxElev);
 		}
 
         // create texture

@@ -11,7 +11,7 @@ $(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
     <LocalDebuggerEnvironment>PATH=$(PATH);C:\dev\cog\ThirdParty\gdal204\bin;
 $(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>-bounds 12.7788 12.7595 45.0361 45.0201 -output D:/Jobs/job0 -format .b3dm -ws</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-bounds 12.7881 12.7826 45.0055 45 -output D:/Jobs/job0 -format .b3dm -ws</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>$(TargetDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
 </Project>
