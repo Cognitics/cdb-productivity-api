@@ -17,76 +17,95 @@
 
 namespace ws
 {
-	void GetDataWithGDAL(cognitics::TerrainGenerator& tg, std::set<std::string>& elevationFiles, const std::string &outputPath, double north, double south, double east, double west, int& textureWidth, int& textureHeight, double originLat, double originLon, std::string format)
-	{
-		GDALAllRegister();
-		GDALDataset* elevationDataset;
-		char** papszDrivers = NULL;
-		papszDrivers = CSLAddString(papszDrivers, "WCS");
-		char** papszOptions = NULL;
-		papszOptions = CSLAddString(papszOptions, "GridCRSOptional");
+    void GetDataWithGDAL(cognitics::TerrainGenerator& tg, std::set<std::string>& elevationFiles, const std::string &outputPath, double north, double south, double east, double west, int& textureWidth, int& textureHeight, double originLat, double originLon, std::string format)
+    {
+        GDALAllRegister();
+        GDALDataset* elevationDataset;
+        char** papszDrivers = NULL;
+        papszDrivers = CSLAddString(papszDrivers, "WCS");
+        char** papszOptions = NULL;
+        papszOptions = CSLAddString(papszOptions, "GridCRSOptional");
 
-		std::stringstream parameters;
+        std::stringstream parameters;
+        std::stringstream workingUrl;
 
-		parameters << std::fixed << std::setprecision(15)
-			<< "SERVICE=WCS&amp;FORMAT=GeoTIFF&amp;BOUNDINGBOX="
-			<< south
-			<< "," << west
-			<< "," << north
-			<< "," << east
-			<< ",urn:ogc:def:crs:EPSG::4326&amp;WIDTH="
-			<< std::to_string(textureWidth)
-			<< "&amp;HEIGHT="
-			<< std::to_string(textureHeight);
+        workingUrl << "wcs:http://tgs/geoserver/wcs?SERVICE=WCS&version=1.0.0";
+        workingUrl << "&coverage=CDB%20Elevation_Terrain_Primary&CRS=EPSG:4326&bbox=";
+        workingUrl << west
+            << "," << south
+            << "," << east
+            << "," << north;
+        workingUrl << "&format=GeoTIFF";
+        parameters << std::fixed << std::setprecision(15)
+            << "SERVICE=WCS&amp;FORMAT=GeoTIFF&amp;bbox="
+            << south
+            << "," << west
+            << "," << north
+            << "," << east
+            << ",urn:ogc:def:crs:EPSG::4326&amp;WIDTH="
+            << std::to_string(textureWidth)
+            << "&amp;HEIGHT="
+            << std::to_string(textureHeight);
+        std::stringstream ss;
+        std::string xml = "";
 
-		std::string xml = "";
-		xml += "<WCS_GDAL>";
-		xml += "  <ServiceURL>http://localhost:81/geoserver/wcs?SERVICE=WCS</ServiceURL>";
-		xml += "  <Version>1.1.1</Version>";
-		xml += "  <CoverageName>CDB Elevation_Terrain_Primary</CoverageName>";
-		xml += "  <Parameters>" + parameters.str() + "</Parameters>";
-		xml += "  <GridCRSOptional>TRUE</GridCRSOptional>";
-		xml += "  <CoverageDescription>";
-		xml += "    <Identifier>Base:CDB Elevation_Terrain_Primary</Identifier>";
-		xml += "    <Domain>";
-		xml += "      <SpatialDomain>";
-		xml += "        <BoundingBox crs=\"urn:ogc:def:crs:OGC:1.3 : CRS84\" dimensions=\"2\">";
-		xml += "          <LowerCorner>-180.0 -90.0</LowerCorner>";
-		xml += "          <UpperCorner>180.0 90.0</UpperCorner>";
-		xml += "        </BoundingBox>";
-		xml += "        <BoundingBox crs=\"urn:ogc:def:crs:EPSG::4326\" dimensions=\"2\">";
-		xml += "          <LowerCorner>-90.0 -180.0</LowerCorner>";
-		xml += "          <UpperCorner>90.0 180.0</UpperCorner>";
-		xml += "        </BoundingBox>";
-		xml += "        <BoundingBox crs=\":imageCRS\" dimensions=\"2\">";
-		xml += "          <LowerCorner>0 0</LowerCorner>";
-		xml += "          <UpperCorner>356356356 3563456</UpperCorner>";
-		xml += "        </BoundingBox>";
-		xml += "        <GridCRS>";
-		xml += "          <GridBaseCRS>urn:ogc:def:crs:EPSG::4326</GridBaseCRS>";
-		xml += "          <GridType>urn:ogc:def:method:WCS:1.1:2dGridIn2dCrs</GridType>";
-		xml += "          <GridOrigin>-179.82421875 89.91259765625</GridOrigin>";
-		xml += "          <GridOffsets>0.3515625 0.0 0.0 -0.1748046875</GridOffsets>";
-		xml += "          <GridCS>urn:ogc:def:cs:OGC:0.0:Grid2dSquareCS</GridCS>";
-		xml += "        </GridCRS>";
-		xml += "      </SpatialDomain>";
-		xml += "    </Domain>";
-		xml += "    <SupportedCRS>urn:ogc:def:crs:EPSG::4326</SupportedCRS>";
-		xml += "    <SupportedCRS>EPSG:4326</SupportedCRS>";
-		xml += "    <SupportedFormat>image/tiff</SupportedFormat>";
-		xml += "  </CoverageDescription>";
-		xml += "  <FieldName>contents</FieldName>";
-		xml += "  <BandType>Float32</BandType>";
-		xml += "  <PreferredFormat>image/tiff</PreferredFormat>";
-		xml += "</WCS_GDAL>";
+        
 
-		elevationDataset = (GDALDataset*)GDALOpenEx(xml.c_str(), GDAL_OF_READONLY, papszDrivers, papszOptions, NULL);
+        ss << "<WCS_GDAL>";
+        ss << "  <ServiceURL>http://tgs/geoserver/wcs?SERVICE=WCS</ServiceURL>";
+        ss << "  <Version>1.1.1</Version>";
+        ss << "  <CoverageName>CDB Elevation_Terrain_Primary</CoverageName>";
+       // ss << "  <Parameters>" + parameters.str() + "</Parameters>";
+      //  ss << "  <GridCRSOptional>TRUE</GridCRSOptional>";
+        		//ss << "  <CoverageDescription>";
+                ss << "    <Identifier>Base:CDB Elevation_Terrain_Primary</Identifier>";
+                ss << "    <DomainSubset>";
+                ss << "        <BoundingBox crs=\"urn:ogc:def:crs:EPSG::4326\" dimensions=\"2\">";
+                ss << "          <LowerCorner>" << south << " " << west << "</LowerCorner>";
+                ss << "          <UpperCorner>" << north << " " << east << "</UpperCorner>";
+                ss << "        </BoundingBox>";
+                ss << "    </DomainSubset>";
+                ss << "    <Output store=\"true\" format=\"image / tiff\">";
+                ss << "        <GridCRS>";
+                ss << "          <GridBaseCRS>urn:ogc:def:crs:EPSG::4326 </GridBaseCRS >";
+                ss << "          <GridType>urn : ogc : def : method : WCS : 1.1 : 2dSimpleGrid</GridType>";
+                ss << "          <GridOffsets>5.37109375E-6 5.37109375E-6</GridOffsets>";
+                ss << "          <GridCS>urn : ogc : def : cs : OGC : 0.0 : Grid2dSquareCS</GridCS>";
+                ss << "        </GridCRS>";
+                ss << "    </Output>";
+                
+      //          ss << "    <SupportedCRS>urn:ogc:def:crs:EPSG::4326</SupportedCRS>";
+      //          ss << "    <SupportedCRS>EPSG:4326</SupportedCRS>";
+      //          ss << "    <SupportedFormat>image/tiff</SupportedFormat>";
+                //ss << "  </CoverageDescription>";
+       // 		ss << "  <FieldName>contents</FieldName>";
+        ss << "  <BandType>Float32</BandType>";
+        //ss << "  <PreferredFormat>image/tiff</PreferredFormat>";
+        ss << "</WCS_GDAL>";
+        xml = ss.str();
+        std::string u = workingUrl.str();
+        elevationDataset = (GDALDataset*)GDALOpenEx(xml.c_str(), GDAL_OF_READONLY, papszDrivers, papszOptions, NULL);
 
+        
+        double xadfGeoTransform[6];
+        if (!elevationDataset)
+        {
+            std::cout << "Error: unable to open file.\n";
+            return;
+        }
+        if (elevationDataset->GetGeoTransform(xadfGeoTransform) == CE_None)
+        {
+            
+        }
+
+        int width = elevationDataset->GetRasterXSize();
+        int height = elevationDataset->GetRasterYSize();
+        std::cout << "Width: " << width << " Height: " << height << std::endl;
 
 		auto band = elevationDataset->GetRasterBand(1);
 
-		textureWidth = 2452;
-		textureHeight = 2456;
+		textureWidth = width;
+		textureHeight = height;
 
 		float *data = new float[textureWidth * textureHeight + 1];
 

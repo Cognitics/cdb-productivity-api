@@ -217,7 +217,7 @@ int main(int argc, char **argv)
 	if (useWebServices)
 	{
 		std::cout << "using Web Services..." << std::endl;
-
+        CPLSetConfigOption("CPL_DEBUG", "ON");
 		ws::GetDataWithGDAL(terrainGenerator, elevationFiles, outputTmpPath, north, south, east, west, textureWidth, textureHeight, originLat, originLon, outputFormat);
 		terrainGenerator.setOrigin(originLat, originLon);
 		terrainGenerator.setBounds(north, south, west, east);
