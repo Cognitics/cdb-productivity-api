@@ -33,6 +33,7 @@ typedef unsigned int u_int;
 #include <ccl/mutex.h>
 #include <sfa/BSP.h>
 
+
 class GDALRasterSampler
 {
     ccl::ObjLog log;
