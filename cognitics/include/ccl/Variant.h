@@ -45,13 +45,14 @@ Conversions between numeric values and date/time values are done with POSIX time
 
 #ifdef _WIN32
 #include <windows.h>
+#include <sql.h>
+#include <sqlext.h>
 #else
 #include <string.h>
 #undef HAVE_UNISTD_H
 #endif
 
-#include <sql.h>
-#include <sqlext.h>
+
 
 #include <boost/uuid/uuid.hpp>
 #include <typeinfo>
@@ -109,7 +110,7 @@ namespace ccl
 
         Variant(const Variant &value);
         Variant(const boost::uuids::uuid &value);
-        Variant(const SQLGUID &value);
+        //Variant(const SQLGUID &value);
         Variant(const char *value);
         Variant(const std::string &value);
         Variant(const wchar_t *value);
@@ -126,15 +127,18 @@ namespace ccl
         Variant(const float &value);
         Variant(const double &value);
         Variant(const long double &value);
+        /*
         Variant(const TIMESTAMP_STRUCT &value);
         Variant(const DATE_STRUCT &value);
         Variant(const TIME_STRUCT &value);
         Variant(const SQL_INTERVAL_STRUCT &value);
+        
+        */
         Variant(const binary &value);
 
         Variant &operator=(const Variant &value);
         Variant &operator=(const boost::uuids::uuid &value);
-        Variant &operator=(const SQLGUID &value);
+        //Variant &operator=(const SQLGUID &value);
         Variant &operator=(const char *value);
         Variant &operator=(const std::string &value);
         Variant &operator=(const wchar_t *value);
@@ -151,10 +155,10 @@ namespace ccl
         Variant &operator=(const float &value);
         Variant &operator=(const double &value);
         Variant &operator=(const long double &value);
-        Variant &operator=(const TIMESTAMP_STRUCT &value);
-        Variant &operator=(const DATE_STRUCT &value);
-        Variant &operator=(const TIME_STRUCT &value);
-        Variant &operator=(const SQL_INTERVAL_STRUCT &value);
+        //Variant &operator=(const TIMESTAMP_STRUCT &value);
+        //Variant &operator=(const DATE_STRUCT &value);
+        //Variant &operator=(const TIME_STRUCT &value);
+        //Variant &operator=(const SQL_INTERVAL_STRUCT &value);
         Variant &operator=(const binary &value);
 
         bool operator==(const Variant &rhs) const;
@@ -202,7 +206,7 @@ namespace ccl
 
         //! Get the stored value as a double.
         double as_double(void) const;
-
+/*
         //! Get the stored value as an SQL TIMESTAMP_STRUCT.
         TIMESTAMP_STRUCT as_datetime(void) const;
 
@@ -214,7 +218,7 @@ namespace ccl
 
         //! Get the stored value as an SQL INTERVAL_STRUCT.
         SQL_INTERVAL_STRUCT as_interval(void) const;
-
+*/
         //! Get the stored value as binary using the specified byte encoding (if applicable).
         binary as_binary(uint8_t byteOrder = ENDIAN_LITTLE) const;
 
@@ -250,7 +254,7 @@ If parsing failed, an empty Variant is returned and the iterator is reset.
     typedef std::vector<VariantMap> VariantMapList;
 
 }
-
+/*
 inline int operator==(const TIMESTAMP_STRUCT &lhs, const TIMESTAMP_STRUCT &rhs)
 {
     return (lhs.year == rhs.year) && (lhs.month == rhs.month) && (lhs.day == rhs.day)
@@ -291,7 +295,7 @@ inline int operator!=(const SQL_INTERVAL_STRUCT &lhs, const SQL_INTERVAL_STRUCT 
 {
     return !(lhs == rhs);
 }
-
+*/
 
 
 

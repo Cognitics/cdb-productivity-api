@@ -200,4 +200,6 @@ namespace ccl
     bool directoryExists(const std::string &directory);
 
     bool copyFile(const std::string &src, const std::string &dest);
+
+    uint64_t getFileSize(const std::string &filePath);
 }

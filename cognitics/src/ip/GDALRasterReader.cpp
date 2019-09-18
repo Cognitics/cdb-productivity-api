@@ -33,6 +33,11 @@ bool g_UseProjDLL = false;
 
 namespace gdalsampler
 {
+
+    const int CacheManager::MAX_CACHE_ENTRIES = 5;
+    const int CacheManager::CACHE_BLOCK_HEIGHT = 3000;
+    const int CacheManager::CACHE_BLOCK_WIDTH = 3000;
+
     TransformCache *TransformCache::instance = NULL;
     ccl::mutex transform_cache_singleton_mutex;
     TransformCache *TransformCache::getInstance()
@@ -1068,9 +1073,9 @@ namespace gdalsampler
 
     bool LoadProjDLL() 
     { 
-        if (g_ProjDLL!=NULL)
+        //if (g_ProjDLL!=NULL)
         {
-            return true;
+            return false;
         }
 #if 0
         g_ProjDLL = LoadLibrary("proj470.dll"); 

@@ -94,11 +94,11 @@ It is the responsibility of observer implementations to handle filtering by log 
 
 #include <set>
 #include <string>
-#if (_MSC_VER >= 1700)
+//#if (_MSC_VER >= 1700)
 #include <memory>
-#else
-#include <boost/tr1/memory.hpp>
-#endif
+//#else
+//#include <boost/tr1/memory.hpp>
+//#endif
 
 #if defined(WIN32) && defined(COG_DEBUG)
 #include <windows.h>

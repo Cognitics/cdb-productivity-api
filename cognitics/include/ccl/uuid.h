@@ -26,7 +26,7 @@ namespace cognitics
         template <typename T> inline std::string to_string(const T &id) { return traits<T>::to_string(id); }
         template <typename T> struct string_generator { T operator()(const std::string &str) const { return traits<T>::string_generator()(str); } };
         template <typename T> struct nil_generator { T operator()() const { return traits<T>::nil_generator()(); } };
-        template <typename T> struct random_generator { T operator()() const { return traits<T>::random_generator()(); } };
+        template <typename T> struct random_generator { T operator()() const { return typename traits<T>::random_generator()(); } };
         template <typename T> inline void seed(unsigned int s) { return traits<T>::seed(s); }
 
         //--------------------------------------------------------------------------------

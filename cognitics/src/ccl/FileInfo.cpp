@@ -308,4 +308,16 @@ namespace ccl
     return false;
       }
   }
+
+  uint64_t getFileSize(const std::string &filePath)
+    {
+        uint64_t flen = 0;
+        FILE *file = fopen(filePath.c_str(),"rb");
+        if(!file)
+        return 0;
+        fseek(file,0,SEEK_END);
+        flen = ftell(file);
+        fclose(file);
+        return flen;
+    }
 }

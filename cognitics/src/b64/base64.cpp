@@ -1,5 +1,5 @@
 #pragma once
-#include "b64\base64.h"
+#include "b64/base64.h"
 #include <vector>
 
 std::string base64Encode(const std::string &in)

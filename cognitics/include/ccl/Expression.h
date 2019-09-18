@@ -32,11 +32,11 @@ DEALINGS IN THE SOFTWARE.
 #pragma once
 
 #include "Variant.h"
-#if (_MSC_VER >= 1700)
+//#if (_MSC_VER >= 1700)
 #include <memory>
-#else
-#include <boost/tr1/memory.hpp>
-#endif
+//#else
+//#include <boost/tr1/memory.hpp>
+//#endif
 
 namespace ccl
 {
