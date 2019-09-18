@@ -51,6 +51,101 @@ GDALRasterSampler::GDALRasterSampler() : bsp(NULL)
 }
 
 
+
+IppStatus WarpPerspective_8u_C3R(Ipp8u *pSrc, IppiSize srcSize, Ipp32s srcStep,
+    Ipp8u *pDst, IppiSize dstSize,
+    Ipp32s dstStep, const double coeffs[3][3], IppiInterpolationType interpolation)
+{
+    IppiWarpSpec *pSpec = 0;
+    Ipp8u *pInitBuf = 0;
+    int specSize = 0, initSize = 0, bufSize = 0;
+    Ipp8u *pBuffer = 0;
+    const Ipp32u numChannels = 3;
+    IppiPoint dstOffset = { 0, 0 };
+    IppStatus status = ippStsNoErr;
+    IppiBorderType borderType = ippBorderTransp;
+    IppiWarpDirection direction = ippWarpForward;
+    Ipp64f pBorderValue[numChannels];
+    Ipp64f valB = 0.0, valC = 0.5;	 /* Catmull-Rom filter coefficients for cubic interpolation */
+    IppiRect srcRoi = ippRectInfinite; /* Region of interest is not specified */
+    for (int i = 0; i < numChannels; ++i)
+        pBorderValue[i] = 255.0;
+    /* Spec and init buffer sizes */
+    status = ippiWarpPerspectiveGetSize(srcSize, srcRoi, dstSize, ipp8u, coeffs,
+        interpolation, direction, borderType,
+        &specSize, &initSize);
+    if (status != ippStsNoErr)
+        return status;
+    /* Memory allocation */
+    pSpec = (IppiWarpSpec *)ippsMalloc_8u(specSize);
+    if (pSpec == NULL)
+    {
+        return ippStsNoMemErr;
+    }
+    /* Filter initialization */
+    switch (interpolation)
+    {
+    case ippNearest:
+        status = ippiWarpPerspectiveNearestInit(srcSize, srcRoi, dstSize, ipp8u, coeffs,
+            direction, numChannels, borderType, pBorderValue, 0, pSpec);
+        break;
+    case ippLinear:
+        status = ippiWarpPerspectiveLinearInit(srcSize, srcRoi, dstSize, ipp8u, coeffs,
+            direction, numChannels, borderType, pBorderValue, 0, pSpec);
+        break;
+    case ippCubic:
+        pInitBuf = ippsMalloc_8u(initSize);
+        if (pInitBuf == NULL)
+        {
+            ippsFree(pSpec);
+            return ippStsNoMemErr;
+        }
+        status = ippiWarpPerspectiveCubicInit(srcSize, srcRoi, dstSize, ipp8u, coeffs,
+            direction, numChannels, valB, valC, borderType, pBorderValue, 0, pSpec, pInitBuf);
+        ippsFree(pInitBuf);
+        break;
+    default:
+        return ippStsInterpolationErr;
+    }
+    if (status < ippStsNoErr)
+    {
+        ippsFree(pSpec);
+        return status;
+    }
+    /* work buffer size */
+    status = ippiWarpGetBufferSize(pSpec, dstSize, &bufSize);
+    if (status < ippStsNoErr)
+    {
+        ippsFree(pSpec);
+        return status;
+    }
+    pBuffer = ippsMalloc_8u(bufSize);
+    if (pBuffer == NULL)
+    {
+        ippsFree(pSpec);
+        return ippStsNoMemErr;
+    }
+    /* Warp processing */
+    switch (interpolation)
+    {
+    case ippNearest:
+        status = ippiWarpPerspectiveNearest_8u_C3R(pSrc, srcStep, pDst, dstStep,
+            dstOffset, dstSize, pSpec, pBuffer);
+        break;
+    case ippLinear:
+        status = ippiWarpPerspectiveLinear_8u_C3R(pSrc, srcStep, pDst, dstStep,
+            dstOffset, dstSize, pSpec, pBuffer);
+        break;
+    case ippCubic:
+        status = ippiWarpPerspectiveCubic_8u_C3R(pSrc, srcStep, pDst, dstStep, dstOffset,
+            dstSize, pSpec, pBuffer);
+        break;
+    }
+    ippsFree(pSpec);
+    ippsFree(pBuffer);
+    return status;
+}
+
 gdalsampler::GDALRasterFileList GDALRasterSampler::GetFilesInAOI(gdalsampler::Quad &aoi)
 {
     gdalsampler::GDALRasterFileList ret;
@@ -506,7 +601,7 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, u_char 
             int srcStep = block->xsize*3;
             IppiSize srcNumPix = {block->xsize,block->ysize};
             int destStep = window.width*3;
-                        
+            IppiSize destNumPix = { window.width, window.height };
             // Get the transform from the quad
             double coeff[3][3];
             IppStatus istatus = ippiGetPerspectiveTransform(srcroi,srcquad,coeff);
@@ -516,18 +611,17 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, u_char 
                 IppiSize srcNumPix = {block->xsize,block->ysize};
                 
                 // Now use the coeff to warp the source on to the dest.
-                istatus=ippiWarpPerspective_8u_C3R(interleavedbuf,
+                istatus=WarpPerspective_8u_C3R(interleavedbuf,
                                                    srcNumPix,
                                                    srcStep,
-                                                   srcroi,
                                                    scratch,
+                                                   destNumPix,
                                                    destStep,
-                                                   dstroi,
                                                    coeff,
-                                                   IPPI_INTER_LINEAR);
+                                                   ippCubic);
                 if(istatus!=ippStsNoErr)
                 {
-                    //printf("ippiWarpPerspective_8u_C3R returned %d\n",istatus);
+                    //printf("WarpPerspective_8u_C3R returned %d\n",istatus);
                 }
             }            
             delete[] interleavedbuf;

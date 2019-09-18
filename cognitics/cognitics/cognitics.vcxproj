@@ -849,7 +849,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions);WIN32;_CRT_SECURE_NO_WARNINGS;IPP_ENABLED</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\IPP6.1.5\em64t\include;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal204\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal204\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
