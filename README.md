@@ -34,4 +34,8 @@ Currently, the solution is expecting the following libraries in this directory:
 - jpeg-8c
 - lpng154
 
-Binaries of all these can be downloaded here: [http://cdb.cognitics.net/ThirdParty.7z](http://cdb.cognitics.net/ThirdParty.7z)
+Binaries of all these can be downloaded here:
+
+Windows: [http://cdb.cognitics.net/ThirdParty.7z](http://cdb.cognitics.net/ThirdParty.7z)
+
+Linux: [http://cdb.cognitics.net/ThirdParty.7z](http://cdb.cognitics.net/linux_x64_third_party.tgz)

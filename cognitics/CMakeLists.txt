@@ -4,13 +4,16 @@ cmake_minimum_required(VERSION 2.8)
 project (cognitics)
 
 set(CMAKE_CXX_FLAGS "-lstdc++fs")
+#set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath='${ORIGIN}'")
+SET (CMAKE_EXE_LINKER_FLAGS
+    "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags,-rpath,'$ORIGIN:.'" )
 
 include_directories("./include")
 include_directories("./include/ccl/Unix")
 include_directories("./../ThirdParty/boost_1_69_0")
 include_directories("./../ThirdParty/gdal/include")
 include_directories("./../ThirdParty/linux_x64/include")
-
+include_directories("./../ThirdParty/ipp2019_linux_x64/include")
 
 set(COG_HEADERS
     ./include/cad/AttributeDictionary.h
@@ -35,6 +38,9 @@ set(COG_HEADERS
     ./include/ccl/uri.h
 #    ./include/ccl/Expression.h
     ./include/ccl/sem.h
+
+
+
     ./include/ccl/LSBitField.h
     ./include/ccl/BigEndian.h
     ./include/ccl/inspection.h
@@ -782,7 +788,7 @@ set(COG_SOURCES
     ./src/lmfit/lmcurve_tyd.c
 )
 
-
+add_definitions(-DLINUX)
 add_executable(meshgen ${COG_SOURCES} ${COG_HEADERS} )
 target_link_libraries(meshgen "dl")
 target_link_libraries(meshgen "pthread")
@@ -790,3 +796,7 @@ target_link_libraries(meshgen "/home/kbentley/cognitics/ThirdParty/gdal/lib/libg
 
 target_link_libraries(meshgen "/home/kbentley/cognitics/ThirdParty/linux_x64/lib/libpng15.so")
 target_link_libraries(meshgen "/home/kbentley/cognitics/ThirdParty/linux_x64/lib/libjpeg.so")
+target_link_libraries(meshgen "/home/kbentley/cognitics/ThirdParty/ipp2019_linux_x64/lib/intel64/libippcore.so")
+target_link_libraries(meshgen "/home/kbentley/cognitics/ThirdParty/ipp2019_linux_x64/lib/intel64/libippvm.so")
+target_link_libraries(meshgen "/home/kbentley/cognitics/ThirdParty/ipp2019_linux_x64/lib/intel64/libipps.so")
+target_link_libraries(meshgen "/home/kbentley/cognitics/ThirdParty/ipp2019_linux_x64/lib/intel64/libippi.so")
