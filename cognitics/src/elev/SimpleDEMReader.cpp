@@ -24,6 +24,8 @@ namespace elev {
         depth = 0;
         log.init("SimpleDEMReader", this);
         this->filename = filename;
+        app_srs = NULL;
+        file_srs = NULL;
     }
 
     SimpleDEMReader::SimpleDEMReader(const std::string &filename, OGRSpatialReference destinationSRS)
@@ -34,6 +36,8 @@ namespace elev {
         depth = 0;
         log.init("SimpleDEMReader", this);
         this->filename = filename;
+        app_srs = NULL;
+        file_srs = NULL;
 }
 
 
