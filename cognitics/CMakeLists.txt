@@ -2,11 +2,11 @@
 
 cmake_minimum_required(VERSION 2.8)
 project (cognitics)
-
+#cmake -G "Unix Makefiles" -DTHIRD_PARTY_DIR=/home/kbentley/cognitics/ThirdParty -DCMAKE_INSTALL_PREFIX=/home/kbentley/meshgen ..
 set(CMAKE_CXX_FLAGS "-lstdc++fs -g")
-#set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath='${ORIGIN}'")
-#SET (CMAKE_EXE_LINKER_FLAGS
-#    "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags,-rpath,'$ORIGIN:.'" )
+set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath='/usr/local/lib'")
+set(IPP_STATIC "ON")
+
 
 include_directories("./include")
 include_directories("./include/ccl/Unix")
@@ -774,11 +774,14 @@ target_link_libraries(meshgen "pthread")
 target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
 target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
 target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
-target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.so")
-target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippvm.so")
-target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.so")
-target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.so")
+
+##target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippvm.a")
+
+target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
+target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
+target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
 
 install(TARGETS meshgen DESTINATION bin)
-install(DIRECTORY ${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64_lin/ DESTINATION lib FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
+#install(DIRECTORY ${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64_lin/ DESTINATION lib FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
 install(DIRECTORY ${THIRD_PARTY_DIR}/linux_x64/ DESTINATION .)
+
