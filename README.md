@@ -30,12 +30,12 @@ Currently, the solution is expecting the following libraries in this directory:
 
 - boost_1_69_0
 - gdal204
-- IPP6.1.5
+- IPP (2019 build)
 - jpeg-8c
 - lpng154
 
-Binaries of all these can be downloaded here:
+Binaries of all these (except boost) can be downloaded here:
 
 Windows: [http://cdb.cognitics.net/ThirdParty.7z](http://cdb.cognitics.net/ThirdParty.7z)
 
-Linux: [http://cdb.cognitics.net/ThirdParty.7z](http://cdb.cognitics.net/linux_x64_third_party.tgz)
+Linux: [http://cdb.cognitics.net/meshgen/ThirdPartyLinux.7z](http://cdb.cognitics.net/meshgen/ThirdPartyLinux.7z)
