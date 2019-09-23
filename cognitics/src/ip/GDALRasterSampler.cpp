@@ -30,6 +30,7 @@ DEALINGS IN THE SOFTWARE.
 
 #define USE_IPP_LIBRARY 1
 
+//#include "ipp_k0.h"
 #include "ipp.h"
 
 

@@ -5,15 +5,14 @@ project (cognitics)
 
 set(CMAKE_CXX_FLAGS "-lstdc++fs -g")
 #set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath='${ORIGIN}'")
-SET (CMAKE_EXE_LINKER_FLAGS
-    "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags,-rpath,'$ORIGIN:.'" )
+#SET (CMAKE_EXE_LINKER_FLAGS
+#    "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags,-rpath,'$ORIGIN:.'" )
 
 include_directories("./include")
 include_directories("./include/ccl/Unix")
-include_directories("./../ThirdParty/boost_1_69_0")
-#include_directories("./../ThirdParty/gdal/include")
-include_directories("./../ThirdParty/linux_x64/include")
-include_directories("./../ThirdParty/ipp2019_linux_x64/include")
+include_directories("${THIRD_PARTY_DIR}/boost_1_69_0")
+include_directories("${THIRD_PARTY_DIR}/linux_x64/include")
+include_directories("${THIRD_PARTY_DIR}/ipp2019_linux_x64/include")
 
 set(COG_HEADERS
     ./include/cad/AttributeDictionary.h
@@ -772,10 +771,14 @@ add_definitions(-DLINUX)
 add_executable(meshgen ${COG_SOURCES} ${COG_HEADERS} )
 target_link_libraries(meshgen "dl")
 target_link_libraries(meshgen "pthread")
-target_link_libraries(meshgen "/home/kbentley/cognitics/ThirdParty/linux_x64/lib/libgdal.so")
-target_link_libraries(meshgen "/home/kbentley/cognitics/ThirdParty/linux_x64/lib/libpng15.so")
-target_link_libraries(meshgen "/home/kbentley/cognitics/ThirdParty/linux_x64/lib/libjpeg.so")
-target_link_libraries(meshgen "/home/kbentley/cognitics/ThirdParty/ipp2019_linux_x64/lib/intel64/libippcore.so")
-target_link_libraries(meshgen "/home/kbentley/cognitics/ThirdParty/ipp2019_linux_x64/lib/intel64/libippvm.so")
-target_link_libraries(meshgen "/home/kbentley/cognitics/ThirdParty/ipp2019_linux_x64/lib/intel64/libipps.so")
-target_link_libraries(meshgen "/home/kbentley/cognitics/ThirdParty/ipp2019_linux_x64/lib/intel64/libippi.so")
+target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
+target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
+target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.so")
+target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippvm.so")
+target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.so")
+target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.so")
+
+install(TARGETS meshgen DESTINATION bin)
+install(DIRECTORY ${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64_lin/ DESTINATION lib FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
+install(DIRECTORY ${THIRD_PARTY_DIR}/linux_x64/ DESTINATION .)
