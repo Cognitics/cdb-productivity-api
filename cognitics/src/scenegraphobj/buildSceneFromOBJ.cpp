@@ -20,7 +20,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ****************************************************************************/
 
-#include "scenegraphflt/scenegraphflt.h"
+#include "scenegraphobj/scenegraphobj.h"
 #include "ccl/StringUtils.h"
 #include <scenegraph/LOD.h>
 #include <boost/tokenizer.hpp>
