@@ -294,6 +294,7 @@
     <ClCompile Include="..\src\scenegraph\TerrainCullingVisitor.cpp" />
     <ClCompile Include="..\src\scenegraph\TransformVisitor.cpp" />
     <ClCompile Include="..\src\scenegraph\Visitor.cpp" />
+    <ClCompile Include="..\src\scenegraph_gl\scenegraph_gl.cpp" />
     <ClCompile Include="..\src\sfa\BSP.cpp" />
     <ClCompile Include="..\src\sfa\Buffer.cpp" />
     <ClCompile Include="..\src\sfa\Buffer3D.cpp" />
@@ -700,6 +701,7 @@
     <ClInclude Include="..\include\scenegraph\TransformVisitor.h" />
     <ClInclude Include="..\include\scenegraph\UserData.h" />
     <ClInclude Include="..\include\scenegraph\Visitor.h" />
+    <ClInclude Include="..\include\scenegraph_gl\scenegraph_gl.h" />
     <ClInclude Include="..\include\sfa\BSP.h" />
     <ClInclude Include="..\include\sfa\Buffer.h" />
     <ClInclude Include="..\include\sfa\Buffer3D.h" />
@@ -850,7 +852,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions);WIN32;_CRT_SECURE_NO_WARNINGS;IPP_ENABLED</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\include;$(SolutionDir)..\include;$(SolutionDir)..\..\ThirdParty\glut\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -886,7 +888,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions);WIN32;;_CRT_SECURE_NO_WARNINGS;IPP_ENABLED</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\release\include;$(SolutionDir)..\include;$(SolutionDir)..\..\ThirdParty\ipp2019\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\release\include;$(SolutionDir)..\include;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\glut\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

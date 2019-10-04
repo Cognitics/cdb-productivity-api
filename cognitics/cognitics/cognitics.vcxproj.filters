@@ -151,6 +151,12 @@
     <Filter Include="Source Files\b64">
       <UniqueIdentifier>{b277aaa5-fdd5-4e1a-995d-88d32bf87573}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\scenegraph_gl">
+      <UniqueIdentifier>{cb9a62ae-b64b-424c-b312-859d7502db44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\scenegraph_gl">
+      <UniqueIdentifier>{d1803d98-3ca9-47ef-9b4b-ace8c1f67a6f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\cad\AttributeDictionary.cpp">
@@ -1166,6 +1172,9 @@
     </ClCompile>
     <ClCompile Include="..\src\scenegraphobj\buildSceneFromOBJ.cpp">
       <Filter>Source Files\scenegraphobj</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\scenegraph_gl\scenegraph_gl.cpp">
+      <Filter>Source Files\scenegraph_gl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -2379,6 +2388,9 @@
     </ClInclude>
     <ClInclude Include="..\include\b64\base64.h">
       <Filter>Header Files\b64</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\scenegraph_gl\scenegraph_gl.h">
+      <Filter>Header Files\scenegraph_gl</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

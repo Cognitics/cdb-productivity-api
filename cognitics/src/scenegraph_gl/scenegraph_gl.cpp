@@ -1,26 +1,27 @@
-/****************************************************************************
-Copyright 2013 Cognitics, Inc.
-Contract No:  N61340-11-C-0008
-Contractor Name: Cognitics, Inc.
-Contractor Address: 4250 N Glenwood St, Boise ID 83704
+/*************************************************************************
+Copyright (c) 2019 Cognitics, Inc.
 
-Expiration of SBIR Data Rights Period: February 28, 2019
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
 
-SBIR DATA RIGHTS - The Government's rights to use, modify, reproduce,
-release, perform, display, or disclose technical data or computer software
-marked with this legend are restricted during the period shown as provided
-in paragraph (b)(4) of the Rights in Noncommercial Technical Data and
-Computer Software -- Small Business Innovative Research (SBIR) Program
-clause contained in the above identified contract. No restrictions apply
-after the expiration date shown above. Any reproduction of technical data,
-computer software, or portions thereof marked with this legend must also
-reproduce the markings.
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
 
-This software contains inseparable components developed commercially, and 
-may not be reproduced or used without a written license from Cognitics, Inc.
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
 ****************************************************************************/
 
-#include "scenegraph_gl.h"
+
+#include "scenegraph_gl/scenegraph_gl.h"
 #include <ip/jpgwrapper.h>
 
 #ifdef _WIN32
