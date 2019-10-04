@@ -268,6 +268,7 @@
     <ClCompile Include="..\src\scenegraphflt\buildOpenFlightFromScene.cpp" />
     <ClCompile Include="..\src\scenegraphflt\buildSceneFromOpenFlight.cpp" />
     <ClCompile Include="..\src\scenegraphgltf\buildGltfFromScene.cpp" />
+    <ClCompile Include="..\src\scenegraphobj\buildSceneFromOBJ.cpp" />
     <ClCompile Include="..\src\scenegraph\buildSceneFromFeature.cpp" />
     <ClCompile Include="..\src\scenegraph\Color.cpp" />
     <ClCompile Include="..\src\scenegraph\CoordinateTransformVisitor.cpp" />
