@@ -63,7 +63,8 @@ namespace scenegraph
 
         ~OBJSceneBuilder(void)
         {
-            delete currentScene;
+            //scene is owned by the caller, they have to delete it
+            //delete currentScene;
         }
 
         bool parseMtlFile(const std::string &mtlFilename)
@@ -281,6 +282,7 @@ namespace scenegraph
                 else if (parts[0] == "f")
                 {
                     Face face;
+                    face.materials.push_back(currentMaterial);
                     bool hasTextureCood = false;
                     MappedTexture mt;
                     // OBJ only supports one texture.
@@ -317,7 +319,7 @@ namespace scenegraph
                             vn = atoi(coords[2].c_str());
                             if (vertexNormals.size() > vn)
                             {
-                                face.setNormalN(i, vertexNormals[vn]);
+                                face.setNormalN((int)i, vertexNormals[vn]);
                             }
                         }
                     }
@@ -341,7 +343,7 @@ namespace scenegraph
                 }
 
             }
-            return false;
+            return true;
         }
 
     };
@@ -349,7 +351,9 @@ namespace scenegraph
     Scene *buildSceneFromOBJ(const std::string &filename, bool setTexturePath)
     {
         OBJSceneBuilder builder(filename, setTexturePath);
-        return builder.build() ? builder.rootScene : NULL;
+        if(builder.build())
+            return builder.rootScene;
+        return NULL;
     }
 
 }
