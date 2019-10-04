@@ -36,7 +36,7 @@ namespace scenegraph
         Color emission;
         double shine;
         double transparency;
-
+        std::string textureFile;
         Material();
         virtual ~Material();
 

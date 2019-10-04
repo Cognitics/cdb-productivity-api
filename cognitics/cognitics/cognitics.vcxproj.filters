@@ -1164,6 +1164,9 @@
     <ClCompile Include="..\src\b64\base64.cpp">
       <Filter>Source Files\b64</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\scenegraphobj\buildSceneFromOBJ.cpp">
+      <Filter>Source Files\scenegraphobj</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\src\ccl\CMakeLists.txt">
