@@ -67,6 +67,7 @@ namespace scenegraph
 		ip::ImageInfo info;
 		if(ip::GetImagePixels(texpath,info,buffer))
 		{
+            ip::FlipVertically(info, buffer);
 			glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 			GLuint texid = 0;
@@ -196,6 +197,21 @@ namespace scenegraph
 			visit(scene);
 	}
 
+    void SimpleGLRenderVisitor::setExtensions()
+    {
+#ifdef WIN32	
+        //TODO: Fix for Linux..
+        if (!glGenerateMipmapfunc)
+            glGenerateMipmapfunc = (PFNGLGENERATEMIPMAPPROC)wglGetProcAddress("glGenerateMipmap");
+        if (!glGenerateMipmapfunc)
+            glGenerateMipmapfunc = (PFNGLGENERATEMIPMAPPROC)wglGetProcAddress("glGenerateMipmapEXT");
+        if (!glGenerateMipmapfunc)
+        {
+            //printf("");
+        }
+#endif
+
+    }
 
 
 }

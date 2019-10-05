@@ -91,12 +91,12 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\include;$(SolutionDir)..\include;$(SolutionDir)..\..\ThirdParty\glut\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)..\..\ThirdParty\jpeg-8c\lib;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\lib;$(SolutionDir)..\..\ThirdParty\ipp2019\lib\intel64_win;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)..\..\ThirdParty\jpeg-8c\lib;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\lib;$(SolutionDir)..\..\ThirdParty\ipp2019\lib\intel64_win;%(AdditionalLibraryDirectories);$(SolutionDir)..\..\ThirdParty\glut\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);ippcore.lib;ippvm.lib;ipps.lib;ippi.lib;cognitics.lib;gdal_i.lib;jpg8-c.lib;libpng15d.lib;zlib128.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -145,19 +145,23 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\include;$(SolutionDir)..\include;$(SolutionDir)..\..\ThirdParty\glut\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)..\..\ThirdParty\jpeg-8c\lib;$(SolutionDir)..\..\ThirdParty\lpng154\lib;$(SolutionDir)..\..\ThirdParty\gdal-cdb\release\lib;$(SolutionDir)..\..\ThirdParty\ipp2019\lib\intel64_win;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)..\..\ThirdParty\jpeg-8c\lib;$(SolutionDir)..\..\ThirdParty\lpng154\lib;$(SolutionDir)..\..\ThirdParty\gdal-cdb\release\lib;$(SolutionDir)..\..\ThirdParty\ipp2019\lib\intel64_win;%(AdditionalLibraryDirectories);$(SolutionDir)..\..\ThirdParty\glut\lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>cognitics.lib;gdal_i.lib;jpg8-c.lib;libpng15_static.lib;%(AdditionalDependencies);ippcore.lib;ippvm.lib;ipps.lib;ippi.lib;zlib128.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="OBJRender.cpp" />
     <ClCompile Include="ObjTest.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="OBJRender.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -283,43 +283,57 @@ namespace scenegraph
                 {
                     Face face;
                     face.materials.push_back(currentMaterial);
-                    bool hasTextureCood = false;
+                    bool hasTextureCoord = false;
                     MappedTexture mt;
                     // OBJ only supports one texture.
                     if (currentMaterial.textureFile != "")
                     {
                         mt.SetTextureName(currentMaterial.textureFile);
                         face.addMappedTexture(mt);
-                        hasTextureCood = true;
+                        hasTextureCoord = true;
                     }
                     for (size_t i = 1, ic = parts.size(); i < ic; i++)
                     {
                         std::vector<std::string> coords = ccl::splitString(parts[i],"/");
                         int v = atoi(coords[0].c_str());
                         // Make sure the vert index is valid
-                        if (verts.size() > v)
+                        // Verts start at 1, not 0
+                        if (verts.size() >= v && v > 0)
                         {
-                            face.addVert(verts[v]);
+                            face.addVert(verts[v-1]);
+                        }
+                        else
+                        {
+                            log << "Out of bound vertex. Have " << verts.size() << ", tried " << v << log.endl;
                         }
                         int vt = -1;
                         int vn = -1;
                         if (coords.size() > 1)
                         {
+                            // UVs start at 1, not 0
                             vt = atoi(coords[1].c_str());
-                            if (uvs.size() > vt)
+                            if (uvs.size() >= vt && vt > 0)
                             {
-                                if (hasTextureCood)
+                                if (hasTextureCoord)
                                 {
-                                    face.textures[0].uvs.push_back(uvs[vt]);
+                                    face.textures[0].uvs.push_back(uvs[vt-1]);
                                 }
+                            }
+                            else
+                            {
+                                log << "Out of bound UV. Have " << uvs.size() << ", tried " << vt << log.endl;
                             }
                         }
                         if (coords.size() > 2)
                         {
                             vn = atoi(coords[2].c_str());
-                            if (vertexNormals.size() > vn)
+                            if (vertexNormals.size() >= vn && vn > 0)
                             {
-                                face.setNormalN((int)i, vertexNormals[vn]);
+                                face.setNormalN((int)i, vertexNormals[vn-1]);
+                            }
+                            else
+                            {
+                                log << "Out of bound Normal. Have " << vertexNormals.size() << ", tried " << vn << log.endl;
                             }
                         }
                     }

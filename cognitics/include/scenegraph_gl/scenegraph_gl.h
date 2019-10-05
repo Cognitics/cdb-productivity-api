@@ -59,6 +59,7 @@ namespace scenegraph
 		SimpleGLRenderVisitor(std::string _texturedir);
 		virtual void visiting(scenegraph::Scene *scene);
 		void render(scenegraph::Scene *scene);
+        void setExtensions();//Try loading the GL extensions again
 	};
 
 }
