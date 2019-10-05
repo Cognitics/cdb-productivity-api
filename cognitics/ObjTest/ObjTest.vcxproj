@@ -91,13 +91,13 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\gdal204\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)..\..\ThirdParty\jpeg-8c\lib;$(SolutionDir)..\..\ThirdParty\lpng154\lib;$(SolutionDir)..\..\ThirdParty\gdal204\lib;$(SolutionDir)..\..\ThirdParty\ipp2019\lib\intel64_win;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);ippcore.lib;ippvm.lib;ipps.lib;ippi.lib;cognitics.lib;gdal_i.lib;jpg8-c.lib;libpng15_static.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)..\..\ThirdParty\jpeg-8c\lib;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\lib;$(SolutionDir)..\..\ThirdParty\ipp2019\lib\intel64_win;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);ippcore.lib;ippvm.lib;ipps.lib;ippi.lib;cognitics.lib;gdal_i.lib;jpg8-c.lib;libpng15d.lib;zlib128.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -145,15 +145,15 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal204\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)..\..\ThirdParty\jpeg-8c\lib;$(SolutionDir)..\..\ThirdParty\lpng154\lib;$(SolutionDir)..\..\ThirdParty\gdal204\lib;$(SolutionDir)..\..\ThirdParty\IPP6.1.5\em64t\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>cognitics.lib;gdal_i.lib;jpg8-c.lib;libpng15_static.lib;%(AdditionalDependencies);ippsemergedem64t.lib;ippsmergedem64t.lib;ippiemergedem64t.lib;ippimergedem64t.lib;ippcoreem64tl.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)..\..\ThirdParty\jpeg-8c\lib;$(SolutionDir)..\..\ThirdParty\lpng154\lib;$(SolutionDir)..\..\ThirdParty\gdal-cdb\release\lib;$(SolutionDir)..\..\ThirdParty\ipp2019\lib\intel64_win;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cognitics.lib;gdal_i.lib;jpg8-c.lib;libpng15_static.lib;%(AdditionalDependencies);ippcore.lib;ippvm.lib;ipps.lib;ippi.lib;zlib128.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
