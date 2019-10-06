@@ -5,9 +5,11 @@
 //#include "ip/pngwrapper.h"
 #include <scenegraph/ExtentsVisitor.h>
 
+#include <GL/glew.h>
+#include <GL/glut.h>
 #include <scenegraph_gl/scenegraph_gl.h>
 #include "OBJRender.h"
-#include <GL/glut.h>
+#include "ip/pngwrapper.h"
 
 namespace
 {
@@ -52,15 +54,21 @@ void setAOI(double llx, double lly, double urx, double  ury)
 
 bool renderInit(int argc, char **argv, scenegraph::Scene *_scene)
 {
+    //glutInitDisplayMode(GLUT_RGB);
+    
     scene = _scene;
     logger.init("OBJ Render");
     logger << ccl::LINFO;
     // init GLUT and create window
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
+    
     glutInitWindowPosition(50, 50);
     glutInitWindowSize(1000, 800);
     glutCreateWindow("OBJ Viewer");
+
+    glewExperimental = GL_TRUE;
+    glewInit();
 
     // register callbacks
     glutDisplayFunc(renderScene);
@@ -164,19 +172,170 @@ void renderScene(void)
     glutSwapBuffers();
 }
 
+GLuint LoadShaders(std::string vertexShader, std::string fragmentShader)
+{
+
+    // Create the shaders
+    GLuint VertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+    GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+
+    GLint Result = GL_FALSE;
+    int InfoLogLength;
+
+    if (vertexShader.size() > 0)
+    {
+        // Compile Vertex Shader
+        logger << "Compiling vertex shader..." << logger.endl;
+        char const * VertexSourcePointer = vertexShader.c_str();
+        glShaderSource(VertexShaderID, 1, &VertexSourcePointer, NULL);
+        glCompileShader(VertexShaderID);
+
+        // Check Vertex Shader
+        glGetShaderiv(VertexShaderID, GL_COMPILE_STATUS, &Result);
+        glGetShaderiv(VertexShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+        if (InfoLogLength > 0) {
+            std::vector<char> VertexShaderErrorMessage(InfoLogLength + 1);
+            glGetShaderInfoLog(VertexShaderID, InfoLogLength, NULL, &VertexShaderErrorMessage[0]);
+            logger << (&VertexShaderErrorMessage[0]) << logger.endl;
+        }
+    }
+
+    if (fragmentShader.size() > 0)
+    {
+        // Compile Fragment Shader
+        logger << "Compiling fragment shader..." << logger.endl;
+        char const * FragmentSourcePointer = fragmentShader.c_str();
+        glShaderSource(FragmentShaderID, 1, &FragmentSourcePointer, NULL);
+        glCompileShader(FragmentShaderID);
+
+        // Check Fragment Shader
+        glGetShaderiv(FragmentShaderID, GL_COMPILE_STATUS, &Result);
+        glGetShaderiv(FragmentShaderID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+        if (InfoLogLength > 0) {
+            std::vector<char> FragmentShaderErrorMessage(InfoLogLength + 1);
+            glGetShaderInfoLog(FragmentShaderID, InfoLogLength, NULL, &FragmentShaderErrorMessage[0]);
+            logger << (&FragmentShaderErrorMessage[0]) << logger.endl;
+        }
+    }
+    // Link the program
+    logger << "Linking program..." << logger.endl;
+    GLuint ProgramID = glCreateProgram();
+    
+    if (vertexShader.size() > 0)
+        glAttachShader(ProgramID, VertexShaderID);
+    if (fragmentShader.size() > 0)
+        glAttachShader(ProgramID, FragmentShaderID);
+
+    glLinkProgram(ProgramID);
+
+    // Check the program
+    glGetProgramiv(ProgramID, GL_LINK_STATUS, &Result);
+    glGetProgramiv(ProgramID, GL_INFO_LOG_LENGTH, &InfoLogLength);
+    if (InfoLogLength > 0) {
+        std::vector<char> ProgramErrorMessage(InfoLogLength + 1);
+        glGetProgramInfoLog(ProgramID, InfoLogLength, NULL, &ProgramErrorMessage[0]);
+        logger << (&ProgramErrorMessage[0]) << logger.endl;
+    }
+
+    if (vertexShader.size() > 0)
+    {
+        glDetachShader(ProgramID, VertexShaderID);
+        glDeleteShader(VertexShaderID);
+    }
+    if (fragmentShader.size() > 0)
+    {
+        glDetachShader(ProgramID, FragmentShaderID);
+        glDeleteShader(FragmentShaderID);
+
+    }
+
+    return ProgramID;
+}
+
 void processNormalKeys(unsigned char key, int xx, int yy)
 {
 
     //glutSetMenu(mainMenu);
     switch (key) {
     case 27:
-        //glutDestroyMenu(mainMenu);
-        //glutDestroyMenu(fillMenu);
-        //glutDestroyMenu(colorMenu);
-        //glutDestroyMenu(shrinkMenu);
         exit(0);
         break;
+    case 'r':
+    {
+        int width = 1024;
+        int height = 1024;
+        int depth = 3;
+        // Build the texture that will serve as the depth attachment for the framebuffer.
+        GLuint depth_texture;
+        glGenTextures(1, &depth_texture);
+        glBindTexture(GL_TEXTURE_2D, depth_texture);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
+        // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
+        GLuint FramebufferName = 0;
+        glGenFramebuffers(1, &FramebufferName);
+        glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+        // The texture we're going to render to
+        GLuint renderedTexture;
+        glGenTextures(1, &renderedTexture);
+
+        // "Bind" the newly created texture : all future texture functions will modify this texture
+        glBindTexture(GL_TEXTURE_2D, renderedTexture);
+
+        // Give an empty image to OpenGL ( the last "0" )
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+        // Poor filtering. Needed !
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+        // Set "renderedTexture" as our colour attachement #0
+        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
+
+        // Set the list of draw buffers.
+        GLenum DrawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
+        glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+
+        // Always check that our framebuffer is ok
+        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        {
+            logger << "Frame Buffer Error!" << logger.endl;
+            break;
+        }
+
+        //GLuint ProgramID = LoadShaders("", "layout(location = 0) out vec3 color;");
+
+        // Render to our framebuffer
+        glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture, 0);
+
+        glViewport(0, 0, width, height); // Render on the whole framebuffer, complete from the lower left corner to the upper right
+        glEnable(GL_DEPTH_TEST);
+        // Use our shader
+        //glUseProgram(ProgramID);
+
+        renderScene();
+        unsigned char *pixels = new unsigned char[width * height * depth];
+        glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE,pixels);
+        ip::ImageInfo info;
+        info.width = width;
+        info.height = height;
+        info.depth = depth;
+        info.interleaved = true;
+        info.dataType = ip::ImageInfo::UBYTE;
+        ccl::binary buf;
+        for (int i = 0; i < (width * height * depth); i++)
+            buf.push_back(pixels[i]);
+        ip::FlipVertically(info, buf);
+        ip::WritePNG24("E:/TestData/texture.png", info, buf);
+        exit(0);
+        break;
+    }
     case ' ':
     {
         // Reset view				

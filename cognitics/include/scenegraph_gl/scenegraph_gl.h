@@ -25,6 +25,7 @@ DEALINGS IN THE SOFTWARE.
 #include <Windows.h>
 #endif
 
+#include <GL/glew.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
 

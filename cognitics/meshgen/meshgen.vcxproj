@@ -108,6 +108,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -148,6 +149,7 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\release\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
