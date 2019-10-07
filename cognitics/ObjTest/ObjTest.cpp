@@ -15,7 +15,7 @@ int main(int argc, char **argv)
     logger << ccl::LINFO;   
 
     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
-    std::vector<ccl::FileInfo> files = ccl::FileInfo::getAllFiles("E:/TestData/MUTC_50m_OBJ/Data", "*.*", true);
+    std::vector<ccl::FileInfo> files = ccl::FileInfo::getAllFiles("f:/MUTC_50m_OBJ/Data", "*.*", true);
     std::vector<ccl::FileInfo> objFiles;
     for (auto&& fi : files)
     {
@@ -46,7 +46,7 @@ int main(int argc, char **argv)
 
     }
     */
-    scenegraph::Scene *scene = scenegraph::buildSceneFromOBJ("E:/TestData/MUTC_50m_OBJ/Data/Tile_+005_+021/Tile_+005_+021_L21.obj",true);
+    //scenegraph::Scene *scene = scenegraph::buildSceneFromOBJ("f:/MUTC_50m_OBJ/Data/Tile_+005_+021/Tile_+005_+021_L21.obj",true);
 
     //E:/TestData/Tile_+001_+024/Tile_+001_+024_L20.obj
     //E:/TestData/MUTC_50m_OBJ/Data/Tile_+005_+021/Tile_+005_+021_L21.obj
@@ -54,7 +54,7 @@ int main(int argc, char **argv)
     //ip::ImageInfo info;
     //ccl::binary buf;
     //ip::GetPNGImagePixels("e:/test.png", info, buf);
-
-    renderInit(argc, argv, scene);    
+    //std::vector<ccl::FileInfo>
+    renderInit(argc, argv, objFiles);
     return 0;
 } 

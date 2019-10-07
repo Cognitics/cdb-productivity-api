@@ -52,11 +52,194 @@ void setAOI(double llx, double lly, double urx, double  ury)
     aoi_changed = true;
 }
 
-bool renderInit(int argc, char **argv, scenegraph::Scene *_scene)
+
+int currentFileNum = 0;
+std::vector<ccl::FileInfo> renderFiles;
+void renderToFile()
+{
+    int width = 1024;
+    int height = 1024;
+    int depth = 3;
+
+
+
+    // Build the texture that will serve as the depth attachment for the framebuffer.
+    GLuint depth_texture;
+    glGenTextures(1, &depth_texture);
+    glBindTexture(GL_TEXTURE_2D, depth_texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
+    GLuint FramebufferName = 0;
+    glGenFramebuffers(1, &FramebufferName);
+    glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+    // The texture we're going to render to
+    GLuint renderedTexture;
+    glGenTextures(1, &renderedTexture);
+
+    // "Bind" the newly created texture : all future texture functions will modify this texture
+    glBindTexture(GL_TEXTURE_2D, renderedTexture);
+
+    // Give an empty image to OpenGL ( the last "0" )
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
+
+    // Poor filtering. Needed !
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+
+    // Set "renderedTexture" as our colour attachement #0
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
+
+    // Set the list of draw buffers.
+    GLenum DrawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
+
+    // Always check that our framebuffer is ok
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+    {
+        logger << "Frame Buffer Error!" << logger.endl;
+        return;
+    }
+
+    //GLuint ProgramID = LoadShaders("", "layout(location = 0) out vec3 color;");
+
+    // Render to our framebuffer
+    glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture, 0);
+
+    glViewport(0, 0, width, height); // Render on the whole framebuffer, complete from the lower left corner to the upper right
+    glEnable(GL_DEPTH_TEST);
+    // Use our shader
+    //glUseProgram(ProgramID);
+
+        // Clear Color and Depth Buffers
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    //glClearColor(1.0f, 1.0f, 0.0f, 1.0f); //Chromakey background
+    // Reset transformations
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    glPushMatrix();
+    glLoadIdentity();
+
+    glOrtho(0, width, 0, height, -5000, 5000);
+
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glRasterPos2i(10, 10);
+    
+
+    glPopMatrix();
+
+    glOrtho(window_llx, window_urx, window_lly, window_ury, -5000, 5000);
+    glMatrixMode(GL_MODELVIEW);
+
+    // Draw
+    glEnable(GL_BLEND);
+    glEnable(GL_LINE_SMOOTH);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glPushMatrix();
+    renderVisitor.visit(scene);
+    glPopMatrix();
+
+    glMatrixMode(GL_PROJECTION);
+    glDisable(GL_BLEND);
+    glPopMatrix();
+    glutSwapBuffers();
+
+    unsigned char *pixels = new unsigned char[width * height * depth];
+    glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    ip::ImageInfo info;
+    info.width = width;
+    info.height = height;
+    info.depth = depth;
+    info.interleaved = true;
+    info.dataType = ip::ImageInfo::UBYTE;
+    ccl::binary buf;
+    for (int i = 0; i < (width * height * depth); i++)
+        buf.push_back(pixels[i]);
+    ip::FlipVertically(info, buf);
+    std::string basePath = "f:/MUTC_50m_OBJ/output";
+    std::string pngName = ccl::joinPaths(basePath, renderFiles[currentFileNum].getBaseName() + ".png");
+
+    ip::WritePNG24(pngName, info, buf);
+    delete pixels;
+    currentFileNum++;
+    if (renderFiles.size() <= currentFileNum)
+        exit(0);
+    if(scene)
+        delete scene;
+
+    scene = scenegraph::buildSceneFromOBJ(renderFiles[currentFileNum].getFileName(), true);
+    double top = -DBL_MAX;
+    double bottom = DBL_MAX;
+    double left = DBL_MAX;
+    double right = -DBL_MAX;
+    double minZ = DBL_MAX;
+    double maxZ = -DBL_MAX;
+    extentsVisitor = scenegraph::ExtentsVisitor();
+    extentsVisitor.visit(scene);
+    extentsVisitor.getExtents(left, right, bottom, top, minZ, maxZ);
+    setAOI(left, bottom, right, top);
+}
+
+scenegraph::Scene *getCurrentScene()
+{
+    if (scene)
+        return scene;
+    /*
+    if (renderFiles.size() <= currentFileNum)
+    {
+        if (!scene)
+        {
+            scene = scenegraph::buildSceneFromOBJ(renderFiles[currentFileNum].getFileName(), true);
+        }
+        return scene;
+    }
+    */
+    
+    scene = scenegraph::buildSceneFromOBJ(renderFiles[currentFileNum].getFileName(), true);
+    double top = -DBL_MAX;
+    double bottom = DBL_MAX;
+    double left = DBL_MAX;
+    double right = -DBL_MAX;
+    double minZ = DBL_MAX;
+    double maxZ = -DBL_MAX;
+    extentsVisitor = scenegraph::ExtentsVisitor();
+    extentsVisitor.visit(scene);
+    extentsVisitor.getExtents(left, right, bottom, top, minZ, maxZ);
+    setAOI(left, bottom, right, top);
+    
+    return scene;
+}
+
+#if 0
+
+scenegraph::Scene *scene = scenegraph::buildSceneFromOBJ(fi.getFileName(), true);
+double top = -DBL_MAX;
+double bottom = DBL_MAX;
+double left = DBL_MAX;
+double right = -DBL_MAX;
+double minZ = DBL_MAX;
+double maxZ = -DBL_MAX;
+extentsVisitor.visit(scene);
+extentsVisitor.getExtents(left, right, bottom, top, minZ, maxZ);
+
+#endif
+
+bool renderingToFile = false;
+
+bool renderInit(int argc, char **argv, std::vector<ccl::FileInfo> files)
 {
     //glutInitDisplayMode(GLUT_RGB);
-    
-    scene = _scene;
+    renderFiles = files;
+    //scene = _scene;
     logger.init("OBJ Render");
     logger << ccl::LINFO;
     // init GLUT and create window
@@ -64,7 +247,7 @@ bool renderInit(int argc, char **argv, scenegraph::Scene *_scene)
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
     
     glutInitWindowPosition(50, 50);
-    glutInitWindowSize(1000, 800);
+    glutInitWindowSize(1024, 1024);
     glutCreateWindow("OBJ Viewer");
 
     glewExperimental = GL_TRUE;
@@ -89,20 +272,6 @@ bool renderInit(int argc, char **argv, scenegraph::Scene *_scene)
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
-    renderVisitor.setExtensions();
-    double top = -DBL_MAX;
-    double bottom = DBL_MAX;
-    double left = DBL_MAX;
-    double right = -DBL_MAX;
-    double minZ = DBL_MAX;
-    double maxZ = -DBL_MAX;
-    extentsVisitor.visit(scene);
-    extentsVisitor.getExtents(left, right, bottom, top, minZ, maxZ);
-
-    double centerx = (left + right) / 2;
-    double centery = (top + bottom) / 2;
-    setAOI(centerx - 100, centery - 100, centerx + 100, centery + 100);
-
     // enter GLUT event processing cycle
     glutMainLoop();
 
@@ -111,6 +280,13 @@ bool renderInit(int argc, char **argv, scenegraph::Scene *_scene)
 
 void renderScene(void)
 {
+    scene = getCurrentScene();
+    if (!scene)
+        exit(0);
+    if (renderingToFile)
+    {
+        renderToFile();
+    }
     // Clear Color and Depth Buffers
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     //glClearColor(1.0f, 1.0f, 0.0f, 1.0f); //Chromakey background
@@ -128,7 +304,9 @@ void renderScene(void)
     std::stringstream ss;
     ss.precision(10);
     ss << "x=" << cursor_world_x << " y=" << cursor_world_y;
-    RenderBitmapText(ss.str());
+    if (!renderingToFile)
+        RenderBitmapText(ss.str());
+    
     ss.str() = "";
 
     glPopMatrix();
@@ -147,24 +325,11 @@ void renderScene(void)
     glEnable(GL_LINE_SMOOTH);
     glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    glLineWidth(2.0);
-
-    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-    glBegin(GL_LINE_LOOP);
-    const float rad = 20.0;
-    const float segments = 10;
-    for (int i = 0; i < segments; i++) {
-        float angle = i * 2 * 3.1459 / segments;
-        double x = (cursor_world_x) + (cos(angle) * rad);
-        double y = (cursor_world_y) + (sin(angle) * rad);
-        glVertex2f(x, y);
-    }
-    glEnd();
 
     glPushMatrix();
     renderVisitor.visit(scene);
-    glPopMatrix();
 
+    glPopMatrix();
     glMatrixMode(GL_PROJECTION);
     glDisable(GL_BLEND);
     //glDisable(GL_LINE_SMOOTH);
@@ -252,6 +417,9 @@ GLuint LoadShaders(std::string vertexShader, std::string fragmentShader)
     return ProgramID;
 }
 
+
+
+
 void processNormalKeys(unsigned char key, int xx, int yy)
 {
 
@@ -262,78 +430,9 @@ void processNormalKeys(unsigned char key, int xx, int yy)
         break;
     case 'r':
     {
-        int width = 1024;
-        int height = 1024;
-        int depth = 3;
-        // Build the texture that will serve as the depth attachment for the framebuffer.
-        GLuint depth_texture;
-        glGenTextures(1, &depth_texture);
-        glBindTexture(GL_TEXTURE_2D, depth_texture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
-        glBindTexture(GL_TEXTURE_2D, 0);
+        renderingToFile = true;
 
-        // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
-        GLuint FramebufferName = 0;
-        glGenFramebuffers(1, &FramebufferName);
-        glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-        // The texture we're going to render to
-        GLuint renderedTexture;
-        glGenTextures(1, &renderedTexture);
-
-        // "Bind" the newly created texture : all future texture functions will modify this texture
-        glBindTexture(GL_TEXTURE_2D, renderedTexture);
-
-        // Give an empty image to OpenGL ( the last "0" )
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
-
-        // Poor filtering. Needed !
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-
-        // Set "renderedTexture" as our colour attachement #0
-        glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
-
-        // Set the list of draw buffers.
-        GLenum DrawBuffers[1] = { GL_COLOR_ATTACHMENT0 };
-        glDrawBuffers(1, DrawBuffers); // "1" is the size of DrawBuffers
-
-        // Always check that our framebuffer is ok
-        if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        {
-            logger << "Frame Buffer Error!" << logger.endl;
-            break;
-        }
-
-        //GLuint ProgramID = LoadShaders("", "layout(location = 0) out vec3 color;");
-
-        // Render to our framebuffer
-        glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_texture, 0);
-
-        glViewport(0, 0, width, height); // Render on the whole framebuffer, complete from the lower left corner to the upper right
-        glEnable(GL_DEPTH_TEST);
-        // Use our shader
-        //glUseProgram(ProgramID);
-
-        renderScene();
-        unsigned char *pixels = new unsigned char[width * height * depth];
-        glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE,pixels);
-        ip::ImageInfo info;
-        info.width = width;
-        info.height = height;
-        info.depth = depth;
-        info.interleaved = true;
-        info.dataType = ip::ImageInfo::UBYTE;
-        ccl::binary buf;
-        for (int i = 0; i < (width * height * depth); i++)
-            buf.push_back(pixels[i]);
-        ip::FlipVertically(info, buf);
-        ip::WritePNG24("E:/TestData/texture.png", info, buf);
-        exit(0);
+        
         break;
     }
     case ' ':

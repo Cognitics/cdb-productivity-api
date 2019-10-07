@@ -157,6 +157,18 @@
     <Filter Include="Header Files\scenegraph_gl">
       <UniqueIdentifier>{d1803d98-3ca9-47ef-9b4b-ace8c1f67a6f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\cdb_tile">
+      <UniqueIdentifier>{c4e3cc29-18d9-439e-bc18-53bbb3961461}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\cdb_tile">
+      <UniqueIdentifier>{3bef30a1-4b92-4acf-931d-fb76dbd20246}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\CoordinateSystems">
+      <UniqueIdentifier>{16c2c64b-629b-47d8-b9c5-1e3bee74fe1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\CoordinateSystems">
+      <UniqueIdentifier>{c9fc430c-b83f-47de-8524-07086aab41d0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\cad\AttributeDictionary.cpp">
@@ -1176,13 +1188,64 @@
     <ClCompile Include="..\src\scenegraph_gl\scenegraph_gl.cpp">
       <Filter>Source Files\scenegraph_gl</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\cdb_tile\Coordinates.cpp">
+      <Filter>Source Files\cdb_tile</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cdb_tile\CoordinatesRange.cpp">
+      <Filter>Source Files\cdb_tile</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cdb_tile\Dataset.cpp">
+      <Filter>Source Files\cdb_tile</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cdb_tile\Latitude.cpp">
+      <Filter>Source Files\cdb_tile</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cdb_tile\LODRange.cpp">
+      <Filter>Source Files\cdb_tile</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cdb_tile\Longitude.cpp">
+      <Filter>Source Files\cdb_tile</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cdb_tile\Tile.cpp">
+      <Filter>Source Files\cdb_tile</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cdb_tile\TileCoordinates.cpp">
+      <Filter>Source Files\cdb_tile</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cdb_tile\TileLatitude.cpp">
+      <Filter>Source Files\cdb_tile</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cdb_tile\TileLongitude.cpp">
+      <Filter>Source Files\cdb_tile</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cdb_tile\CDBLOD.cpp">
+      <Filter>Source Files\cdb_tile</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\CoordinateSystems\EGM.cpp">
+      <Filter>Source Files\CoordinateSystems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\CoordinateSystems\EGM2008.cpp">
+      <Filter>Source Files\CoordinateSystems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\CoordinateSystems\EGMTransform.cpp">
+      <Filter>Source Files\CoordinateSystems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\CoordinateSystems\EllipsoidTangentPlane.cpp">
+      <Filter>Source Files\CoordinateSystems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\CoordinateSystems\GeoidTangentPlane.cpp">
+      <Filter>Source Files\CoordinateSystems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\CoordinateSystems\SphereTangentPlane.cpp">
+      <Filter>Source Files\CoordinateSystems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\CoordinateSystems\WGS84Transform.cpp">
+      <Filter>Source Files\CoordinateSystems</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\src\ccl\CMakeLists.txt">
       <Filter>Source Files\ccl</Filter>
-    </Text>
-    <Text Include="..\src\cts\CMakeLists.txt">
-      <Filter>Source Files\cts</Filter>
     </Text>
     <Text Include="..\include\rapidjson\license.txt">
       <Filter>Header Files\rapidjson</Filter>
@@ -2391,6 +2454,72 @@
     </ClInclude>
     <ClInclude Include="..\include\scenegraph_gl\scenegraph_gl.h">
       <Filter>Header Files\scenegraph_gl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cdb_tile\Coordinates.h">
+      <Filter>Header Files\cdb_tile</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cdb_tile\CoordinatesRange.h">
+      <Filter>Header Files\cdb_tile</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cdb_tile\Dataset.h">
+      <Filter>Header Files\cdb_tile</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cdb_tile\Latitude.h">
+      <Filter>Header Files\cdb_tile</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cdb_tile\LOD.h">
+      <Filter>Header Files\cdb_tile</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cdb_tile\LODRange.h">
+      <Filter>Header Files\cdb_tile</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cdb_tile\Longitude.h">
+      <Filter>Header Files\cdb_tile</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cdb_tile\Tile.h">
+      <Filter>Header Files\cdb_tile</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cdb_tile\TileCoordinates.h">
+      <Filter>Header Files\cdb_tile</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cdb_tile\TileLatitude.h">
+      <Filter>Header Files\cdb_tile</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cdb_tile\TileLongitude.h">
+      <Filter>Header Files\cdb_tile</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\CoordinateSystems\EGM2008.h">
+      <Filter>Header Files\CoordinateSystems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\CoordinateSystems\EGMTransform.h">
+      <Filter>Header Files\CoordinateSystems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\CoordinateSystems\EllipsoidTangentPlane.h">
+      <Filter>Header Files\CoordinateSystems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\CoordinateSystems\GeoidTangentPlane.h">
+      <Filter>Header Files\CoordinateSystems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\CoordinateSystems\IGeodeticTransform.h">
+      <Filter>Header Files\CoordinateSystems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\CoordinateSystems\ILocalTangentPlane.h">
+      <Filter>Header Files\CoordinateSystems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\CoordinateSystems\Image.h">
+      <Filter>Header Files\CoordinateSystems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\CoordinateSystems\SphereTangentPlane.h">
+      <Filter>Header Files\CoordinateSystems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\CoordinateSystems\WGS84.h">
+      <Filter>Header Files\CoordinateSystems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\CoordinateSystems\WGS84Transform.h">
+      <Filter>Header Files\CoordinateSystems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\CoordinateSystems\EGM.h">
+      <Filter>Header Files\CoordinateSystems</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

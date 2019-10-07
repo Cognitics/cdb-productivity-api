@@ -5,7 +5,7 @@
 
 void setAOI(double llx, double lly, double urx, double  ury);
 
-bool renderInit(int argc, char **argv, scenegraph::Scene *scene);
+bool renderInit(int argc, char **argv, std::vector<ccl::FileInfo> objFiles);
 void pressKey(int key, int xx, int yy);
 void releaseKey(int key, int x, int y);
 void renderScene(void);
