@@ -113,8 +113,8 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)..\..\ThirdParty\jpeg-8c\lib;$(SolutionDir)..\..\ThirdParty\lpng154\lib;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\lib;$(SolutionDir)..\..\ThirdParty\ipp2019\lib\intel64_win;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);ippcore.lib;ippvm.lib;ipps.lib;ippi.lib;cognitics.lib;gdal_i.lib;jpg8-c.lib;libpng15_static.lib;zlib128.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)..\..\ThirdParty\jpeg-8c\lib;$(SolutionDir)..\..\ThirdParty\lpng154\lib;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\lib;$(SolutionDir)..\..\ThirdParty\ipp2019\lib\intel64_win;$(SolutionDir)..\..\ThirdParty\fbxsdk\lib\vs2015\x64\debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);ippcore.lib;ippvm.lib;ipps.lib;ippi.lib;cognitics.lib;gdal_i.lib;jpg8-c.lib;libpng15_static.lib;zlib128.lib;libcurl.lib;libfbxsdk.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -156,8 +156,8 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)..\..\ThirdParty\jpeg-8c\lib;$(SolutionDir)..\..\ThirdParty\lpng154\lib;$(SolutionDir)..\..\ThirdParty\gdal-cdb\release\lib;$(SolutionDir)..\..\ThirdParty\ipp2019\lib\intel64_win;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>cognitics.lib;gdal_i.lib;jpg8-c.lib;libpng15_static.lib;%(AdditionalDependencies);ippcore.lib;ippvm.lib;ipps.lib;ippi.lib;zlib128.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)..\..\ThirdParty\jpeg-8c\lib;$(SolutionDir)..\..\ThirdParty\lpng154\lib;$(SolutionDir)..\..\ThirdParty\gdal-cdb\release\lib;$(SolutionDir)..\..\ThirdParty\ipp2019\lib\intel64_win;$(SolutionDir)..\..\ThirdParty\fbxsdk\lib\vs2015\x64\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cognitics.lib;gdal_i.lib;jpg8-c.lib;libpng15_static.lib;%(AdditionalDependencies);ippcore.lib;ippvm.lib;ipps.lib;ippi.lib;zlib128.lib;libcurl.lib;libfbxsdk.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

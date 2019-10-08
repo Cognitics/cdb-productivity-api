@@ -21,7 +21,6 @@ DEALINGS IN THE SOFTWARE.
 ****************************************************************************/
 
 #include "dbi_sqlite/File.h"
-//#include "dbi/Statement.h"
 
 namespace dbi
 {

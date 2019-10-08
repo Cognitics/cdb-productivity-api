@@ -21,30 +21,29 @@ namespace gltf
 	{
 	public:
 		std::string name;
+		std::string outputPath;
+		std::string relativePathName;
 		std::ofstream file;
 		std::string format;
 		GeoRect& bounds;
+		double angle;
 		bool gltfBinary;
+		bool embedTextures;
 		sfa::Point rtcCenter;
 
 		OGRSpatialReference wgs;
 		OGRSpatialReference ecef;
 		OGRCoordinateTransformation* coordTrans;
 		cts::FlatEarthProjection flatEarth;
-
-		std::vector<float> maxVertexValues;
-		std::vector<float> minVertexValues;
-		std::vector<float> maxNormalValues;
-		std::vector<float> minNormalValues;
-		std::vector<float> maxUvValues;
-		std::vector<float> minUvValues;
-
-		GltfInfo(std::string filename, GeoRect& pos);
+		
+		GltfInfo(std::string filename, GeoRect& pos, double zRotation);
 		~GltfInfo();
 		void calcRtcCenter();
 		int addPadding(char paddingData, int alignmentRequirement);
+		void getFeatureJson(std::string & out_json);
 		void writeFeatureTable();
 		void writeB3dmHeader();
+		void writeI3dmHeader();
 		void finalizeB3dmSizes();
 		void writeGltfBinaryHeader();
 		void finalizeJsonChunk();
@@ -52,12 +51,13 @@ namespace gltf
 		void finalizeBinaryChunk();
 		void finalizeGltfBinarySizes();
 		bool init();
+		void setPath();
 		void createFile();
 		void finalizeFile();
 
 	private:
-		std::streampos b3dmSizePos;
-		std::streampos b3dmStart;
+		std::streampos tileSizePos;
+		std::streampos tileStart;
 		std::streampos gltfSizePos;
 		std::streampos gltfStart;
 		std::streampos jsonChunkSizePos;

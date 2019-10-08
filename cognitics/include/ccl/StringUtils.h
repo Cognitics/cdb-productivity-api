@@ -105,6 +105,26 @@ namespace ccl
         return false;
     }
 
+    inline bool stringStartsWith(const std::string &str, const std::string &compareStr, bool caseSensitive = true)
+    {
+        if (compareStr.length() > str.length())
+            return false;
+        std::string sub = str.substr(0, compareStr.length());
+        if (!caseSensitive)
+        {
+            std::string lstr(sub);
+            std::string lcomp(compareStr);
+            std::transform(lstr.begin(), lstr.end(), lstr.begin(), ::tolower);
+            std::transform(lcomp.begin(), lcomp.end(), lcomp.begin(), ::tolower);
+            if (lcomp == lstr)
+                return true;
+            return false;
+        }
+        if (sub == compareStr)
+            return true;
+        return false;
+    }
+
         inline int stringCompareNoCase(const std::string &a, const std::string &b)
         {
 #ifdef WIN32

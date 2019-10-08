@@ -4,6 +4,7 @@
 
 namespace scenegraph
 {
-	bool buildGltfFromScene(const std::string &filename, Scene *scene, double north, double south, double east, double west);
-	bool buildTilesetFromScene(const std::string &filename, Scene *scene);
+	bool buildGltfFromScene(std::string &filename, Scene *scene,
+		double north, double south, double east, double west, double minElev = 0.0, double maxElev = 1.0, int id = 0, double angle = 0.0);
+	bool buildTilesetFromScene(const std::string &filename, Scene *scene, double north, double south, double east, double west);
 }

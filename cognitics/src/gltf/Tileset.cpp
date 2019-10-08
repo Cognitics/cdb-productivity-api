@@ -1,26 +1,119 @@
-#include "gltf/GltfInfo.h"
-#include "gltf/Tileset.h"
-#include "rapidjson/prettywriter.h"
+#include "gltf\GltfInfo.h"
+#include "gltf\Tileset.h"
+#include "ccl\FileInfo.h"
 
 namespace gltf
 {
+	std::vector<TileInfo> Tileset::tiles;
 
-	void Tileset::GetRadianRectFromExtRef(scenegraph::ExternalReference & ref, GeoRect & out_rect)
+	void Tileset::GetRadianRectFromExtRef(TileInfo& ref, GeoRect & out_rect)
 	{
 		double pi = 3.14159265358979323846264338327950288;
 
-		out_rect.west = ref.position.X();
-		out_rect.south = ref.position.Y();
-		out_rect.east = ref.position.X() + ref.scale.X();
-		out_rect.north = ref.position.Y() + ref.scale.Y();
-		out_rect.west = out_rect.west   * pi / 180;
-		out_rect.south = out_rect.south * pi / 180;
-		out_rect.east = out_rect.east 	* pi / 180;
-		out_rect.north = out_rect.north	* pi / 180;
+		out_rect.west = ref.west   * pi / 180;
+		out_rect.south = ref.south * pi / 180;
+		out_rect.east = ref.east 	* pi / 180;
+		out_rect.north = ref.north	* pi / 180;
+	}
+
+	void Tileset::writeLeafChild(rapidjson::PrettyWriter<rapidjson::FileWriteStream>& writer, TileInfo& ref, int geometricError)
+	{
+
+		writer.StartObject();
+
+		writer.Key("boundingVolume");
+		writer.StartObject();
+		writer.Key("region");
+		writer.StartArray();
+		GeoRect bounds;
+		GetRadianRectFromExtRef(ref, bounds);
+		writer.Double(bounds.west);
+		writer.Double(bounds.south);
+		writer.Double(bounds.east);
+		writer.Double(bounds.north);
+		writer.Double(ref.minElev);
+		writer.Double(ref.maxElev);
+		writer.EndArray();//region
+		writer.EndObject();//boudingVolume
+
+		writer.Key("geometricError");
+		writer.Int(geometricError);
+
+		writer.Key("content");
+		writer.StartObject();
+		writer.Key("uri");
+		writer.String(ref.relativePathName.c_str());
+		writer.EndObject();//content
+
+		writer.EndObject();//child
+	}
+
+	void Tileset::writeLods(rapidjson::PrettyWriter<rapidjson::FileWriteStream>& writer, 
+		TileInfo& ref, int geometricError)
+	{
+
+		writer.StartObject();
+
+		writer.Key("boundingVolume");
+		writer.StartObject();
+		writer.Key("region");
+		writer.StartArray();
+		GeoRect bounds;
+		GetRadianRectFromExtRef(ref, bounds);
+		writer.Double(bounds.west);
+		writer.Double(bounds.south);
+		writer.Double(bounds.east);
+		writer.Double(bounds.north);
+		writer.Double(ref.minElev);
+		writer.Double(ref.maxElev);
+		writer.EndArray();//region
+		writer.EndObject();//boudingVolume
+
+		writer.Key("geometricError");
+		writer.Int(geometricError);
+		writer.Key("refine");
+		writer.String("REPLACE");
+
+		writer.Key("content");
+		writer.StartObject();
+		writer.Key("uri");
+		writer.String(ref.relativePathName.c_str());
+
+		writer.EndObject();//content
+
+		bool childrenCreated = false;
+
+		for (int i = 0; i < 4; ++i)
+		{
+			ccl::FileInfo fi(ref.relativePathName);
+			std::string quadkey = fi.getBaseName(true);
+			auto child = tileLods.find(quadkey + std::to_string(i));
+			if (child != tileLods.end())
+			{
+				if (!childrenCreated)
+				{
+					writer.Key("children");
+					writer.StartArray();
+					childrenCreated = true;
+				}
+				writeLods(writer, child->second, geometricError / 2);
+			}
+
+		}
+
+		if (childrenCreated)
+		{
+			writer.EndArray();//children
+		}
+
+
+		writer.EndObject();//child
 	}
 
 	void Tileset::write()
 	{
+		double pi = 3.14159265358979323846264338327950288;
+		int baseError = 65536;
 
 		FILE* fp = fopen(name.c_str(), "wb");
 		char writeBuffer[65536];
@@ -44,7 +137,8 @@ namespace gltf
 		writer.EndObject();
 
 		writer.Key("geometricError");
-		writer.Int(240);
+		writer.Int(baseError);
+		
 
 		writer.Key("root");
 		writer.StartObject();
@@ -52,57 +146,51 @@ namespace gltf
 		writer.StartObject();
 		writer.Key("region");
 		writer.StartArray();
-		GeoRect bound1;
-		GeoRect bound2;
-		GetRadianRectFromExtRef(scene->externalReferences[0], bound1);
-		GetRadianRectFromExtRef(scene->externalReferences[scene->externalReferences.size() - 1], bound2);
-		writer.Double(bound1.west);
-		writer.Double(bound1.south);
-		writer.Double(bound2.east);
-		writer.Double(bound2.north);
-		writer.Double(scene->externalReferences[0].position.Z());
-		writer.Double(scene->externalReferences[0].position.Z() - scene->externalReferences[0].scale.Z());
+		writer.Double(bounds.west * pi / 180);
+		writer.Double(bounds.south * pi / 180);
+		writer.Double(bounds.east * pi / 180);
+		writer.Double(bounds.north * pi / 180);
+		writer.Double(tiles[0].minElev);
+		writer.Double(tiles[0].maxElev);
 		writer.EndArray();//region
 		writer.EndObject();//boudingVolume
 
 		writer.Key("geometricError");
-		writer.Int(70);
+		writer.Int(baseError);
 		writer.Key("refine");
 		writer.String("ADD");
 		writer.Key("children");
 		writer.StartArray();
 
-		for (int i = 0; i < scene->externalReferences.size(); ++i)
+		int maxLod = 0;
+		for (int i = 0; i < tiles.size(); ++i)
 		{
-			writer.StartObject();
-
-			writer.Key("boundingVolume");
-			writer.StartObject();
-			writer.Key("region");
-			writer.StartArray();
-			GeoRect bounds;
-			GetRadianRectFromExtRef(scene->externalReferences[i], bounds);
-			writer.Double(bounds.west);
-			writer.Double(bounds.south);
-			writer.Double(bounds.east);
-			writer.Double(bounds.north);
-			writer.Double(scene->externalReferences[i].position.Z());
-			writer.Double(scene->externalReferences[i].position.Z() - scene->externalReferences[i].scale.Z());
-			writer.EndArray();//region
-			writer.EndObject();//boudingVolume
-
-			writer.Key("geometricError");
-			writer.Int(0);
-
-			writer.Key("content");
-			writer.StartObject();
-			writer.Key("uri");
-			ccl::FileInfo fi(scene->externalReferences[i].filename);
-			writer.String(fi.getBaseName().c_str());
-			writer.EndObject();//content
-
-			writer.EndObject();//child
+			//create searchable map of lods/quadkeys
+			if (tiles[i].typeId == 1)
+			{
+				ccl::FileInfo fi(tiles[i].relativePathName);
+				std::string quadkey = fi.getBaseName(true);
+				tileLods.insert(std::pair<std::string, 
+					TileInfo&>(quadkey, tiles[i]));
+				maxLod = max(maxLod, quadkey.size());
+			}
+			else
+			{
+				writeLeafChild(writer, tiles[i], 0);
+			}
 		}
+
+		auto root = tileLods.find("0");
+		if (root != tileLods.end())
+		{
+			writeLods(writer, root->second, baseError / 2);
+		}
+		else
+		{
+			std::cout << "Tileset: couldn't find terrain lods" << std::endl;
+		}
+
+
 
 		writer.EndArray();//children
 

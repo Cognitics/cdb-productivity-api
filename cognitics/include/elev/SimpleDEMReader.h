@@ -48,6 +48,7 @@ namespace elev
         bool windowedMode;
         int windowHeight;
         int windowWidth;
+        float scaleFactor;
         double spacing_x;                    //!< coordinate distance between post x-values
         double spacing_y;                    //!< coordinate distance between post y-values
         double rotation_x;                    //!< rotation between post x-values
@@ -71,18 +72,20 @@ namespace elev
     public:
         ~SimpleDEMReader();
         SimpleDEMReader(const std::string &filename, 
-            OGRSpatialReference destinationSRS);
+            OGRSpatialReference destinationSRS, float scale = 1);
         SimpleDEMReader(const std::string &filename,
             OGRSpatialReference destinationSRS,
             int windowTop,
             int windowBottom,
             int windowRight,
-            int windowLeft);
+            int windowLeft, float scale = 1);
 
         int getWidth() const;
         int getHeight() const;
-        double getPostSpacingX() { return spacing_x; }
-        double getPostSpacingY() { return spacing_y; }
+        int getScaledWidth() const;
+        int getScaledHeight() const;
+        double getPostSpacingX() { return spacing_x / scaleFactor; }
+        double getPostSpacingY() { return spacing_y / scaleFactor; }
 
         void getMBR(double &north, double &south, double &east, double &west);
         // Convert each post to a double value and return it as an array

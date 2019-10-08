@@ -27,11 +27,7 @@ DEALINGS IN THE SOFTWARE.
 \sa Document Object Model (DOM) Level 3 Core Specification (http://www.w3.org/TR/DOM-Level-3-Core/) 1.2
 */
 #pragma once
-//#if (_MSC_VER >= 1700)
 #include <memory>
-//#else
-//#include <boost/tr1/memory.hpp>
-//#endif
 #include <boost/utility.hpp>
 #include <string>
 #include <vector>

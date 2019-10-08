@@ -169,6 +169,9 @@
     <Filter Include="Header Files\CoordinateSystems">
       <UniqueIdentifier>{c9fc430c-b83f-47de-8524-07086aab41d0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\scenegraphfbx">
+      <UniqueIdentifier>{ca0780b0-f786-4480-a890-9d01855b3cf3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\cad\AttributeDictionary.cpp">
@@ -1241,6 +1244,30 @@
     </ClCompile>
     <ClCompile Include="..\src\CoordinateSystems\WGS84Transform.cpp">
       <Filter>Source Files\CoordinateSystems</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\features\FeatureInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\features\GMLParser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\features\GsBuildings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\scenegraphfbx\buildFbxFromScene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tg\GltfTerrainGenerator.cpp">
+      <Filter>Source Files\tg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tg\FbxTerrainGenerator.cpp">
+      <Filter>Source Files\tg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tg\ObjTerrainGenerator.cpp">
+      <Filter>Source Files\tg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\tg\OpenFlightTerrainGenerator.cpp">
+      <Filter>Source Files\tg</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -2520,6 +2547,30 @@
     </ClInclude>
     <ClInclude Include="..\include\CoordinateSystems\EGM.h">
       <Filter>Header Files\CoordinateSystems</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\features\FeatureInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\features\GMLParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\features\GsBuildings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\tg\OpenFlightTerrainGenerator.h">
+      <Filter>Header Files\tg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\tg\ObjTerrainGenerator.h">
+      <Filter>Header Files\tg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\tg\GltfTerrainGenerator.h">
+      <Filter>Header Files\tg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\tg\FbxTerrainGenerator.h">
+      <Filter>Header Files\tg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\scenegraphfbx\scenegraphfbx.h">
+      <Filter>Header Files\scenegraphfbx</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
