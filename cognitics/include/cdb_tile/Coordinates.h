@@ -12,6 +12,7 @@ class Coordinates
 public:
     Coordinates(void);
     Coordinates(const Latitude& latitude, const Longitude& longitude);
+    Coordinates(double latDouble,double lonDouble);
 
     Latitude latitude(void) const;
     Longitude longitude(void) const;

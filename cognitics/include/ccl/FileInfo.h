@@ -44,6 +44,8 @@ namespace ccl
 
     public:
         ~FileInfo(void);
+        FileInfo() {};
+
         FileInfo(const std::string &filename);
 
         /**

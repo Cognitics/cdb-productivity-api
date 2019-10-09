@@ -12,6 +12,13 @@ Coordinates::Coordinates(const Latitude& latitude, const Longitude& longitude) :
 {
 }
 
+
+Coordinates::Coordinates(double latDouble, double lonDouble)
+{
+    _latitude = Latitude(latDouble);
+    _longitude = Longitude(lonDouble);
+}
+
 Latitude Coordinates::latitude(void) const
 {
     return _latitude;
