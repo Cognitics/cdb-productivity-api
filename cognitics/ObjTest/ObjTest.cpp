@@ -42,7 +42,9 @@ int main(int argc, char **argv)
     std::map<std::string, std::string> highestTileLODFilename;
 
     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
-    std::vector<ccl::FileInfo> files = ccl::FileInfo::getAllFiles("E:/TestData/MUTC_50m_OBJ/Data", "*.*", true);
+    //std::vector<ccl::FileInfo> files = ccl::FileInfo::getAllFiles("E:/TestData/MUTC_50m_OBJ/Data", "*.*", true);
+    //J:/MUTC_OBJ/MUTC_50m_OBJ/Data
+    std::vector<ccl::FileInfo> files = ccl::FileInfo::getAllFiles("J:/MUTC_OBJ/MUTC_50m_OBJ/Data", "*.*", true);
     std::vector<ccl::FileInfo> objFiles;
     for (auto&& fi : files)
     {
@@ -68,7 +70,7 @@ int main(int argc, char **argv)
     for (auto&& fileLODPair : highestTileLODFilename)
     {
         objFiles.push_back(fileLODPair.second);
-        //if (objFiles.size() > 5)
+        //if (objFiles.size() > 10)
         //    break;
     }
     double origin_lat = 39.05011;
@@ -134,10 +136,8 @@ int main(int argc, char **argv)
     double dbMaxZElev = 0;
     
     ltp_ellipsoid->LocalToGeodetic(dbLeft, dbBottom, 0, dbBottomLat, dbLeftLon, dbMinZElev);
-    double e, n, u;
-    ltp_ellipsoid->GeodeticToLocal(dbBottomLat, dbLeftLon, 0, e, n, u);
-
-
+    //double e, n, u;
+    //ltp_ellipsoid->GeodeticToLocal(dbBottomLat, dbLeftLon, 0, e, n, u);
 
     ltp_ellipsoid->LocalToGeodetic(dbRight, dbTop, dbMaxZ, dbTopLat, dbRightLon, dbMaxZElev);
 
@@ -152,13 +152,13 @@ int main(int argc, char **argv)
 #endif
 
     std::vector<cognitics::cdb::Tile> cdbTiles;
-    cognitics::cdb::LOD lod(8);
+    cognitics::cdb::LOD lod(11);
     cognitics::cdb::Coordinates cdbLL(dbBottomLat, dbLeftLon);
     cognitics::cdb::Coordinates cdbUR(dbTopLat,dbRightLon);
     cognitics::cdb::CoordinatesRange cdbAOI(cdbLL, cdbUR);
     cdbTiles = cognitics::cdb::generate_tiles(cdbAOI, cognitics::cdb::Dataset::Imagery, lod);
 
-    std::string cdbRootPath = "e:/testdata/output/test_cdb";
+    std::string cdbRootPath = "j:/output/test_cdb_lod11";
     logger << "Found " << cdbTiles.size() << " CDB tiles:" << logger.endl;
 
     renderJobList_t renderJobs;
@@ -219,6 +219,7 @@ int main(int argc, char **argv)
             renderJobs.push_back(renderJob);
         }
     }
+    logger << "Rendering " << renderJobs.size() << " CDB tiles." << logger.endl;
     renderInit(argc, argv, renderJobs);//objFiles);
     return 0;
 }

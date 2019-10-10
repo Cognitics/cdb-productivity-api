@@ -40,6 +40,7 @@ namespace scenegraph
 
     Scene::Scene(Scene *p) : parent(p), userData(NULL), hasVertexNormals(false), sharpEdges(false)
     {
+        faces.reserve(1000);
         if(p)
             p->children.push_back(this);
     }
@@ -317,10 +318,24 @@ namespace scenegraph
     bool Scene::buildStateFaces(void)
     {
         stateMap.clear();
-        for(size_t i = 0, c = faces.size(); i < c; ++i)
+        if(this->faceTextures.size()<=1)
         {
-            std::string key = faces.at(i).getGroupAndTextureKey();
-            stateMap[key].push_back(&faces.at(i));
+            if (faces.size() > 0)
+            {
+                std::string key = faces[0].getGroupAndTextureKey();
+                for (size_t i = 0, c = faces.size(); i < c; ++i)
+                {
+                    stateMap[key].push_back(&faces[i]);
+                }
+            }
+        }
+        else
+        {
+            for (size_t i = 0, c = faces.size(); i < c; ++i)
+            {
+                std::string key = faces[i].getGroupAndTextureKey();
+                stateMap[key].push_back(&faces[i]);
+            }
         }
         return true;
     }

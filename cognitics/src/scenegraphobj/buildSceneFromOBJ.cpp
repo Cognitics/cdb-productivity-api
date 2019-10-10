@@ -59,6 +59,10 @@ namespace scenegraph
             log.init("OBJSceneBuilder", this);
             log << ccl::LINFO;
             rootScene = currentScene = new scenegraph::Scene();
+            rootScene->faces.reserve(10000);
+            verts.reserve(10000);
+            uvs.reserve(10000);
+            vertexNormals.reserve(10000);
         }
 
         ~OBJSceneBuilder(void)
@@ -281,7 +285,8 @@ namespace scenegraph
                 //Polygon/Face
                 else if (parts[0] == "f")
                 {
-                    Face face;
+                    currentScene->faces.push_back(Face());
+                    Face &face = currentScene->faces.back();
                     face.materials.push_back(currentMaterial);
                     bool hasTextureCoord = false;
                     MappedTexture mt;
@@ -337,7 +342,7 @@ namespace scenegraph
                             }
                         }
                     }
-                    currentScene->faces.push_back(face);
+                    
                 }
                 else if (parts[0] == "mtllib" && parts.size() > 1)
                 {

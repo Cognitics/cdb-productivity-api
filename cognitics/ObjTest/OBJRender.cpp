@@ -53,17 +53,19 @@ namespace
     renderJobList_t renderJobs;
 }
 
-void resetAOIForScene(scenegraph::Scene *_scene)
+void resetAOIForScene(RenderJob job)
 {
-    double top = -DBL_MAX;
-    double bottom = DBL_MAX;
-    double left = DBL_MAX;
-    double right = -DBL_MAX;
+    double top = job.enuMaxY;
+    double bottom = job.enuMinY;
+    double left = job.enuMinX;
+    double right = job.enuMaxX;
+    /*
     double minZ = DBL_MAX;
     double maxZ = -DBL_MAX;
     extentsVisitor = scenegraph::ExtentsVisitor();
     extentsVisitor.visit(scene);
     extentsVisitor.getExtents(left, right, bottom, top, minZ, maxZ);
+    */
     setAOI(left, bottom, right, top);
 }
 
@@ -121,6 +123,23 @@ void writeJP2(RenderJob &job, unsigned char *pixels, int width, int height)
     GDALClose((GDALDatasetH)poDstDS);
 }
 
+void FlipVertically(unsigned char *pixels, int width, int height, int depth)
+{
+    unsigned char *copy = new unsigned char[width * height * depth];
+    memcpy(copy, pixels, width * height * depth);
+    for (int i = 0; i < height; i++)
+    {
+        int row_len = width * depth;        
+        int ii = ((height - 1) - i);
+        // copy the row
+        for (int j = 0; j < row_len; j++)
+        {
+            pixels[(i*row_len) + j] = copy[(ii*row_len) + j];
+        }
+    }    
+    delete copy;
+}
+
 void renderToFile(RenderJob &job)
 {
     int width = 1024;
@@ -132,10 +151,12 @@ void renderToFile(RenderJob &job)
     scene = new scenegraph::Scene();
     for (auto&&obj : job.objFiles)
     {
+        std::cout << "s";
         scenegraph::Scene *childScene = scenegraph::buildSceneFromOBJ(obj, true);
         scene->addChild(childScene);
+        std::cout << "S";
     }
-    resetAOIForScene(scene);
+    resetAOIForScene(job);
 
     // Build the texture that will serve as the depth attachment for the framebuffer.
     GLuint depth_texture;
@@ -226,23 +247,25 @@ void renderToFile(RenderJob &job)
     glDisable(GL_BLEND);
     glPopMatrix();
     glutSwapBuffers();
-
+    std::cout << "i";
     unsigned char *pixels = new unsigned char[width * height * depth];
     glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
+    std::cout << "o";
+    FlipVertically(pixels, width, height, 3);
+    /*
     ip::ImageInfo info;
     info.width = width;
     info.height = height;
     info.depth = depth;
     info.interleaved = true;
-    info.dataType = ip::ImageInfo::UBYTE;
+    info.dataType = ip::ImageInfo::UBYTE;    
     ccl::binary buf;
     for (int i = 0; i < (width * height * depth); i++)
         buf.push_back(pixels[i]);
-    ip::FlipVertically(info, buf);
     std::string pngName = job.cdbFilename + ".png";
     logger << "Writing " << pngName << logger.endl;
     ip::WritePNG24(pngName, info, buf);
-
+    */
     writeJP2(job, pixels, width, height);
     delete pixels;
 
@@ -299,7 +322,7 @@ extentsVisitor.getExtents(left, right, bottom, top, minZ, maxZ);
 
 #endif
 
-bool renderingToFile = false;
+bool renderingToFile = true;
 
 
 bool renderInit(int argc, char **argv, renderJobList_t &jobs)//std::vector<ccl::FileInfo> files, scenegraph::Scene *_fixedScene)
@@ -370,7 +393,7 @@ void renderScene(void)
             scenegraph::Scene *childScene = scenegraph::buildSceneFromOBJ(obj, true);
             scene->addChild(childScene);
         }
-        resetAOIForScene(scene);
+        resetAOIForScene(job);
     }
     /*
     if (!scene)
@@ -545,7 +568,7 @@ void processNormalKeys(unsigned char key, int xx, int yy)
                 scenegraph::Scene *childScene = scenegraph::buildSceneFromOBJ(obj, true);
                 scene->addChild(childScene);
             }
-            resetAOIForScene(scene);
+            resetAOIForScene(job);
         }
         break;
     }
