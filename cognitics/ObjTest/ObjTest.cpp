@@ -13,7 +13,8 @@
 #include "cdb_tile/Tile.h"
 ccl::ObjLog logger;
 
-int getLODFromFilename(std::string filename)
+
+int getLODFromFilename(const std::string &filename)
 {
     if (ccl::stringEndsWith(filename, ".obj", false))
     {
@@ -34,8 +35,9 @@ int main(int argc, char **argv)
     logger.init("main");
     logger << ccl::LINFO;
 
-    std::map<sfa::Polygon *, ccl::FileInfo> bestTileLOD;
+    std::map<sfa::Geometry *, ccl::FileInfo> bestTileLOD;
     sfa::BSP bsp;
+    bsp.targetCount = 1;
     std::map<std::string, int> highestTileLODNum;
     std::map<std::string, std::string> highestTileLODFilename;
 
@@ -47,7 +49,7 @@ int main(int argc, char **argv)
         if (ccl::stringEndsWith(fi.getFileName(), ".obj"))
         {
             int lod = getLODFromFilename(fi.getFileName());
-            logger << fi.getFileName() << " is LOD " << lod << logger.endl;
+            //logger << fi.getFileName() << " is LOD " << lod << logger.endl;
             if (highestTileLODNum.find(fi.getDirName()) == highestTileLODNum.end())
             {
                 highestTileLODNum[fi.getDirName()] = lod;
@@ -69,16 +71,6 @@ int main(int argc, char **argv)
         if (objFiles.size() > 5)
             break;
     }
-#if 0
-    
-    double lat = 47;
-    double lon = -120;
-    double elev = 0;
-    //ltp_ellipsoid->GeodeticToLocal(lat, lon, elev, north, east, up);
-    //ltp_ellipsoid->LocalToGeodetic(north, east, up, lat, lon, elev)
-
-
-#endif
     double origin_lat = 39.05011;
     double origin_lon = -85.53082;
     auto ltp_ellipsoid = new Cognitics::CoordinateSystems::EllipsoidTangentPlane(origin_lat, origin_lon);
@@ -104,8 +96,13 @@ int main(int argc, char **argv)
         double maxZ = -DBL_MAX;
         extentsVisitor = scenegraph::ExtentsVisitor();
         extentsVisitor.visit(scene);
-        extentsVisitor.getExtents(left, right, bottom, top, minZ, maxZ);
-
+        if(!extentsVisitor.getExtents(left, right, bottom, top, minZ, maxZ) ||
+            top <= bottom ||
+            right <= left)
+        {
+            continue;
+        }
+        logger << fi.getBaseName() << " : " << left << " <-> " << right << " | " << top << " ^ " << bottom << logger.endl;
         dbLeft = std::min<double>(left, dbLeft);
         dbRight = std::max<double>(right,dbRight);
         dbBottom = std::min<double>(bottom, dbBottom);
@@ -126,6 +123,8 @@ int main(int argc, char **argv)
         bsp.addGeometry(aoi_poly);
         delete scene;
     }
+    std::map<sfa::Geometry *, sfa::LineString *> envelopes;
+    bsp.generate(envelopes);
 
     double dbLeftLon = 0;
     double dbRightLon = 0;
@@ -134,8 +133,13 @@ int main(int argc, char **argv)
     double dbMinZElev = 0;
     double dbMaxZElev = 0;
     
-    ltp_ellipsoid->LocalToGeodetic(dbBottom, dbLeft, dbMinZ, dbBottomLat, dbLeftLon, dbMinZElev);
-    ltp_ellipsoid->LocalToGeodetic(dbTop, dbRight, dbMaxZ, dbTopLat, dbRightLon, dbMaxZElev);
+    ltp_ellipsoid->LocalToGeodetic(dbLeft, dbBottom, 0, dbBottomLat, dbLeftLon, dbMinZElev);
+    double e, n, u;
+    ltp_ellipsoid->GeodeticToLocal(dbBottomLat, dbLeftLon, 0, e, n, u);
+
+
+
+    ltp_ellipsoid->LocalToGeodetic(dbRight, dbTop, dbMaxZ, dbTopLat, dbRightLon, dbMaxZElev);
 
     logger << "Database Extents (Cartesian):" << logger.endl;
     logger << "LL: " << dbLeft << " , " << dbBottom << logger.endl;
@@ -153,13 +157,67 @@ int main(int argc, char **argv)
     cognitics::cdb::Coordinates cdbUR(dbTopLat,dbRightLon);
     cognitics::cdb::CoordinatesRange cdbAOI(cdbLL, cdbUR);
     cdbTiles = cognitics::cdb::generate_tiles(cdbAOI, cognitics::cdb::Dataset::Imagery, lod);
-    //lod.cognitics::cdb::LODRange cdbLODRange(cognitics::cdb::LOD(-10), cognitics::cdb::LOD(8));
-    //cognitics::cdb::generate_tiles(cdbTiles, cdbAOI, cognitics::cdb::Dataset::Imagery, cdbLODRange);
+
+    std::string cdbRootPath = "j:/output/test_cdb";
     logger << "Found " << cdbTiles.size() << " CDB tiles:" << logger.endl;
+
+    renderJobList_t renderJobs;
     for (auto&& tile : cdbTiles)
     {
-        logger << "\t" << tile.getFilename() << logger.endl;
+        RenderJob renderJob(tile);
+        sfa::BSPCollectGeometriesVisitor bspVisitor;
+        std::string absoluteFilePath = ccl::joinPaths(cdbRootPath, tile.getFilename());
+        ccl::FileInfo tileFi(absoluteFilePath);
+        ccl::makeDirectory(tileFi.getDirName());        
+        logger << "\t" << absoluteFilePath << logger.endl;
+        //get all scenes that intersect with this tile.
+        //bsp.
+        //
+        double tileLocalBottom = 0;
+        double tileLocalTop = 0;
+        double tileLocalLeft = 0;
+        double tileLocalRight = 0;
+        double localZ;
+        ltp_ellipsoid->GeodeticToLocal(tile.getCoordinates().low().latitude().value(),
+            tile.getCoordinates().low().longitude().value(),
+            0,
+            tileLocalLeft,
+            tileLocalBottom,
+            localZ);
+        ltp_ellipsoid->GeodeticToLocal(tile.getCoordinates().high().latitude().value(),
+            tile.getCoordinates().high().longitude().value(),
+            0,
+            tileLocalRight,
+            tileLocalTop,
+            localZ);
+        renderJob.enuMinX = tileLocalLeft;
+        renderJob.enuMaxX = tileLocalRight;
+        renderJob.enuMinY = tileLocalBottom;
+        renderJob.enuMaxY = tileLocalTop;
+
+        logger << "Tile Extents (Cartesian):" << logger.endl;
+        logger << "LL: " << tileLocalLeft << " , " << tileLocalBottom << logger.endl;
+        logger << "UR: " << tileLocalRight << " , " << tileLocalTop << logger.endl;
+
+        bspVisitor.setBounds(tileLocalLeft,
+            tileLocalBottom, 
+            tileLocalRight,
+            tileLocalTop);
+        bspVisitor.visiting(&bsp);
+        scenegraph::Scene *parentScene = new scenegraph::Scene();
+        for (auto&& geometry : bspVisitor.results)
+        {            
+            std::string sourceOBJ = bestTileLOD[geometry].getFileName();
+            logger << "\t\tUsing " << sourceOBJ << " as source file." << logger.endl;
+            renderJob.objFiles.push_back(sourceOBJ);
+            //scenegraph::Scene *childScene = scenegraph::buildSceneFromOBJ(sourceOBJ, true);
+            //parentScene->addChild(childScene);
+        }
+        if (!renderJob.objFiles.empty())
+        {
+            renderJobs.push_back(renderJob);
+        }
     }
-    renderInit(argc, argv, objFiles);
+    renderInit(argc, argv, renderJobs);//objFiles);
     return 0;
 }

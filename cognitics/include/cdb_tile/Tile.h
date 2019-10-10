@@ -17,9 +17,20 @@ namespace cdb {
 
 class Tile
 {
-
-    //TileCoordinates coordinates;
     CoordinatesRange coordinates;
+public:
+    const CoordinatesRange& getCoordinates() const
+    {
+        return coordinates;
+    }
+
+    void setCoordinates(const CoordinatesRange& coordinates)
+    {
+        this->coordinates = coordinates;
+    }
+
+    Tile() {}
+private:
     Dataset dataset;
     int lod;
     uint32_t uref;

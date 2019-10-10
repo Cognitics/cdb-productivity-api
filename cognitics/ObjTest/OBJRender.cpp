@@ -41,6 +41,8 @@ namespace
     scenegraph::Scene *scene = NULL;
     scenegraph::SimpleGLRenderVisitor renderVisitor("");
     scenegraph::ExtentsVisitor extentsVisitor;
+    scenegraph::Scene *fixedScene = NULL;
+    renderJobList_t renderJobs;
 }
 
 void setAOI(double llx, double lly, double urx, double  ury)
@@ -52,16 +54,18 @@ void setAOI(double llx, double lly, double urx, double  ury)
     aoi_changed = true;
 }
 
-
-int currentFileNum = 0;
-std::vector<ccl::FileInfo> renderFiles;
-void renderToFile()
+void renderToFile(RenderJob &job)
 {
     int width = 1024;
     int height = 1024;
     int depth = 3;
 
-
+    scenegraph::Scene *scene = new scenegraph::Scene();
+    for (auto&&obj : job.objFiles)
+    {
+        scenegraph::Scene *childScene = scenegraph::buildSceneFromOBJ(obj, true);
+        scene->addChild(childScene);
+    }
 
     // Build the texture that will serve as the depth attachment for the framebuffer.
     GLuint depth_texture;
@@ -165,18 +169,11 @@ void renderToFile()
     for (int i = 0; i < (width * height * depth); i++)
         buf.push_back(pixels[i]);
     ip::FlipVertically(info, buf);
-    std::string basePath = "f:/MUTC_50m_OBJ/output";
-    std::string pngName = ccl::joinPaths(basePath, renderFiles[currentFileNum].getBaseName() + ".png");
-
+    std::string pngName = job.cdbFilename + ".png";
+    logger << "Writing " << pngName << logger.endl;
     ip::WritePNG24(pngName, info, buf);
     delete pixels;
-    currentFileNum++;
-    if (renderFiles.size() <= currentFileNum)
-        exit(0);
-    if(scene)
-        delete scene;
-
-    scene = scenegraph::buildSceneFromOBJ(renderFiles[currentFileNum].getFileName(), true);
+    
     double top = -DBL_MAX;
     double bottom = DBL_MAX;
     double left = DBL_MAX;
@@ -187,10 +184,12 @@ void renderToFile()
     extentsVisitor.visit(scene);
     extentsVisitor.getExtents(left, right, bottom, top, minZ, maxZ);
     setAOI(left, bottom, right, top);
+    delete scene;
 }
 
 scenegraph::Scene *getCurrentScene()
 {
+#if 0
     if (scene)
         return scene;
     /*
@@ -203,8 +202,10 @@ scenegraph::Scene *getCurrentScene()
         return scene;
     }
     */
-    
-    scene = scenegraph::buildSceneFromOBJ(renderFiles[currentFileNum].getFileName(), true);
+    if (fixedScene)
+        scene = fixedScene;
+    else
+        scene = scenegraph::buildSceneFromOBJ(renderFiles[currentFileNum].getFileName(), true);
     double top = -DBL_MAX;
     double bottom = DBL_MAX;
     double left = DBL_MAX;
@@ -217,6 +218,8 @@ scenegraph::Scene *getCurrentScene()
     setAOI(left, bottom, right, top);
     
     return scene;
+#endif
+    return NULL;
 }
 
 #if 0
@@ -235,10 +238,13 @@ extentsVisitor.getExtents(left, right, bottom, top, minZ, maxZ);
 
 bool renderingToFile = false;
 
-bool renderInit(int argc, char **argv, std::vector<ccl::FileInfo> files)
+
+bool renderInit(int argc, char **argv, renderJobList_t &jobs)//std::vector<ccl::FileInfo> files, scenegraph::Scene *_fixedScene)
 {
+    renderJobs = jobs;
+    //fixedScene = _fixedScene;
     //glutInitDisplayMode(GLUT_RGB);
-    renderFiles = files;
+    //renderFiles = files;
     //scene = _scene;
     logger.init("OBJ Render");
     logger << ccl::LINFO;
@@ -280,13 +286,24 @@ bool renderInit(int argc, char **argv, std::vector<ccl::FileInfo> files)
 
 void renderScene(void)
 {
-    scene = getCurrentScene();
+    if(renderJobs.empty())
+    {
+        exit(0);
+    }
+    RenderJob job = renderJobs.back();
+    renderJobs.pop_back();
+    
+    renderToFile(job);
+
+    //scene = getCurrentScene();
+    /*
     if (!scene)
         exit(0);
     if (renderingToFile)
     {
         renderToFile();
     }
+    */
     // Clear Color and Depth Buffers
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     //glClearColor(1.0f, 1.0f, 0.0f, 1.0f); //Chromakey background

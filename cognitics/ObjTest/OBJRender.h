@@ -2,10 +2,33 @@
 
 #include <string>
 #include <vector>
+#include "cdb_tile/Tile.h"
+
+class RenderJob
+{
+public:
+    std::string cdbFilename;
+    double enuMinX;
+    double enuMinY;
+    double enuMaxX;
+    double enuMaxY;
+    cognitics::cdb::Tile cdbTile;
+    std::vector<std::string> objFiles;
+
+    RenderJob(const cognitics::cdb::Tile tile) : cdbTile(tile)
+    {
+        enuMinX = 0;
+        enuMinY = 0;
+        enuMaxX = 0;
+        enuMaxY = 0;
+    }
+};
+
+typedef std::list<RenderJob> renderJobList_t;
 
 void setAOI(double llx, double lly, double urx, double  ury);
 
-bool renderInit(int argc, char **argv, std::vector<ccl::FileInfo> objFiles);
+bool renderInit(int argc, char **argv, renderJobList_t &jobs) ;
 void pressKey(int key, int xx, int yy);
 void releaseKey(int key, int x, int y);
 void renderScene(void);

@@ -355,8 +355,8 @@ namespace scenegraph
                 {
 
                 }
-
             }
+            //if(Sc)
             return true;
         }
 
