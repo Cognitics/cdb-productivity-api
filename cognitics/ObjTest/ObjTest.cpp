@@ -42,7 +42,7 @@ int main(int argc, char **argv)
     std::map<std::string, std::string> highestTileLODFilename;
 
     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
-    std::vector<ccl::FileInfo> files = ccl::FileInfo::getAllFiles("f:/MUTC_50m_OBJ/Data", "*.*", true);
+    std::vector<ccl::FileInfo> files = ccl::FileInfo::getAllFiles("E:/TestData/MUTC_50m_OBJ/Data", "*.*", true);
     std::vector<ccl::FileInfo> objFiles;
     for (auto&& fi : files)
     {
@@ -68,8 +68,8 @@ int main(int argc, char **argv)
     for (auto&& fileLODPair : highestTileLODFilename)
     {
         objFiles.push_back(fileLODPair.second);
-        if (objFiles.size() > 5)
-            break;
+        //if (objFiles.size() > 5)
+        //    break;
     }
     double origin_lat = 39.05011;
     double origin_lon = -85.53082;
@@ -158,7 +158,7 @@ int main(int argc, char **argv)
     cognitics::cdb::CoordinatesRange cdbAOI(cdbLL, cdbUR);
     cdbTiles = cognitics::cdb::generate_tiles(cdbAOI, cognitics::cdb::Dataset::Imagery, lod);
 
-    std::string cdbRootPath = "j:/output/test_cdb";
+    std::string cdbRootPath = "e:/testdata/output/test_cdb";
     logger << "Found " << cdbTiles.size() << " CDB tiles:" << logger.endl;
 
     renderJobList_t renderJobs;
@@ -168,7 +168,8 @@ int main(int argc, char **argv)
         sfa::BSPCollectGeometriesVisitor bspVisitor;
         std::string absoluteFilePath = ccl::joinPaths(cdbRootPath, tile.getFilename());
         ccl::FileInfo tileFi(absoluteFilePath);
-        ccl::makeDirectory(tileFi.getDirName());        
+        ccl::makeDirectory(tileFi.getDirName());
+        renderJob.cdbFilename = absoluteFilePath;
         logger << "\t" << absoluteFilePath << logger.endl;
         //get all scenes that intersect with this tile.
         //bsp.

@@ -29,7 +29,28 @@ public:
         this->coordinates = coordinates;
     }
 
-    Tile() {}
+    Tile() : lod(0),
+        uref(0),
+        rref(0),
+        cs1(1),
+        cs2(1),
+        postSpaceX(0),
+        postSpaceY(0)
+    {
+        
+    }
+
+    Tile(int lod, uint32_t uref, uint32_t rref, uint32_t cs1, uint32_t cs2, double post_space_x, double post_space_y)
+        : lod(lod),
+          uref(uref),
+          rref(rref),
+          cs1(cs1),
+          cs2(cs2),
+          postSpaceX(post_space_x),
+          postSpaceY(post_space_y)
+    {
+    }
+
 private:
     Dataset dataset;
     int lod;
@@ -37,7 +58,12 @@ private:
     uint32_t rref;
     uint32_t cs1;
     uint32_t cs2;
+
+
 public:
+    double postSpaceX;
+    double postSpaceY;
+
     const Dataset& getDataset() const
     {
         return dataset;

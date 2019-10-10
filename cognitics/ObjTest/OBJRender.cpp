@@ -11,6 +11,14 @@
 #include "OBJRender.h"
 #include "ip/pngwrapper.h"
 
+#pragma warning ( push )
+#pragma warning ( disable : 4251 )        // C4251: 'GDALColorTable::aoEntries' : class 'std::vector<_Ty>' needs to have dll-interface to be used by clients of class 'GDALColorTable'
+#include "gdal_priv.h"
+#include "ogr_api.h"
+#include "ogr_spatialref.h"
+#pragma warning ( pop )
+
+
 namespace
 {
     ccl::ObjLog logger;
@@ -45,6 +53,20 @@ namespace
     renderJobList_t renderJobs;
 }
 
+void resetAOIForScene(scenegraph::Scene *_scene)
+{
+    double top = -DBL_MAX;
+    double bottom = DBL_MAX;
+    double left = DBL_MAX;
+    double right = -DBL_MAX;
+    double minZ = DBL_MAX;
+    double maxZ = -DBL_MAX;
+    extentsVisitor = scenegraph::ExtentsVisitor();
+    extentsVisitor.visit(scene);
+    extentsVisitor.getExtents(left, right, bottom, top, minZ, maxZ);
+    setAOI(left, bottom, right, top);
+}
+
 void setAOI(double llx, double lly, double urx, double  ury)
 {
     window_llx = llx;
@@ -54,18 +76,66 @@ void setAOI(double llx, double lly, double urx, double  ury)
     aoi_changed = true;
 }
 
+void writeJP2(RenderJob &job, unsigned char *pixels, int width, int height)
+{
+    const char *pszFormat = "GTiff";
+    GDALDriver *poDriver;
+    char **papszMetadata;
+    poDriver = GetGDALDriverManager()->GetDriverByName(pszFormat);
+    if (poDriver == NULL)
+    {
+        logger << "Unable to get JP2OpenJPEG Driver." << logger.endl;
+        return;
+    }
+    char **papszOptions = NULL;
+    auto poDstDS = poDriver->Create((job.cdbFilename + ".tif").c_str(), width, height, 3, GDT_Byte,
+        papszOptions);
+    //GDALCreate("JP2OpenJPEG", );
+    const cognitics::cdb::CoordinatesRange cdbExtents = job.cdbTile.getCoordinates();
+    double adfGeoTransform[6];
+    adfGeoTransform[0] =  cdbExtents.low().longitude().value();//left geo
+    adfGeoTransform[1] = job.cdbTile.postSpaceX; //post spacing x
+    adfGeoTransform[2] = 0;
+    adfGeoTransform[3] = cdbExtents.high().latitude().value(); //top geo
+    adfGeoTransform[4] = 0;
+    adfGeoTransform[5] = job.cdbTile.postSpaceY * -1; //post spacing y
+
+    OGRSpatialReference oSRS;
+    char *pszSRS_WKT = NULL;
+    GDALRasterBand *poBand;
+    poDstDS->SetGeoTransform(adfGeoTransform);
+    oSRS.SetWellKnownGeogCS("WGS84");
+    oSRS.exportToWkt(&pszSRS_WKT);
+    poDstDS->SetProjection(pszSRS_WKT);
+    CPLFree(pszSRS_WKT);
+    poBand = poDstDS->GetRasterBand(1);//Red
+    poBand->RasterIO(GF_Write, 0, 0, width, height,
+        pixels, width, height, GDT_Byte, 3, width*3);
+    poBand = poDstDS->GetRasterBand(2);//Green
+    poBand->RasterIO(GF_Write, 0, 0, width, height,
+        pixels+1, width, height, GDT_Byte, 3, width * 3);
+    poBand = poDstDS->GetRasterBand(3);//Blue
+    poBand->RasterIO(GF_Write, 0, 0, width, height,
+        pixels+2, width, height, GDT_Byte, 3, width * 3);
+    /* Once we're done, close properly the dataset */
+    GDALClose((GDALDatasetH)poDstDS);
+}
+
 void renderToFile(RenderJob &job)
 {
     int width = 1024;
     int height = 1024;
     int depth = 3;
 
-    scenegraph::Scene *scene = new scenegraph::Scene();
+    if (scene)
+        delete scene;
+    scene = new scenegraph::Scene();
     for (auto&&obj : job.objFiles)
     {
         scenegraph::Scene *childScene = scenegraph::buildSceneFromOBJ(obj, true);
         scene->addChild(childScene);
     }
+    resetAOIForScene(scene);
 
     // Build the texture that will serve as the depth attachment for the framebuffer.
     GLuint depth_texture;
@@ -172,19 +242,12 @@ void renderToFile(RenderJob &job)
     std::string pngName = job.cdbFilename + ".png";
     logger << "Writing " << pngName << logger.endl;
     ip::WritePNG24(pngName, info, buf);
+
+    writeJP2(job, pixels, width, height);
     delete pixels;
-    
-    double top = -DBL_MAX;
-    double bottom = DBL_MAX;
-    double left = DBL_MAX;
-    double right = -DBL_MAX;
-    double minZ = DBL_MAX;
-    double maxZ = -DBL_MAX;
-    extentsVisitor = scenegraph::ExtentsVisitor();
-    extentsVisitor.visit(scene);
-    extentsVisitor.getExtents(left, right, bottom, top, minZ, maxZ);
-    setAOI(left, bottom, right, top);
+
     delete scene;
+    scene = NULL;
 }
 
 scenegraph::Scene *getCurrentScene()
@@ -241,6 +304,9 @@ bool renderingToFile = false;
 
 bool renderInit(int argc, char **argv, renderJobList_t &jobs)//std::vector<ccl::FileInfo> files, scenegraph::Scene *_fixedScene)
 {
+    GDALDataset  *poDataset;
+    GDALAllRegister();
+
     renderJobs = jobs;
     //fixedScene = _fixedScene;
     //glutInitDisplayMode(GLUT_RGB);
@@ -291,11 +357,21 @@ void renderScene(void)
         exit(0);
     }
     RenderJob job = renderJobs.back();
-    renderJobs.pop_back();
-    
-    renderToFile(job);
-
-    //scene = getCurrentScene();
+    if (renderingToFile)
+    {
+        renderJobs.pop_back();
+        renderToFile(job);
+    }
+    if(!scene)
+    {
+        scene = new scenegraph::Scene();
+        for (auto&&obj : job.objFiles)
+        {
+            scenegraph::Scene *childScene = scenegraph::buildSceneFromOBJ(obj, true);
+            scene->addChild(childScene);
+        }
+        resetAOIForScene(scene);
+    }
     /*
     if (!scene)
         exit(0);
@@ -447,9 +523,30 @@ void processNormalKeys(unsigned char key, int xx, int yy)
         break;
     case 'r':
     {
-        renderingToFile = true;
-
-        
+        renderingToFile = true;        
+        break;
+    }
+    case 'n':
+    {
+        if(renderJobs.empty())
+        {
+            logger << "Out of render jobs, cannot advance." << logger.endl;
+        }
+        else
+        {
+            RenderJob job = renderJobs.back();
+            logger << "Rendering " << job.cdbFilename << logger.endl;
+            renderJobs.pop_back();
+            if(scene)
+                delete scene;
+            scene = new scenegraph::Scene();
+            for (auto&&obj : job.objFiles)
+            {
+                scenegraph::Scene *childScene = scenegraph::buildSceneFromOBJ(obj, true);
+                scene->addChild(childScene);
+            }
+            resetAOIForScene(scene);
+        }
         break;
     }
     case ' ':

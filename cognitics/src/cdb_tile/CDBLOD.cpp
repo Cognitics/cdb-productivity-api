@@ -86,6 +86,8 @@ std::vector<Tile> generate_tiles(const CoordinatesRange &geographicBounds, Datas
                         continue;
                     CoordinatesRange tileBounds(tile_west, tile_east, tile_south, tile_north);
                     Tile tile(tileBounds, ds, lod.value(),uref,rref);
+                    tile.postSpaceX = col_width / 1024;
+                    tile.postSpaceY = rowHeight / 1024;
                     result.push_back(tile);
                 }
             }
