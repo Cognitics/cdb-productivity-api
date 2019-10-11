@@ -3,18 +3,86 @@
 #include <ccl/Timer.h>
 #include "scenegraphobj/scenegraphobj.h"
 #include <scenegraph/ExtentsVisitor.h>
+#include <scenegraph/TransformVisitor.h>
+#include "fstream"
 
 #include "ccl/StringUtils.h"
 #include "Obj2CDB.h"
 #include "OBJRender.h"
 #include "ip/pngwrapper.h"
 #include  "sfa/BSP.h"
+#include "rapidxml/rapidxml.hpp"
+
+using namespace rapidxml;
+bool Obj2CDB::readMetadataXML(const std::string &sourceDir)
+{
+    xml_document<> doc;
+    xml_node<> * root_node;
+    // Read the xml file into a vector
+    std::ifstream theFile(sourceDir.c_str());
+    std::vector<char> buffer((std::istreambuf_iterator<char>(theFile)), std::istreambuf_iterator<char>());
+    buffer.push_back('\0');
+    // Parse the buffer using the xml file parsing library into doc 
+    doc.parse<0>(&buffer[0]);
+    // Find our root node
+    root_node = doc.first_node("ModelMetadata");
+    for (xml_node<> * node = root_node->first_node(0);
+        node;
+        node = node->next_sibling())
+    {
+        if (ccl::stringCompareNoCase(node->name(), "SRS")==0)
+        {
+            std::string srs_string = node->value();
+            //Parse out the ENU as the first 3 bytes
+            if (ccl::stringStartsWith(srs_string, "ENU:", false))
+            {
+                std::vector<std::string> parts = ccl::splitString(srs_string.substr(4), ",");
+                    if (parts.size() == 2)
+                    {
+                        dbOriginLat = atof(parts[0].c_str());
+                        dbOriginLon = atof(parts[1].c_str());
+
+                    }
+                    else
+                    {
+                        log << "Unable to parse SRS in metadata.xml" << log.endl;
+                        return false;
+                    }
+            }
+            else
+            {
+                log << "Unable to parse SRS in metadata.xml" << log.endl;
+                return false;
+            }
+        }
+        else if (ccl::stringCompareNoCase(node->name(), "SRSOrigin")==0)
+        {
+            std::string srs_offset_string = node->value();
+            std::vector<std::string> parts = ccl::splitString(srs_offset_string, ",");
+            if (parts.size() == 3)
+            {
+                offsetX = atof(parts[0].c_str());
+                offsetY = atof(parts[1].c_str());
+                offsetZ = atof(parts[2].c_str());
+            }
+            else
+            {
+                log << "Unable to parse SRSOrigin in metadata.xml" << log.endl;
+                return false;
+            }
+        }
+    }
+    
+    return true;
+}
 
 
 Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
     const std::string &outputCDBDir) :
         objRootDir(inputOBJDir), cdbOutputDir(outputCDBDir)
 {
+    dbOriginLat = 39.05011;
+    dbOriginLon = -85.53082;
     ltp_ellipsoid = NULL;
     dbTop = -DBL_MAX;
     dbBottom = DBL_MAX;
@@ -22,10 +90,12 @@ Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
     dbRight = -DBL_MAX;
     dbMinZ = DBL_MAX;
     dbMaxZ = -DBL_MAX;
+    offsetX = 0;
+    offsetY = 0;
+    offsetZ = 0;
 
     //Read metadata TODO:Add XML parsing!!!!!!!!!
-    dbOriginLat = 39.05011;
-    dbOriginLon = -85.53082;
+    readMetadataXML(ccl::joinPaths(inputOBJDir, "metadata.xml"));
 
     ltp_ellipsoid = new Cognitics::CoordinateSystems::EllipsoidTangentPlane(dbOriginLat, dbOriginLon);
     collectHighestLODTiles();
@@ -77,6 +147,14 @@ void Obj2CDB::buildBSP()
         {
             continue;
         }
+        if(offsetX || offsetY || offsetZ)
+        {
+            sfa::Matrix matrix;
+            matrix.PushTranslate(offsetX, offsetY, offsetZ);
+            scenegraph::TransformVisitor transform_visitor(matrix);
+            transform_visitor.visit(scene);
+        }
+
         log << fi.getBaseName() << " : " << left << " <-> " << right << " | " << top << " ^ " << bottom << log.endl;
         dbLeft = std::min<double>(left, dbLeft);
         dbRight = std::max<double>(right, dbRight);
@@ -149,8 +227,9 @@ void Obj2CDB::collectHighestLODTiles()
     for (auto&& fileLODPair : highestTileLODFilename)
     {
         objFiles.push_back(fileLODPair.second);
-        if (objFiles.size() > 10)
-            break;
+        //"OBJ count limit enabled!!!!"
+        //if (objFiles.size() > 10)
+        //    break;
     }
 
 
@@ -196,6 +275,9 @@ renderJobList_t Obj2CDB::collectRenderJobs(cognitics::cdb::Dataset dataset, int 
         renderJob.enuMaxX = tileLocalRight;
         renderJob.enuMinY = tileLocalBottom;
         renderJob.enuMaxY = tileLocalTop;
+        renderJob.offsetX = offsetX;
+        renderJob.offsetY = offsetY;
+        renderJob.offsetZ = offsetZ;
 
         log << "Tile Extents (Cartesian):" << log.endl;
         log << "LL: " << tileLocalLeft << " , " << tileLocalBottom << log.endl;

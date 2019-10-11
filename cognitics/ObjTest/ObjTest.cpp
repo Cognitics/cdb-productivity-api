@@ -27,8 +27,10 @@ int main(int argc, char **argv)
     logger << ccl::LINFO;
     GDALAllRegister();
     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
-    std::string rootCDBOutput = "E:/TestData/output/cdbRefactored2";
-    std::string objRootDir = "E:/TestData/MUTC_50m_OBJ";
+    //std::string rootCDBOutput = "E:/TestData/output/cdbRefactored2";
+    //std::string objRootDir = "E:/TestData/MUTC_50m_OBJ";
+    std::string rootCDBOutput = "j:/output/mutc_cdb_xml";
+    std::string objRootDir = "j:/MUTC_OBJ/MUTC_50m_OBJ";
     Obj2CDB obj2_cdb(objRootDir, rootCDBOutput);
     /*
     renderJobList_t demJobs = obj2_cdb.collectRenderJobs(cognitics::cdb::Dataset::Elevation, 11);

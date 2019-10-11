@@ -82,16 +82,24 @@ void setAOI(double llx, double lly, double urx, double  ury)
 
 void writeJP2(RenderJob &job, unsigned char *pixels, int width, int height)
 {
-    const char *pszFormat = "GTiff";
-    GDALDriver *poDriver;
-    poDriver = GetGDALDriverManager()->GetDriverByName(pszFormat);
-    if (poDriver == NULL)
+    const char *pszFormat = "MEM";
+    GDALDriver *poMemDriver;
+    poMemDriver = GetGDALDriverManager()->GetDriverByName(pszFormat);
+    if (poMemDriver == NULL)
     {
         logger << "Unable to get JP2OpenJPEG Driver." << logger.endl;
         return;
     }
+    GDALDriver *poJP2Driver;
+    poJP2Driver = GetGDALDriverManager()->GetDriverByName("JP2OpenJPEG");
+    if (poJP2Driver == NULL)
+    {
+        logger << "Unable to get JP2OpenJPEG Driver." << logger.endl;
+        return;
+    }
+
     char **papszOptions = NULL;
-    auto poDstDS = poDriver->Create((job.cdbFilename + ".tif").c_str(), width, height, 3, GDT_Byte,
+    auto poDstDS = poMemDriver->Create("mem.tmp", width, height, 3, GDT_Byte,
         papszOptions);
     //GDALCreate("JP2OpenJPEG", );
     const cognitics::cdb::CoordinatesRange cdbExtents = job.cdbTile.getCoordinates();
@@ -120,6 +128,10 @@ void writeJP2(RenderJob &job, unsigned char *pixels, int width, int height)
     poBand = poDstDS->GetRasterBand(3);//Blue
     poBand->RasterIO(GF_Write, 0, 0, width, height,
         pixels+2, width, height, GDT_Byte, 3, width * 3);
+
+
+    GDALDataset *outDs = poJP2Driver->CreateCopy(job.cdbFilename.c_str(), poDstDS, 1, NULL, NULL, NULL);
+    GDALClose((GDALDatasetH)outDs);
     /* Once we're done, close properly the dataset */
     GDALClose((GDALDatasetH)poDstDS);
 }
@@ -141,8 +153,43 @@ void FlipVertically(unsigned char *pixels, int width, int height, int depth)
     delete copy;
 }
 
+
+void FlipVertically(float *grid, int width, int height)
+{
+    float *copy = new float[width * height];
+    memcpy(copy, grid, width * height * sizeof(float));
+    for (int i = 0; i < height; i++)
+    {
+        int row_len = width;
+        int ii = ((height - 1) - i);
+        // copy the row
+        for (int j = 0; j < row_len; j++)
+        {
+            grid[(i*row_len) + j] = copy[(ii*row_len) + j];
+        }
+    }
+    delete copy;
+}
+
+bool replace(std::string& str, const std::string& from, const std::string& to)
+{
+    size_t start_pos = str.find(from);
+    if (start_pos == std::string::npos)
+        return false;
+    str.replace(start_pos, from.length(), to);
+    return true;
+}
+
 bool writeDEM(RenderJob &job, float *grid, int width, int height)
 {
+
+    std::string demFileName = job.cdbFilename;
+    replace(demFileName, "004_Imagery", "001_Elevation");
+    replace(demFileName, "D004", "D001");
+    replace(demFileName, ".jp2", ".tif");
+    ccl::FileInfo fi(demFileName);
+    ccl::makeDirectory(fi.getDirName(), true);
+
     const char *pszFormat = "GTiff";
     GDALDriver *poDriver;
     poDriver = GetGDALDriverManager()->GetDriverByName(pszFormat);
@@ -152,7 +199,7 @@ bool writeDEM(RenderJob &job, float *grid, int width, int height)
         return false;
     }
     char **papszOptions = NULL;
-    auto poDstDS = poDriver->Create((job.cdbFilename + "_elev.tif").c_str(), width, height, 1, GDT_Float32,
+    auto poDstDS = poDriver->Create((demFileName).c_str(), width, height, 1, GDT_Float32,
         papszOptions);
     const cognitics::cdb::CoordinatesRange cdbExtents = job.cdbTile.getCoordinates();
     double adfGeoTransform[6];
@@ -180,7 +227,6 @@ bool writeDEM(RenderJob &job, float *grid, int width, int height)
     return true;
 }
 
-
 void renderToFile(RenderJob &job)
 {
     int width = 1024;
@@ -192,10 +238,15 @@ void renderToFile(RenderJob &job)
     scene = new scenegraph::Scene();
     for (auto&&obj : job.objFiles)
     {
-        std::cout << "s";
         scenegraph::Scene *childScene = scenegraph::buildSceneFromOBJ(obj, true);
+        if (job.offsetX || job.offsetY || job.offsetZ)
+        {
+            sfa::Matrix matrix;
+            matrix.PushTranslate(job.offsetX, job.offsetY, job.offsetZ);
+            scenegraph::TransformVisitor transform_visitor(matrix);
+            transform_visitor.visit(childScene);
+        }
         scene->addChild(childScene);
-        std::cout << "S";
     }
     resetAOIForScene(job);
 
@@ -305,10 +356,10 @@ void renderToFile(RenderJob &job)
             grid[i] = -32767.0;
         else
         {
-            double z_e = 2 * zFar*zNear / (zFar + zNear - (zFar - zNear)*(2 * grid[i] - 1));
-            grid[i] = z_e;
+            grid[i] = -1 * (zNear + (grid[i] * (zFar - zNear)));
         }
     }
+    FlipVertically(grid, width, height);
     writeDEM(job, grid, width, height);
     delete[] grid;
     /*

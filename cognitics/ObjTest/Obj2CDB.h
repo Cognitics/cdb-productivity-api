@@ -16,6 +16,9 @@ public:
     double enuMinY;
     double enuMaxX;
     double enuMaxY;
+    double offsetX;
+    double offsetY;
+    double offsetZ;
     cognitics::cdb::Tile cdbTile;
     std::vector<std::string> objFiles;
 
@@ -26,6 +29,9 @@ public:
         enuMinY = 0;
         enuMaxX = 0;
         enuMaxY = 0;
+        offsetX = 0;
+        offsetY = 0;
+        offsetZ = 0;
     }
 };
 typedef std::list<RenderJob> renderJobList_t;
@@ -49,6 +55,9 @@ class Obj2CDB
     double dbTopLat;
     double dbMinZElev;
     double dbMaxZElev;
+    double offsetX;
+    double offsetY;
+    double offsetZ;
 
     std::vector<ccl::FileInfo> objFiles;
     sfa::BSP bsp;
@@ -59,6 +68,7 @@ class Obj2CDB
     int getLODFromFilename(const std::string &filename);
     void collectHighestLODTiles();
     void buildBSP();
+    bool readMetadataXML(const std::string &sourceDir);
 public:
     Obj2CDB(const std::string &inputOBJDir,
         const std::string &outputCDBDir);
