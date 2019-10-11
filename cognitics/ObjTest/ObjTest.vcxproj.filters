@@ -24,9 +24,15 @@
     <ClCompile Include="OBJBuildDEM.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Obj2CDB.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="OBJRender.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Obj2CDB.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

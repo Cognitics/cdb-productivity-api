@@ -159,11 +159,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Obj2CDB.cpp" />
     <ClCompile Include="OBJBuildDEM.cpp" />
     <ClCompile Include="OBJRender.cpp" />
     <ClCompile Include="ObjTest.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Obj2CDB.h" />
     <ClInclude Include="OBJRender.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

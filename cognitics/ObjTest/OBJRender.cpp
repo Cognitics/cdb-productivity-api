@@ -6,7 +6,9 @@
 #include <scenegraph/ExtentsVisitor.h>
 
 #include <GL/glew.h>
+
 #include <GL/glut.h>
+#include <GL/freeglut_ext.h>
 #include <scenegraph_gl/scenegraph_gl.h>
 #include "OBJRender.h"
 #include "ip/pngwrapper.h"
@@ -82,7 +84,6 @@ void writeJP2(RenderJob &job, unsigned char *pixels, int width, int height)
 {
     const char *pszFormat = "GTiff";
     GDALDriver *poDriver;
-    char **papszMetadata;
     poDriver = GetGDALDriverManager()->GetDriverByName(pszFormat);
     if (poDriver == NULL)
     {
@@ -325,9 +326,8 @@ extentsVisitor.getExtents(left, right, bottom, top, minZ, maxZ);
 bool renderingToFile = true;
 
 
-bool renderInit(int argc, char **argv, renderJobList_t &jobs)//std::vector<ccl::FileInfo> files, scenegraph::Scene *_fixedScene)
+bool renderInit(int argc, char **argv, renderJobList_t &jobs)
 {
-    GDALDataset  *poDataset;
     GDALAllRegister();
 
     renderJobs = jobs;
@@ -377,7 +377,8 @@ void renderScene(void)
 {
     if(renderJobs.empty())
     {
-        exit(0);
+        glutLeaveMainLoop();
+        //exit(0);
     }
     RenderJob job = renderJobs.back();
     if (renderingToFile)

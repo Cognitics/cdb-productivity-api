@@ -3,7 +3,8 @@
 #include <string>
 #include <vector>
 #include "cdb_tile/Tile.h"
-
+#include "Obj2CDB.h"
+/*
 class RenderJob
 {
 public:
@@ -25,7 +26,7 @@ public:
 };
 
 typedef std::list<RenderJob> renderJobList_t;
-
+*/
 void setAOI(double llx, double lly, double urx, double  ury);
 
 bool renderInit(int argc, char **argv, renderJobList_t &jobs) ;
@@ -37,13 +38,3 @@ void processNormalKeys(unsigned char key, int xx, int yy);
 void mouseMove(int x, int y);
 void mouseButton(int button, int state, int x, int y);
 void RenderBitmapText(std::string str);
-
-
-class OBJBuildDEM
-{
-    ccl::ObjLog log;
-    RenderJob job;
-public:
-    OBJBuildDEM(RenderJob job);
-    bool build();
-};
