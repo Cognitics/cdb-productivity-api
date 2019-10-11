@@ -149,6 +149,8 @@ void Obj2CDB::collectHighestLODTiles()
     for (auto&& fileLODPair : highestTileLODFilename)
     {
         objFiles.push_back(fileLODPair.second);
+        if (objFiles.size() > 10)
+            break;
     }
 
 

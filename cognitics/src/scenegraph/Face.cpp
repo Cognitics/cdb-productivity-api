@@ -475,13 +475,11 @@ namespace scenegraph
         if(numVerts)
         {
             sfa::Point testpt(getVertN(0));
-            testpt.setZ(0);
             ring.addPoint(testpt);
         }
         for(int i=numVerts-1;i>=0;i--)
         {
             sfa::Point testpt(getVertN(i));
-            testpt.setZ(0);
             ring.addPoint(testpt);
         }
         

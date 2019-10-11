@@ -139,6 +139,8 @@ bool OBJBuildDEM::build()
     collector.visit(scene);
     //Make sure the bsp and visitor go out of scope first
     {
+        double enuPostSpaceX = (job.enuMaxX - job.enuMinX) / 1024;
+        double enuPostSpaceY = (job.enuMaxY - job.enuMinY) / 1024;
         sfa::BSP bsp;
         sfa::BSPCollectGeometriesVisitor bspVisitor;
         for (auto&& face : collector.getFaces())
@@ -150,16 +152,17 @@ bool OBJBuildDEM::build()
         for (int row = 0; row < height; row++)
         {
             int rowStart = row * width;
-            double postY = (job.cdbTile.postSpaceY * row) + job.enuMinY;
+            double postY = (enuPostSpaceY * row) + job.enuMinY;
             for (int col = 0; col < width; col++)
             {
                 int colIndex = rowStart + col;
-                double postX = (job.cdbTile.postSpaceX * col) + job.enuMinX;
+                double postX = (enuPostSpaceX * col) + job.enuMinX;
                 sfa::BSPCollectGeometriesVisitor bspVisitor;
-                bspVisitor.setBounds(postX - job.cdbTile.postSpaceX,
-                    postY - job.cdbTile.postSpaceY,
-                    postX + job.cdbTile.postSpaceX,
-                    postY + job.cdbTile.postSpaceY);
+                bspVisitor.setBounds(
+                    postX - enuPostSpaceX,
+                    postY - enuPostSpaceY,
+                    postX + enuPostSpaceX,
+                    postY + enuPostSpaceY);
                 bspVisitor.visiting(&bsp);
                 for (auto&& geometry : bspVisitor.results)
                 {

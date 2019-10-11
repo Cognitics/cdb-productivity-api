@@ -141,6 +141,46 @@ void FlipVertically(unsigned char *pixels, int width, int height, int depth)
     delete copy;
 }
 
+bool writeDEM(RenderJob &job, float *grid, int width, int height)
+{
+    const char *pszFormat = "GTiff";
+    GDALDriver *poDriver;
+    poDriver = GetGDALDriverManager()->GetDriverByName(pszFormat);
+    if (poDriver == NULL)
+    {
+        logger << "Unable to get GTiff Driver." << logger.endl;
+        return false;
+    }
+    char **papszOptions = NULL;
+    auto poDstDS = poDriver->Create((job.cdbFilename + "_elev.tif").c_str(), width, height, 1, GDT_Float32,
+        papszOptions);
+    const cognitics::cdb::CoordinatesRange cdbExtents = job.cdbTile.getCoordinates();
+    double adfGeoTransform[6];
+    adfGeoTransform[0] = cdbExtents.low().longitude().value();//left geo
+    adfGeoTransform[1] = job.cdbTile.postSpaceX; //post spacing x
+    adfGeoTransform[2] = 0;
+    adfGeoTransform[3] = cdbExtents.high().latitude().value(); //top geo
+    adfGeoTransform[4] = 0;
+    adfGeoTransform[5] = job.cdbTile.postSpaceY * -1; //post spacing y
+
+    OGRSpatialReference oSRS;
+    char *pszSRS_WKT = NULL;
+    GDALRasterBand *poBand;
+    poDstDS->SetGeoTransform(adfGeoTransform);
+    oSRS.SetWellKnownGeogCS("WGS84");
+    oSRS.exportToWkt(&pszSRS_WKT);
+    poDstDS->SetProjection(pszSRS_WKT);
+    CPLFree(pszSRS_WKT);
+    poBand = poDstDS->GetRasterBand(1);
+    poBand->RasterIO(GF_Write, 0, 0, width, height,
+        grid, width, height, GDT_Float32, 0, 0);
+
+    /* Once we're done, close properly the dataset */
+    GDALClose((GDALDatasetH)poDstDS);
+    return true;
+}
+
+
 void renderToFile(RenderJob &job)
 {
     int width = 1024;
@@ -167,7 +207,7 @@ void renderToFile(RenderJob &job)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
@@ -253,6 +293,24 @@ void renderToFile(RenderJob &job)
     glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
     std::cout << "o";
     FlipVertically(pixels, width, height, 3);
+
+    float *grid = new float[width*height];
+    glBindTexture(GL_TEXTURE_2D, depth_texture);
+    glReadPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT, grid);
+    double zFar = 5000;
+    double zNear = -5000;
+    for(int i=0,ic=width*height;i<ic;i++)
+    {
+        if (grid[i] == 1)
+            grid[i] = -32767.0;
+        else
+        {
+            double z_e = 2 * zFar*zNear / (zFar + zNear - (zFar - zNear)*(2 * grid[i] - 1));
+            grid[i] = z_e;
+        }
+    }
+    writeDEM(job, grid, width, height);
+    delete[] grid;
     /*
     ip::ImageInfo info;
     info.width = width;
@@ -378,7 +436,7 @@ void renderScene(void)
     if(renderJobs.empty())
     {
         glutLeaveMainLoop();
-        //exit(0);
+        return;
     }
     RenderJob job = renderJobs.back();
     if (renderingToFile)
