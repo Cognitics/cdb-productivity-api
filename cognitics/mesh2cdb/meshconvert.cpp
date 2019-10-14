@@ -7,8 +7,8 @@
 #include "fstream"
 
 #include "ccl/StringUtils.h"
-#include "Obj2CDB.h"
-#include "OBJRender.h"
+#include "mesh2cdb.h"
+#include "meshrender.h"
 #include "ip/pngwrapper.h"
 #include "sfa/BSP.h"
 #include "rapidxml/rapidxml.hpp"
@@ -30,24 +30,23 @@ bool Obj2CDB::readMetadataXML(const std::string &sourceDir)
         node;
         node = node->next_sibling())
     {
-        if (ccl::stringCompareNoCase(node->name(), "SRS")==0)
+        if (ccl::stringCompareNoCase(node->name(), "SRS") == 0)
         {
             std::string srs_string = node->value();
             //Parse out the ENU as the first 3 bytes
             if (ccl::stringStartsWith(srs_string, "ENU:", false))
             {
                 std::vector<std::string> parts = ccl::splitString(srs_string.substr(4), ",");
-                    if (parts.size() == 2)
-                    {
-                        dbOriginLat = atof(parts[0].c_str());
-                        dbOriginLon = atof(parts[1].c_str());
-
-                    }
-                    else
-                    {
-                        log << "Unable to parse SRS in metadata.xml" << log.endl;
-                        return false;
-                    }
+                if (parts.size() == 2)
+                {
+                    dbOriginLat = atof(parts[0].c_str());
+                    dbOriginLon = atof(parts[1].c_str());
+                }
+                else
+                {
+                    log << "Unable to parse SRS in metadata.xml" << log.endl;
+                    return false;
+                }
             }
             else
             {
@@ -55,7 +54,7 @@ bool Obj2CDB::readMetadataXML(const std::string &sourceDir)
                 return false;
             }
         }
-        else if (ccl::stringCompareNoCase(node->name(), "SRSOrigin")==0)
+        else if (ccl::stringCompareNoCase(node->name(), "SRSOrigin") == 0)
         {
             std::string srs_offset_string = node->value();
             std::vector<std::string> parts = ccl::splitString(srs_offset_string, ",");
@@ -72,14 +71,15 @@ bool Obj2CDB::readMetadataXML(const std::string &sourceDir)
             }
         }
     }
-    
+
     return true;
 }
 
 
+
 Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
     const std::string &outputCDBDir) :
-        objRootDir(inputOBJDir), cdbOutputDir(outputCDBDir)
+    objRootDir(inputOBJDir), cdbOutputDir(outputCDBDir)
 {
     dbOriginLat = 39.05011;
     dbOriginLon = -85.53082;
@@ -94,7 +94,21 @@ Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
     offsetY = 0;
     offsetZ = 0;
 
-    //Read metadata TODO:Add XML parsing!!!!!!!!!
+    std::string versionXmlPath = ccl::joinPaths(cdbOutputDir, "Metadata/Version.xml");
+    if (!ccl::fileExists(versionXmlPath))
+    {
+        ccl::makeDirectory(ccl::joinPaths(cdbOutputDir, "Metadata"));
+        std::ofstream outfile(versionXmlPath.c_str());
+        outfile << "<?xml version = \"1.0\"?>" << std::endl;
+        outfile << "<Version xmlns : xsi = \"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">" << std::endl;
+        outfile << "<PreviousIncrementalRootDirectory name = \"\" />" << std::endl;
+        outfile << "<Comment>Created by mesh2cdb</Comment>" << std::endl;
+        outfile << "</ Version>" << std::endl;
+
+        outfile.close();
+    }
+
+    //Read metadata
     readMetadataXML(ccl::joinPaths(inputOBJDir, "metadata.xml"));
 
     ltp_ellipsoid = new Cognitics::CoordinateSystems::EllipsoidTangentPlane(dbOriginLat, dbOriginLon);
@@ -104,7 +118,7 @@ Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
 
 Obj2CDB::~Obj2CDB()
 {
-    for(auto && tile_lod: bestTileLOD)
+    for (auto && tile_lod : bestTileLOD)
     {
         delete tile_lod.first;
     }
@@ -147,7 +161,7 @@ void Obj2CDB::buildBSP()
         {
             continue;
         }
-        if(offsetX || offsetY || offsetZ)
+        if (offsetX || offsetY || offsetZ)
         {
             sfa::Matrix matrix;
             matrix.PushTranslate(offsetX, offsetY, offsetZ);
@@ -202,7 +216,7 @@ void Obj2CDB::collectHighestLODTiles()
     std::map<std::string, int> highestTileLODNum;
     std::map<std::string, std::string> highestTileLODFilename;
     std::vector<ccl::FileInfo> files = ccl::FileInfo::getAllFiles(objRootDir, "*.*", true);
-    
+
     for (auto&& fi : files)
     {
         if (ccl::stringEndsWith(fi.getFileName(), ".obj"))
@@ -228,8 +242,8 @@ void Obj2CDB::collectHighestLODTiles()
     {
         objFiles.push_back(fileLODPair.second);
         //"OBJ count limit enabled!!!!"
-        //if (objFiles.size() > 10)
-        //    break;
+        if (objFiles.size() > 10)
+            break;
     }
 
 
