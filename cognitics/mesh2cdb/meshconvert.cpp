@@ -20,6 +20,11 @@ bool Obj2CDB::readMetadataXML(const std::string &sourceDir)
     xml_node<> * root_node;
     // Read the xml file into a vector
     std::ifstream theFile(sourceDir.c_str());
+    if (!theFile.is_open())
+    {
+        log << "Unable to open " << sourceDir << log.endl;
+        exit(1);
+    }
     std::vector<char> buffer((std::istreambuf_iterator<char>(theFile)), std::istreambuf_iterator<char>());
     buffer.push_back('\0');
     // Parse the buffer using the xml file parsing library into doc 

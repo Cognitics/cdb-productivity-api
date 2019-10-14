@@ -12,6 +12,7 @@
 #include "CoordinateSystems/EllipsoidTangentPlane.h"
 #include "cdb_tile/CoordinatesRange.h"
 #include "cdb_tile/Tile.h"
+#include <cstdlib>
 
 #pragma warning ( push )
 #pragma warning ( disable : 4251 )        // C4251: 'GDALColorTable::aoEntries' : class 'std::vector<_Ty>' needs to have dll-interface to be used by clients of class 'GDALColorTable'
@@ -40,28 +41,23 @@ int main(int argc, char **argv)
     std::string objRootDir = argv[1];
     int cdbLOD = atoi(argv[3]);
 
+    size_t requiredSize;
+    getenv_s(&requiredSize, NULL, 0, "GDAL_DATA");
+    if (requiredSize == 0)
+    {
+        ccl::FileInfo fi(argv[0]);
+        int bufSize = 1024;
+        char *envBuffer = new char[bufSize];
+        std::string dataDir = ccl::joinPaths(fi.getDirName(), "gdal-data");
+        sprintf_s(envBuffer, bufSize, "GDAL_DATA=%s", dataDir.c_str());
+        _putenv(envBuffer);        
+    }
     logger.init("main");
     logger << ccl::LINFO;
     GDALAllRegister();
     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
-    //std::string rootCDBOutput = "E:/TestData/output/cdbRefactored2";
-    //std::string objRootDir = "E:/TestData/MUTC_50m_OBJ";
-    //std::string rootCDBOutput = "j:/output/pinehurst_cdb";
-    //std::string objRootDir = "j:/MUTC_OBJ/MUTC_50m_OBJ";
-    //std::string objRootDir = "j:/objs/Pinehurst_OBJ_SEGT_ENU_190701_altadjusted/Pinehurst_OBJ_SEGT_ENU_190701";
-    //J:\objs\Pinehurst_OBJ_SEGT_ENU_190701_altadjusted\Pinehurst_OBJ_SEGT_ENU_190701
-    //J:\objs\CACTIF 50m rapid OBJ
-    Obj2CDB obj2_cdb(objRootDir, rootCDBOutput);
-    /*
-    renderJobList_t demJobs = obj2_cdb.collectRenderJobs(cognitics::cdb::Dataset::Elevation, 11);
-    logger << "Building " << demJobs.size() << " CDB elevation tiles." << logger.endl;
-    for (auto&& job : demJobs)
-    {
-        OBJBuildDEM buildDEM(job);
-        buildDEM.build();
 
-    }
-    */
+    Obj2CDB obj2_cdb(objRootDir, rootCDBOutput);
 
     CPLSetConfigOption("LODMIN", "-10");
     CPLSetConfigOption("LODMAX", argv[3]);
