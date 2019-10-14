@@ -11,6 +11,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "meshgen", "..\meshgen\meshg
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mesh2cdb", "..\mesh2cdb\mesh2cdb.vcxproj", "{161E9146-9763-4C92-A7AC-E2FC62D1AAA9}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01734A89-FE1D-427C-8CF9-E6E644FABCAA} = {01734A89-FE1D-427C-8CF9-E6E644FABCAA}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

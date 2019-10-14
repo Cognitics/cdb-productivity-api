@@ -100,10 +100,10 @@ Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
         ccl::makeDirectory(ccl::joinPaths(cdbOutputDir, "Metadata"));
         std::ofstream outfile(versionXmlPath.c_str());
         outfile << "<?xml version = \"1.0\"?>" << std::endl;
-        outfile << "<Version xmlns : xsi = \"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">" << std::endl;
+        outfile << "<Version xmlns:xsi = \"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">" << std::endl;
         outfile << "<PreviousIncrementalRootDirectory name = \"\" />" << std::endl;
         outfile << "<Comment>Created by mesh2cdb</Comment>" << std::endl;
-        outfile << "</ Version>" << std::endl;
+        outfile << "</Version>" << std::endl;
 
         outfile.close();
     }

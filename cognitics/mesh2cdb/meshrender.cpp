@@ -513,10 +513,26 @@ void finishBuild()
     }
     if (poDataset->BuildOverviews("average", 0, NULL, 0, NULL, GDALProgressObserver, NULL) != CE_None)
     {
-        logger << "LOD Build failed." << logger.endl;
+        logger << "Imagery LOD Build failed." << logger.endl;
         const char *gdalErrMsg = CPLGetLastErrorMsg();
         logger << gdalErrMsg << logger.endl;
     }
+
+    logger << "Building Elevation LODs" << logger.endl;
+    std::string cdbElevationOpenString = "CDB:" + rootCDBOutput + ":Elevation_PrimaryTerrainElevation";
+    auto poElevDataset = (GDALDataset *)GDALOpen(cdbElevationOpenString.c_str(), GA_Update);
+    if (poElevDataset == NULL)
+    {
+        logger << ccl::LERR << "Unable to open " << poElevDataset << logger.endl;
+        return;
+    }
+    if (poElevDataset->BuildOverviews("average", 0, NULL, 0, NULL, GDALProgressObserver, NULL) != CE_None)
+    {
+        logger << "Elevation LOD Build failed." << logger.endl;
+        const char *gdalErrMsg = CPLGetLastErrorMsg();
+        logger << gdalErrMsg << logger.endl;
+    }
+
     logger << "Build completed!" << logger.endl;
 }
 
