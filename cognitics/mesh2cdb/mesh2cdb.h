@@ -59,7 +59,8 @@ class Obj2CDB
     double offsetX;
     double offsetY;
     double offsetZ;
-
+    bool hiveMapperMode;
+    std::string metadataFilename;
     std::vector<ccl::FileInfo> objFiles;
     sfa::BSP bsp;
     std::map<sfa::Geometry *, sfa::LineString *> envelopes;
@@ -72,7 +73,7 @@ class Obj2CDB
     bool readMetadataXML(const std::string &sourceDir);
 public:
     Obj2CDB(const std::string &inputOBJDir,
-        const std::string &outputCDBDir);
+        const std::string &outputCDBDir, std::string metadataFilename = std::string(), bool hiveMapperMode = false);
     ~Obj2CDB();
 
     renderJobList_t collectRenderJobs(cognitics::cdb::Dataset dataset, int lodNum);

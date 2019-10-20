@@ -83,11 +83,11 @@ bool Obj2CDB::readMetadataXML(const std::string &sourceDir)
 
 
 Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
-    const std::string &outputCDBDir) :
-    objRootDir(inputOBJDir), cdbOutputDir(outputCDBDir)
+    const std::string &outputCDBDir, std::string metadataFilename, bool hiveMapperMode) :
+    objRootDir(inputOBJDir), cdbOutputDir(outputCDBDir), metadataFilename(metadataFilename), hiveMapperMode(hiveMapperMode)
 {
-    dbOriginLat = 39.05011;
-    dbOriginLon = -85.53082;
+    dbOriginLat = 0;
+    dbOriginLon = 0;
     ltp_ellipsoid = NULL;
     dbTop = -DBL_MAX;
     dbBottom = DBL_MAX;
@@ -99,7 +99,7 @@ Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
     offsetY = 0;
     offsetZ = 0;
 
-    std::string versionXmlPath = ccl::joinPaths(cdbOutputDir, "Metadata/Version.xml");
+    std::string versionXmlPath = ccl::joinPaths(cdbOutputDir, metadataFilename);
     if (!ccl::fileExists(versionXmlPath))
     {
         ccl::makeDirectory(ccl::joinPaths(cdbOutputDir, "Metadata"));
@@ -117,7 +117,14 @@ Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
     readMetadataXML(ccl::joinPaths(inputOBJDir, "metadata.xml"));
 
     ltp_ellipsoid = new Cognitics::CoordinateSystems::EllipsoidTangentPlane(dbOriginLat, dbOriginLon);
-    collectHighestLODTiles();
+    if (!hiveMapperMode)
+    {
+        collectHighestLODTiles();
+    }
+    else
+    {
+        objFiles = ccl::FileInfo::getAllFiles(objRootDir, "*.*", true);
+    }
     buildBSP();
 }
 
@@ -247,8 +254,8 @@ void Obj2CDB::collectHighestLODTiles()
     {
         objFiles.push_back(fileLODPair.second);
         //"OBJ count limit enabled!!!!"
-        if (objFiles.size() > 10)
-            break;
+        //if (objFiles.size() > 10)
+        //    break;
     }
 
 
