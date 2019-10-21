@@ -99,10 +99,11 @@ Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
     offsetY = 0;
     offsetZ = 0;
 
-    std::string versionXmlPath = ccl::joinPaths(cdbOutputDir, "Metadata/Version.xml");
+    std::string versionXmlPath = ccl::joinPaths(cdbOutputDir, "Metadata");
     if (!ccl::fileExists(versionXmlPath))
     {
         ccl::makeDirectory(versionXmlPath);
+        versionXmlPath = ccl::joinPaths(versionXmlPath, "Version.xml");
         std::ofstream outfile(versionXmlPath.c_str());
         outfile << "<?xml version = \"1.0\"?>" << std::endl;
         outfile << "<Version xmlns:xsi = \"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">" << std::endl;
@@ -161,9 +162,14 @@ int Obj2CDB::getLODFromFilename(const std::string &filename)
 
 void Obj2CDB::buildBSP()
 {
+    int loop = 0;
     //objFiles
     for (auto&& fi : objFiles)
     {
+        //HAAAAAACK
+        //if (loop > 10)
+        //    break;
+        loop++;
         scenegraph::ExtentsVisitor extentsVisitor;
         scenegraph::Scene *scene = scenegraph::buildSceneFromOBJ(fi.getFileName(), true);
         double top = -DBL_MAX;
@@ -281,6 +287,11 @@ renderJobList_t Obj2CDB::collectRenderJobs(cognitics::cdb::Dataset dataset, int 
         RenderJob renderJob(tile);
         sfa::BSPCollectGeometriesVisitor bspVisitor;
         std::string absoluteFilePath = ccl::joinPaths(cdbOutputDir, tile.getFilename());
+        if(ccl::fileExists(absoluteFilePath))
+        {
+            log << absoluteFilePath << " already exists. Skipping..." << log.endl;
+            continue;
+        }
         ccl::FileInfo tileFi(absoluteFilePath);
         ccl::makeDirectory(tileFi.getDirName());
         renderJob.cdbFilename = absoluteFilePath;

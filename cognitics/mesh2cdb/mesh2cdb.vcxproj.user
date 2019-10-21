@@ -1,14 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerCommandArguments>E:\datasets\Data\Pacific-Beach-San-Diego\area_export_base_color E:/TestData/output/hivempapper_cdb11 11 E:\datasets\Data\Pacific-Beach-San-Diego\area_export_base_color.xml hivemapper</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>E:\datasets\Data\Pacific-Beach-San-Diego\area_export_base_color E:/TestData/output/hivempapper_cdb11-dbg 11 E:\datasets\Data\Pacific-Beach-San-Diego\area_export_base_color.xml hivemapper</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerEnvironment>GDAL_DATA=C:\dev\cog\cognitics\cognitics\cognitics\x64\Debug\gdal-data
 GDAL_DRIVER_PATH=C:\dev\cog\cognitics\cognitics\cognitics\x64\Debug\gdalplugins
 $(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>E:\datasets\Data\Pacific-Beach-San-Diego\area_export_base_color E:/TestData/output/hivempapper_cdb11 11 E:\datasets\Data\Pacific-Beach-San-Diego\area_export_base_color.xml hivemapper</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>E:\datasets\Data\Pacific-Beach-San-Diego\area_export_base_color E:/TestData/output/hivempapper_cdb11b 11 E:\datasets\Data\Pacific-Beach-San-Diego\area_export_base_color.xml hivemapper</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerEnvironment>GDAL_DATA=C:\dev\cog\cognitics\cognitics\cognitics\x64\release\gdal-data
 GDAL_DRIVER_PATH=C:\dev\cog\cognitics\cognitics\cognitics\x64\release\gdalplugins

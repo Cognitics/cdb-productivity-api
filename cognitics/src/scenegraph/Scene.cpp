@@ -40,7 +40,7 @@ namespace scenegraph
 
     Scene::Scene(Scene *p) : parent(p), userData(NULL), hasVertexNormals(false), sharpEdges(false)
     {
-        faces.reserve(1000);
+        faces.reserve(10000);
         if(p)
             p->children.push_back(this);
     }

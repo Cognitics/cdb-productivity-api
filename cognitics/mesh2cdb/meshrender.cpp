@@ -4,7 +4,7 @@
 #include "scenegraphobj/scenegraphobj.h"
 //#include "ip/pngwrapper.h"
 #include <scenegraph/ExtentsVisitor.h>
-
+#include <ccl/JobManager.h>
 #include <GL/glew.h>
 
 #include <GL/glut.h>
@@ -55,6 +55,10 @@ namespace
     renderJobList_t renderJobs;
 }
 
+
+
+
+
 void resetAOIForScene(RenderJob job)
 {
     double top = job.enuMaxY;
@@ -78,6 +82,114 @@ void setAOI(double llx, double lly, double urx, double  ury)
     window_urx = urx;
     window_ury = ury;
     aoi_changed = true;
+}
+
+void writeJP2(RenderJob &job, unsigned char *pixels, int width, int height);
+
+class JP2WriterThreadDataManager : public ccl::ThreadDataManager
+{
+public:
+
+    virtual void onThreadFinished(void)
+    {
+    }
+
+};
+
+bool writeDEM(RenderJob &job, float *grid, int width, int height);
+class DEMWriteJob : public ccl::Job
+{
+    float *grid;
+    RenderJob renderJob;
+    int width;
+    int height;
+protected:
+    virtual int onChildFinished(ccl::Job *job, int result)
+    {
+        return 0;
+    }
+
+public:
+    virtual ~DEMWriteJob() {}
+    DEMWriteJob(ccl::JobManager *manager,
+        const RenderJob &job,
+        float *grid,
+        int width,
+        int height) :
+        ccl::Job(manager, NULL),
+        renderJob(job),
+        grid(grid),
+        width(width),
+        height(height)
+    {
+
+    }
+
+    int execute(void)
+    {
+        writeDEM(renderJob, grid, width, height);
+        delete[] grid;
+        grid = NULL;
+        return 0;
+    }
+};
+
+
+
+class JP2WriteJob : public ccl::Job
+{
+    unsigned char *pixels;
+    RenderJob renderJob;
+    int width;
+    int height;
+protected:
+    virtual int onChildFinished(ccl::Job *job, int result)
+    {
+        return 0;
+    }
+
+public:
+    virtual ~JP2WriteJob() {}
+    JP2WriteJob(ccl::JobManager *manager, 
+        const RenderJob &job, 
+        unsigned char *pixels, 
+        int width, 
+        int height) :
+            ccl::Job(manager, NULL),
+            renderJob(job),
+            pixels(pixels),
+            width(width),
+            height(height)
+    {
+        
+    }
+
+    int execute(void)
+    {
+        writeJP2(renderJob, pixels, width, height);
+        delete[] pixels;
+        pixels = NULL;
+        return 0;
+    }
+};
+
+JP2WriterThreadDataManager jp2ThreadDataManager;
+int num_threads = 4;
+ccl::JobManager jobManager(num_threads, NULL, &jp2ThreadDataManager);
+
+ccl::JobManager DEMJobManager(num_threads, NULL);
+
+
+void queueDEMJob(RenderJob &job, float *grid, int width, int height)
+{
+    DEMWriteJob *demJob = new DEMWriteJob(&DEMJobManager, job, grid, width, height);
+    jobManager.submitJob(demJob);
+}
+
+void queueJP2Job(RenderJob &job, unsigned char *pixels, int width, int height)
+{
+    JP2WriteJob *jp2Job = new JP2WriteJob(&jobManager,job,pixels,width,height);
+    jobManager.submitJob(jp2Job);
 }
 
 void writeJP2(RenderJob &job, unsigned char *pixels, int width, int height)
@@ -238,7 +350,9 @@ void renderToFile(RenderJob &job)
     scene = new scenegraph::Scene();
     for (auto&&obj : job.objFiles)
     {
+        std::cout << "[";
         scenegraph::Scene *childScene = scenegraph::buildSceneFromOBJ(obj, true);
+        std::cout << "]";
         if (job.offsetX || job.offsetY || job.offsetZ)
         {
             sfa::Matrix matrix;
@@ -332,17 +446,19 @@ void renderToFile(RenderJob &job)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glPushMatrix();
+    std::cout << "<";
     renderVisitor.visit(scene);
+    std::cout << ">";
     glPopMatrix();
 
     glMatrixMode(GL_PROJECTION);
     glDisable(GL_BLEND);
     glPopMatrix();
     glutSwapBuffers();
-    std::cout << "i";
+    //std::cout << "i";
     unsigned char *pixels = new unsigned char[width * height * depth];
     glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-    std::cout << "o";
+    //std::cout << "o";
     FlipVertically(pixels, width, height, 3);
 
     float *grid = new float[width*height];
@@ -360,25 +476,8 @@ void renderToFile(RenderJob &job)
         }
     }
     FlipVertically(grid, width, height);
-    writeDEM(job, grid, width, height);
-    delete[] grid;
-    /*
-    ip::ImageInfo info;
-    info.width = width;
-    info.height = height;
-    info.depth = depth;
-    info.interleaved = true;
-    info.dataType = ip::ImageInfo::UBYTE;
-    ccl::binary buf;
-    for (int i = 0; i < (width * height * depth); i++)
-        buf.push_back(pixels[i]);
-    std::string pngName = job.cdbFilename + ".png";
-    logger << "Writing " << pngName << logger.endl;
-    ip::WritePNG24(pngName, info, buf);
-    */
-    writeJP2(job, pixels, width, height);
-    delete pixels;
-
+    queueDEMJob(job, grid, width, height);
+    queueJP2Job(job, pixels, width, height);
     delete scene;
     scene = NULL;
 }
@@ -503,6 +602,8 @@ int CPL_STDCALL GDALProgressObserver(CPL_UNUSED double dfComplete,
  */
 void finishBuild()
 {
+    logger << "Waiting for compression of JP2 files..." << logger.endl;
+    jobManager.waitForCompletion();
     logger << "Building Imagery LODs" << logger.endl;
     std::string cdbImageryOpenString = "CDB:" + rootCDBOutput + ":Imagery_Yearly";
     auto poDataset = (GDALDataset *)GDALOpen(cdbImageryOpenString.c_str(), GA_Update);
@@ -550,7 +651,7 @@ void renderScene(void)
         renderJobs.pop_back();
         renderToFile(job);
     }
-    if (!scene)
+    if (false)//(!scene)
     {
         scene = new scenegraph::Scene();
         for (auto&&obj : job.objFiles)
@@ -608,8 +709,10 @@ void renderScene(void)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glPushMatrix();
-    renderVisitor.visit(scene);
-
+    if (!renderingToFile)
+    {
+        renderVisitor.visit(scene);
+    }
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
     glDisable(GL_BLEND);
