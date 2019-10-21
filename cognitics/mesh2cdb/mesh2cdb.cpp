@@ -30,16 +30,33 @@ int main(int argc, char **argv)
     //argv[3] = The LOD to generate
     if (argc < 4)
     {
-        std::cout << "Usage: obj2cdb <input obj dir> <output CDB dir> <lod number>\n";
+        std::cout << "Usage: obj2cdb <input obj dir> <output CDB dir> <lod number> [metadata.xml] [hivemapper]\n";
         std::cout << "\n\n";
         std::cout << "The input OBJ directory is where metadata.xml exists.\n";
         std::cout << "The output CDB directory is the parent directory where Tiles lives.\n";
         std::cout << "LOD is between -10 and 23.\n";
+        std::cout << "Metadata XML file (default is the input obj dir + 'Metadata.xml').\n";
+        std::cout << "hivemapper: If specified, hivemapper mode is used.\n";
         return 1;
     }
+    std::string metadataXML;
+    bool hiveMapperMode = false;
     std::string rootCDBOutput = argv[2];
     std::string objRootDir = argv[1];
     int cdbLOD = atoi(argv[3]);
+    if(argc > 4)
+    {
+        metadataXML = argv[4];
+        logger << "Using metadata file: " << metadataXML << "." << logger.endl;
+    }
+    if (argc > 5)
+    {
+        if(ccl::stringCompareNoCase(argv[5],"hivemapper")==0)
+        {
+            hiveMapperMode = true;
+            logger << "Using HiveMapper Mode." << logger.endl;
+        }
+    }
 
     size_t requiredSize;
     getenv_s(&requiredSize, NULL, 0, "GDAL_DATA");
@@ -57,7 +74,7 @@ int main(int argc, char **argv)
     GDALAllRegister();
     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
 
-    Obj2CDB obj2_cdb(objRootDir, rootCDBOutput);
+    Obj2CDB obj2_cdb(objRootDir, rootCDBOutput,metadataXML,hiveMapperMode);
 
     CPLSetConfigOption("LODMIN", "-10");
     CPLSetConfigOption("LODMAX", argv[3]);

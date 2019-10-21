@@ -99,10 +99,10 @@ Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
     offsetY = 0;
     offsetZ = 0;
 
-    std::string versionXmlPath = ccl::joinPaths(cdbOutputDir, metadataFilename);
+    std::string versionXmlPath = ccl::joinPaths(cdbOutputDir, "Metadata/Version.xml");
     if (!ccl::fileExists(versionXmlPath))
     {
-        ccl::makeDirectory(ccl::joinPaths(cdbOutputDir, "Metadata"));
+        ccl::makeDirectory(versionXmlPath);
         std::ofstream outfile(versionXmlPath.c_str());
         outfile << "<?xml version = \"1.0\"?>" << std::endl;
         outfile << "<Version xmlns:xsi = \"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">" << std::endl;
@@ -114,7 +114,14 @@ Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
     }
 
     //Read metadata
-    readMetadataXML(ccl::joinPaths(inputOBJDir, "metadata.xml"));
+    if (!hiveMapperMode)
+    {
+        readMetadataXML(ccl::joinPaths(inputOBJDir, "metadata.xml"));
+    }
+    else
+    {
+        readMetadataXML(metadataFilename);
+    }
 
     ltp_ellipsoid = new Cognitics::CoordinateSystems::EllipsoidTangentPlane(dbOriginLat, dbOriginLon);
     if (!hiveMapperMode)
@@ -301,9 +308,13 @@ renderJobList_t Obj2CDB::collectRenderJobs(cognitics::cdb::Dataset dataset, int 
         renderJob.enuMaxX = tileLocalRight;
         renderJob.enuMinY = tileLocalBottom;
         renderJob.enuMaxY = tileLocalTop;
-        renderJob.offsetX = offsetX;
-        renderJob.offsetY = offsetY;
-        renderJob.offsetZ = offsetZ;
+        // For some reason, hivemapper puts an origin in that makes no sense.
+        if (!hiveMapperMode)
+        {
+            renderJob.offsetX = offsetX;
+            renderJob.offsetY = offsetY;
+            renderJob.offsetZ = offsetZ;
+        }
 
         log << "Tile Extents (Cartesian):" << log.endl;
         log << "LL: " << tileLocalLeft << " , " << tileLocalBottom << log.endl;
