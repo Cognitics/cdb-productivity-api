@@ -50,15 +50,31 @@ void writeOBJ(const std::string &objFileName,
     for(auto && face : faces)
     {
         outfile << "f ";
-        outfile << face[0] << "/" << face[0] << " ";
+        outfile << face[2] << "/" << face[2] << " ";
         outfile << face[1] << "/" << face[1] << " ";
-        outfile << face[2] << "/" << face[2] << "\n";
+        outfile << face[0] << "/" << face[0] << "\n";
+        
     }
 
     outfile.close();
 }
 
-void convert(FILE *f, const std::string &texturePath, const std::string &outputPath)
+std::string getTileString(const std::string &fileName)
+{
+    ccl::FileInfo fi(fileName);
+    std::string baseName = fi.getBaseName();
+    //Extract the name without the LOD part.
+    //Tile_+006_+015_L19_0.obj -> Tile_+006_+015
+    std::string::size_type pos = baseName.rfind("_L");
+    if(std::string::npos!=pos && pos > 0)
+    {
+        std::string tileName = baseName.substr(0, pos);
+        return tileName;
+    }
+    return ".";
+}
+
+void convert(FILE *f, const std::string &texturePath, std::string outputPath)
 {
     //Read texture length
     unsigned char texture_name_len;
@@ -69,14 +85,19 @@ void convert(FILE *f, const std::string &texturePath, const std::string &outputP
     texname[texture_name_len] = 0;
     fread(texname, 1, texture_name_len, f);
 
+    std::string subdir = getTileString(texname);
+    outputPath = ccl::joinPaths(outputPath, subdir);
+    ccl::makeDirectory(outputPath);
+
     ccl::FileInfo textureFileInfo(texname);
     std::string objPath = ccl::joinPaths(outputPath, textureFileInfo.getBaseName(true) + ".obj");
 
     //Build mtl file
     writeMtlFile(texname, outputPath);
-
+    
     //Copy dds file
     ccl::copyFile(ccl::joinPaths(texturePath, texname), ccl::joinPaths(outputPath, texname));
+    std::cout << "Copying texture: " << texname << std::endl;
 
     //Read vert count
     unsigned short num_verts = 0;
@@ -88,11 +109,12 @@ void convert(FILE *f, const std::string &texturePath, const std::string &outputP
     for (int i = 0; i < num_verts; i++)
     {
         float x, y, z = 0;
-        fread(&z, 4, 1, f);
-        fread(&y, 4, 1, f);
         fread(&x, 4, 1, f);
-        
-        verts.push_back(sfa::Point(x, y, z));
+        fread(&y, 4, 1, f);
+        fread(&z, 4, 1, f);
+
+        //Flip z and y, since the ENU projection expects Z to be up
+        verts.push_back(sfa::Point(z, x, y));
     }
 
     //Read UVs
@@ -125,19 +147,40 @@ void convert(FILE *f, const std::string &texturePath, const std::string &outputP
 
     std::string textureBase = textureFileInfo.getBaseName(true);
     std::string mtlPath = textureBase + ".mtl";
-
+    std::cout << "Creating : " << objPath << std::endl;
     writeOBJ(objPath, mtlPath, verts, uvs, faces);
 
 }
 
 
 
-int main()
+int main(int argc, char **argv)
 {
-    std::string output_path = "j:/obj_convert";
+    //E:\TestData\ATLAS v2 Latest\ATLAS v2 Latest\TerrainsAvailable\USC_LMAB_SEGT_ENU_5cm_170520\terrainMesh.lmab
+    if(argc < 4)
+    {
+        std::cout << "Usage:" << std::endl;
+        std::cout << "lmbundle2obj <lmab file path> <source texture path> <output_directory>" << std::endl;
+        return 1;
+    }
+
+    std::string output_path = argv[3];
+    std::string input_lmab = argv[1];
+    std::string texture_path = argv[2];
     ccl::makeDirectory(output_path, true);
+    ccl::FileInfo fi(input_lmab);
+    std::string metadataFilename = ccl::joinPaths(fi.getDirName(), "metadata.xml");
+    if(ccl::fileExists(metadataFilename))
+    {
+        ccl::copyFile(metadataFilename, ccl::joinPaths(output_path, "metadata.xml"));
+    }
+    else
+    {
+        std::cout << "Warning: No metadata.xml exists in input path.\n";
+    }
+    
     FILE *f = NULL;
-    fopen_s(&f, "J:/ATLAS v2 Latest/TerrainsAvailable/CampRoberts_McMillan_LMAB_ENU_2.2cm_181204/terrainMesh.lmab", "rb");
+    fopen_s(&f, input_lmab.c_str(), "rb");
     if (!f)
     {
         std::cout << "Can't open the file.\n";
@@ -148,7 +191,7 @@ int main()
 
     for (int i = 0; i < num_meshes; i++)
     {
-        convert(f, "J:/ATLAS v2 Latest/TerrainsAvailable/CampRoberts_McMillan_LMAB_ENU_2.2cm_181204/Textures",
+        convert(f, texture_path,
             output_path);
     }
     fclose(f);

@@ -54,6 +54,7 @@ namespace scenegraph
 		std::map<std::string,GLuint> textures;
 		void setupGLMatrixFromSFA(const sfa::Matrix &m,double *glmat);
 		GLuint getOrLoadTextureID(const std::string &texname);
+        GLuint getOrLoadDDSTextureID(const std::string &texname);
 	public:
 		void renderFace(scenegraph::Face &face);
 		virtual ~SimpleGLRenderVisitor(void);
