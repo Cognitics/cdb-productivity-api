@@ -166,9 +166,9 @@ void Obj2CDB::buildBSP()
     //objFiles
     for (auto&& fi : objFiles)
     {
-        //HAAAAAACK
+        // HAAAAAACK
         //if (loop > 10)
-        //    break;
+//            break;
         loop++;
         scenegraph::ExtentsVisitor extentsVisitor;
         scenegraph::Scene *scene = scenegraph::buildSceneFromOBJ(fi.getFileName(), true);
