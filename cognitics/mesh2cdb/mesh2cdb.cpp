@@ -58,6 +58,20 @@ int main(int argc, char **argv)
         }
     }
 
+#ifndef WIN32
+    char *gdal_data_var = getenv("GDAL_DATA");
+    if(gdal_data_var==NULL)
+    {
+        ccl::FileInfo fi(argv[0]);
+        int bufSize = 1024;
+        //This memory becomes owned by the environment,
+        //so do not delete the pointer.
+        char *envBuffer = new char[bufSize];      
+        std::string dataDir = ccl::joinPaths(fi.getDirName(), "gdal-data");  
+        sprintf(envBuffer, "GDAL_DATA=%s", dataDir.c_str());
+        putenv(envBuffer);
+    }
+#else
     size_t requiredSize;
     getenv_s(&requiredSize, NULL, 0, "GDAL_DATA");
     if (requiredSize == 0)
@@ -69,6 +83,7 @@ int main(int argc, char **argv)
         sprintf_s(envBuffer, bufSize, "GDAL_DATA=%s", dataDir.c_str());
         _putenv(envBuffer);        
     }
+#endif
     logger.init("main");
     logger << ccl::LINFO;
     GDALAllRegister();

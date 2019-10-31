@@ -1,18 +1,27 @@
-#include "features\GMLParser.h"
-#include "scenegraph\Scene.h"
+#include "features/GMLParser.h"
+#include "scenegraph/Scene.h"
 #include <scenegraphobj/scenegraphobj.h>
-#include "scenegraphgltf\scenegraphgltf.h"
-#include "rapidxml\rapidxml.hpp"
+#include "scenegraphgltf/scenegraphgltf.h"
+#include "rapidxml/rapidxml.hpp"
 #include <iostream>
 #include <sstream>
-#include <filesystem>
 #include <fstream>
-#include "ctl\Vector.h"
+#include <string.h>
+#include "ctl/Vector.h"
 #include "ctl/QTriangulate.h"
-#include "features\GsBuildings.h"
+#include "features/GsBuildings.h"
 
 using namespace std;
 using namespace rapidxml;
+
+#ifndef _MSC_VER
+namespace {
+    char* strtok_s(char* s, const char* delim, char** context)
+    {
+            return strtok_r(s, delim, context);
+    }
+}
+#endif
 
 //returns a dynamically allocated buffer. caller is responsible for deallocating buffer.
 char* ReadAllFileContents(string sFile)
@@ -24,8 +33,7 @@ char* ReadAllFileContents(string sFile)
         std::cout << "Could not open " << sFile << std::endl;
         return nullptr;
     }
-
-    int length = std::experimental::filesystem::file_size(sFile);
+    int length = ccl::getFileSize(sFile);
     char* buffer = new char[length + 1];
     fin.read(buffer, length);
     buffer[length] = '\0';

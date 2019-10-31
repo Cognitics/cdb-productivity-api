@@ -1,4 +1,4 @@
-#include "gltf\GltfJson.h"
+#include "gltf/GltfJson.h"
 
 namespace gltf
 {

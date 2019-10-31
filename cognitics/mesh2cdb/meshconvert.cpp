@@ -8,7 +8,7 @@
 
 #include "ccl/StringUtils.h"
 #include "mesh2cdb.h"
-#include "meshrender.h"
+#include "MeshRender.h"
 #include "ip/pngwrapper.h"
 #include "sfa/BSP.h"
 #include "rapidxml/rapidxml.hpp"

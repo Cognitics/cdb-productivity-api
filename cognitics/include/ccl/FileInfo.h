@@ -205,4 +205,5 @@ namespace ccl
     bool copyFilesRecursive(const std::string &srcDir, const std::string &destDir);
 
     uint64_t getFileSize(const std::string &filePath);
+    bool deleteFile(const std::string &filename);
 }

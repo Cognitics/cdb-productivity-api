@@ -15,7 +15,7 @@ namespace Cognitics
             double OriginAltitude;
 
         protected:
-            WGS84Transform WGS84Transform;
+            WGS84Transform _WGS84Transform;
             double lambda;
             double phi;
             double sin_lambda;

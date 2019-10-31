@@ -29,8 +29,8 @@ DEALINGS IN THE SOFTWARE.
 #include <elev/Elevation_DSM.h>
 #include <scenegraph/Scene.h>
 #include <dom/dom.h>
-#include <features\GsBuildings.h>
-#include "features\GMLParser.h"
+#include <features/GsBuildings.h>
+#include "features/GMLParser.h"
 
 
 namespace cognitics

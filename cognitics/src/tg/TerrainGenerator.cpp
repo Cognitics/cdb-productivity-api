@@ -47,7 +47,7 @@ DEALINGS IN THE SOFTWARE.
 #include "scenegraph/Face.h"
 
 #include <fstream>
-#include <filesystem>
+//#include <filesystem>
 #include <iomanip>
 #include "features/GsBuildings.h"
 #include "features/GMLParser.h"
@@ -564,10 +564,8 @@ namespace cognitics
                     mat.illumination = (*itr)["illumination"].GetInt(); // illum
 
                     std::string mapDiffuse = (*itr)["mapDiffuse"].GetString(); // material name  
-                    std::experimental::filesystem::path path = mapDiffuse;
-                    //path.replace_extension(""); //why was extension being removed?
-                    auto filenameOfModel = path.filename();
-                    mat.mapDiffuse = filenameOfModel.string();
+                    ccl::FileInfo fi(mapDiffuse);                  
+                    mat.mapDiffuse = fi.getBaseName();
 
                     if (!ccl::copyFile(ccl::joinPaths(fi.getDirName(), mapDiffuse), ccl::joinPaths(outputPath, mapDiffuse)))
                     {
