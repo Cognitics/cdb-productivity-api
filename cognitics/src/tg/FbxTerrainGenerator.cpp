@@ -9,6 +9,7 @@
 #include <string>
 #include <thread>
 #include <mutex>
+#include <algorithm>
 
 using namespace cognitics;
 
@@ -22,7 +23,7 @@ void FbxTerrainGenerator::generateFixedGridWithLOD(std::string geoServerURL, dou
 {
 	double deltaX = east - west;
 	double deltaY = north - south;
-	double delta = std::max(deltaX, deltaY) / 2;
+	double delta = std::max<double>(deltaX, deltaY) / 2;
 	double centerLat = (north - south) / 2 + south;
 	double centerLon = (east - west) / 2 + west;
 

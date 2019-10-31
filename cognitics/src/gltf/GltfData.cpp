@@ -276,12 +276,12 @@ namespace gltf
 					*currentVertexPointer++ = x;
 					*currentVertexPointer++ = y;
 					*currentVertexPointer++ = z;
-					primitives[p].maxVertexValues[0] = std::max(primitives[p].maxVertexValues[0], x);
-					primitives[p].maxVertexValues[1] = std::max(primitives[p].maxVertexValues[1], y);
-					primitives[p].maxVertexValues[2] = std::max(primitives[p].maxVertexValues[2], z);
-					primitives[p].minVertexValues[0] = std::min(primitives[p].minVertexValues[0], x);
-					primitives[p].minVertexValues[1] = std::min(primitives[p].minVertexValues[1], y);
-					primitives[p].minVertexValues[2] = std::min(primitives[p].minVertexValues[2], z);
+					primitives[p].maxVertexValues[0] = std::max<float>(primitives[p].maxVertexValues[0], x);
+					primitives[p].maxVertexValues[1] = std::max<float>(primitives[p].maxVertexValues[1], y);
+					primitives[p].maxVertexValues[2] = std::max<float>(primitives[p].maxVertexValues[2], z);
+					primitives[p].minVertexValues[0] = std::min<float>(primitives[p].minVertexValues[0], x);
+					primitives[p].minVertexValues[1] = std::min<float>(primitives[p].minVertexValues[1], y);
+					primitives[p].minVertexValues[2] = std::min<float>(primitives[p].minVertexValues[2], z);
 
 
 					x = static_cast<float>(primitives[p].faces[i].vertexNormals[j].X());
@@ -290,22 +290,22 @@ namespace gltf
 					*currentNormalsPointer++ = x;
 					*currentNormalsPointer++ = y;
 					*currentNormalsPointer++ = z;
-					primitives[p].maxNormalValues[0] = std::max(primitives[p].maxNormalValues[0], x);
-					primitives[p].maxNormalValues[1] = std::max(primitives[p].maxNormalValues[1], y);
-					primitives[p].maxNormalValues[2] = std::max(primitives[p].maxNormalValues[2], z);
-					primitives[p].minNormalValues[0] = std::min(primitives[p].minNormalValues[0], x);
-					primitives[p].minNormalValues[1] = std::min(primitives[p].minNormalValues[1], y);
-					primitives[p].minNormalValues[2] = std::min(primitives[p].minNormalValues[2], z);
+					primitives[p].maxNormalValues[0] = std::max<float>(primitives[p].maxNormalValues[0], x);
+					primitives[p].maxNormalValues[1] = std::max<float>(primitives[p].maxNormalValues[1], y);
+					primitives[p].maxNormalValues[2] = std::max<float>(primitives[p].maxNormalValues[2], z);
+					primitives[p].minNormalValues[0] = std::min<float>(primitives[p].minNormalValues[0], x);
+					primitives[p].minNormalValues[1] = std::min<float>(primitives[p].minNormalValues[1], y);
+					primitives[p].minNormalValues[2] = std::min<float>(primitives[p].minNormalValues[2], z);
 
 					sfa::Point uv = primitives[p].faces[i].textures[0].uvs[j];
 					x = static_cast<float>(uv.X());
 					y = static_cast<float>(uv.Y());
 					*currentUvPointer++ = x;
 					*currentUvPointer++ = y;
-					primitives[p].maxUvValues[0] = std::max(primitives[p].maxUvValues[0], x);
-					primitives[p].maxUvValues[1] = std::max(primitives[p].maxUvValues[1], y);
-					primitives[p].minUvValues[0] = std::min(primitives[p].minUvValues[0], x);
-					primitives[p].minUvValues[1] = std::min(primitives[p].minUvValues[1], y);
+					primitives[p].maxUvValues[0] = std::max<float>(primitives[p].maxUvValues[0], x);
+					primitives[p].maxUvValues[1] = std::max<float>(primitives[p].maxUvValues[1], y);
+					primitives[p].minUvValues[0] = std::min<float>(primitives[p].minUvValues[0], x);
+					primitives[p].minUvValues[1] = std::min<float>(primitives[p].minUvValues[1], y);
 
 					*currentBatchPointer++ = 0;
 				}
