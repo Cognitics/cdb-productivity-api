@@ -28,11 +28,7 @@ DEALINGS IN THE SOFTWARE.
 
 #include <cts/cts.h>
 #include <ccl/ccl.h>
-//#if (_MSC_VER >= 1700)
 #include <memory>
-//#else
-//#include <boost/tr1/memory.hpp>
-//#endif
 #include <string>
 #include <vector>
 

@@ -187,4 +187,10 @@ namespace ctl {
         return a.x*b.x + a.y*b.y + a.z*b.z;
     }
 
+    void Vector::set(double x, double y, double z)
+    {
+        this->x = x;
+        this->y = y;
+        this->z = z;
+    }
 }

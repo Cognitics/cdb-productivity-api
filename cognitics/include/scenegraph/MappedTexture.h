@@ -32,7 +32,9 @@ namespace scenegraph
     class MappedTexture
     {
         unsigned short textureNameIdx;
-        static std::vector<std::string> s_names;
+        //static std::vector<std::string> s_names;
+        static std::map<std::string, int> s_names;
+        static std::map<int, std::string> s_textureIDs;
         static ccl::mutex s_namesProt;
     public:
         MappedTexture();

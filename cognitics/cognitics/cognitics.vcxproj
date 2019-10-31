@@ -1,9 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="cdb_exporter|Win32">
+      <Configuration>cdb_exporter</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="cdb_exporter|x64">
+      <Configuration>cdb_exporter</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="meshgen|Win32">
+      <Configuration>meshgen</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="meshgen|x64">
+      <Configuration>meshgen</Configuration>
+      <Platform>x64</Platform>
     </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
@@ -53,6 +69,24 @@
     <ClCompile Include="..\src\ccl\Win32\Runnable.cpp" />
     <ClCompile Include="..\src\ccl\Win32\sem.cpp" />
     <ClCompile Include="..\src\ccl\Win32\Timer.cpp" />
+    <ClCompile Include="..\src\cdb_tile\Coordinates.cpp" />
+    <ClCompile Include="..\src\cdb_tile\CoordinatesRange.cpp" />
+    <ClCompile Include="..\src\cdb_tile\Dataset.cpp" />
+    <ClCompile Include="..\src\cdb_tile\Latitude.cpp" />
+    <ClCompile Include="..\src\cdb_tile\CDBLOD.cpp" />
+    <ClCompile Include="..\src\cdb_tile\LODRange.cpp" />
+    <ClCompile Include="..\src\cdb_tile\Longitude.cpp" />
+    <ClCompile Include="..\src\cdb_tile\Tile.cpp" />
+    <ClCompile Include="..\src\cdb_tile\TileCoordinates.cpp" />
+    <ClCompile Include="..\src\cdb_tile\TileLatitude.cpp" />
+    <ClCompile Include="..\src\cdb_tile\TileLongitude.cpp" />
+    <ClCompile Include="..\src\CoordinateSystems\EGM.cpp" />
+    <ClCompile Include="..\src\CoordinateSystems\EGM2008.cpp" />
+    <ClCompile Include="..\src\CoordinateSystems\EGMTransform.cpp" />
+    <ClCompile Include="..\src\CoordinateSystems\EllipsoidTangentPlane.cpp" />
+    <ClCompile Include="..\src\CoordinateSystems\GeoidTangentPlane.cpp" />
+    <ClCompile Include="..\src\CoordinateSystems\SphereTangentPlane.cpp" />
+    <ClCompile Include="..\src\CoordinateSystems\WGS84Transform.cpp" />
     <ClCompile Include="..\src\ctl\CGrid.cpp" />
     <ClCompile Include="..\src\ctl\ConstraintMap.cpp" />
     <ClCompile Include="..\src\ctl\DelaunayTriangulation.cpp" />
@@ -145,6 +179,9 @@
     <ClCompile Include="..\src\elev\Elevation.cpp" />
     <ClCompile Include="..\src\elev\Elevation_DSM.cpp" />
     <ClCompile Include="..\src\elev\SimpleDEMReader.cpp" />
+    <ClCompile Include="..\src\features\FeatureInfo.cpp" />
+    <ClCompile Include="..\src\features\GMLParser.cpp" />
+    <ClCompile Include="..\src\features\GsBuildings.cpp" />
     <ClCompile Include="..\src\flt\BinarySeparatingPlane.cpp" />
     <ClCompile Include="..\src\flt\BoundingBox.cpp" />
     <ClCompile Include="..\src\flt\BoundingConvexHull.cpp" />
@@ -265,9 +302,11 @@
     <ClCompile Include="..\src\ogr\Field.cpp" />
     <ClCompile Include="..\src\ogr\File.cpp" />
     <ClCompile Include="..\src\ogr\OGRLayer.cpp" />
+    <ClCompile Include="..\src\scenegraphfbx\buildFbxFromScene.cpp" />
     <ClCompile Include="..\src\scenegraphflt\buildOpenFlightFromScene.cpp" />
     <ClCompile Include="..\src\scenegraphflt\buildSceneFromOpenFlight.cpp" />
     <ClCompile Include="..\src\scenegraphgltf\buildGltfFromScene.cpp" />
+    <ClCompile Include="..\src\scenegraphobj\buildSceneFromOBJ.cpp" />
     <ClCompile Include="..\src\scenegraph\buildSceneFromFeature.cpp" />
     <ClCompile Include="..\src\scenegraph\Color.cpp" />
     <ClCompile Include="..\src\scenegraph\CoordinateTransformVisitor.cpp" />
@@ -293,6 +332,7 @@
     <ClCompile Include="..\src\scenegraph\TerrainCullingVisitor.cpp" />
     <ClCompile Include="..\src\scenegraph\TransformVisitor.cpp" />
     <ClCompile Include="..\src\scenegraph\Visitor.cpp" />
+    <ClCompile Include="..\src\scenegraph_gl\scenegraph_gl.cpp" />
     <ClCompile Include="..\src\sfa\BSP.cpp" />
     <ClCompile Include="..\src\sfa\Buffer.cpp" />
     <ClCompile Include="..\src\sfa\Buffer3D.cpp" />
@@ -354,13 +394,16 @@
     <ClCompile Include="..\src\sfa\SegmentIntersector.cpp" />
     <ClCompile Include="..\src\sfa\Surface.cpp" />
     <ClCompile Include="..\src\sfa_file_factory\sfa_file_factory.cpp" />
+    <ClCompile Include="..\src\tg\FbxTerrainGenerator.cpp" />
+    <ClCompile Include="..\src\tg\GltfTerrainGenerator.cpp" />
+    <ClCompile Include="..\src\tg\ObjTerrainGenerator.cpp" />
+    <ClCompile Include="..\src\tg\OpenFlightTerrainGenerator.cpp" />
     <ClCompile Include="..\src\tg\TerrainGenerator.cpp" />
     <ClCompile Include="buildObjFromScene.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\include\rapidjson\license.txt" />
     <Text Include="..\src\ccl\CMakeLists.txt" />
-    <Text Include="..\src\cts\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\b64\base64.h" />
@@ -412,6 +455,28 @@
     <ClInclude Include="..\include\ccl\Value.h" />
     <ClInclude Include="..\include\ccl\Variant.h" />
     <ClInclude Include="..\include\ccl\VariantException.h" />
+    <ClInclude Include="..\include\cdb_tile\Coordinates.h" />
+    <ClInclude Include="..\include\cdb_tile\CoordinatesRange.h" />
+    <ClInclude Include="..\include\cdb_tile\Dataset.h" />
+    <ClInclude Include="..\include\cdb_tile\Latitude.h" />
+    <ClInclude Include="..\include\cdb_tile\LOD.h" />
+    <ClInclude Include="..\include\cdb_tile\LODRange.h" />
+    <ClInclude Include="..\include\cdb_tile\Longitude.h" />
+    <ClInclude Include="..\include\cdb_tile\Tile.h" />
+    <ClInclude Include="..\include\cdb_tile\TileCoordinates.h" />
+    <ClInclude Include="..\include\cdb_tile\TileLatitude.h" />
+    <ClInclude Include="..\include\cdb_tile\TileLongitude.h" />
+    <ClInclude Include="..\include\CoordinateSystems\EGM.h" />
+    <ClInclude Include="..\include\CoordinateSystems\EGM2008.h" />
+    <ClInclude Include="..\include\CoordinateSystems\EGMTransform.h" />
+    <ClInclude Include="..\include\CoordinateSystems\EllipsoidTangentPlane.h" />
+    <ClInclude Include="..\include\CoordinateSystems\GeoidTangentPlane.h" />
+    <ClInclude Include="..\include\CoordinateSystems\IGeodeticTransform.h" />
+    <ClInclude Include="..\include\CoordinateSystems\ILocalTangentPlane.h" />
+    <ClInclude Include="..\include\CoordinateSystems\Image.h" />
+    <ClInclude Include="..\include\CoordinateSystems\SphereTangentPlane.h" />
+    <ClInclude Include="..\include\CoordinateSystems\WGS84.h" />
+    <ClInclude Include="..\include\CoordinateSystems\WGS84Transform.h" />
     <ClInclude Include="..\include\ctl\BlockList.h" />
     <ClInclude Include="..\include\ctl\CGrid.h" />
     <ClInclude Include="..\include\ctl\ConstraintMap.h" />
@@ -523,6 +588,9 @@
     <ClInclude Include="..\include\elev\Elevation_DSM.h" />
     <ClInclude Include="..\include\elev\Line.h" />
     <ClInclude Include="..\include\elev\SimpleDEMReader.h" />
+    <ClInclude Include="..\include\features\FeatureInfo.h" />
+    <ClInclude Include="..\include\features\GMLParser.h" />
+    <ClInclude Include="..\include\features\GsBuildings.h" />
     <ClInclude Include="..\include\flt\BinarySeparatingPlane.h" />
     <ClInclude Include="..\include\flt\BoundingBox.h" />
     <ClInclude Include="..\include\flt\BoundingConvexHull.h" />
@@ -671,6 +739,7 @@
     <ClInclude Include="..\include\rapidxml\rapidxml_iterators.hpp" />
     <ClInclude Include="..\include\rapidxml\rapidxml_print.hpp" />
     <ClInclude Include="..\include\rapidxml\rapidxml_utils.hpp" />
+    <ClInclude Include="..\include\scenegraphfbx\scenegraphfbx.h" />
     <ClInclude Include="..\include\scenegraphflt\scenegraphflt.h" />
     <ClInclude Include="..\include\scenegraphgltf\scenegraphgltf.h" />
     <ClInclude Include="..\include\scenegraphobj\scenegraphobj.h" />
@@ -699,6 +768,7 @@
     <ClInclude Include="..\include\scenegraph\TransformVisitor.h" />
     <ClInclude Include="..\include\scenegraph\UserData.h" />
     <ClInclude Include="..\include\scenegraph\Visitor.h" />
+    <ClInclude Include="..\include\scenegraph_gl\scenegraph_gl.h" />
     <ClInclude Include="..\include\sfa\BSP.h" />
     <ClInclude Include="..\include\sfa\Buffer.h" />
     <ClInclude Include="..\include\sfa\Buffer3D.h" />
@@ -762,6 +832,10 @@
     <ClInclude Include="..\include\sfa\Surface.h" />
     <ClInclude Include="..\include\sqlite\sqlite3.h" />
     <ClInclude Include="..\include\sqlite\sqlite3ext.h" />
+    <ClInclude Include="..\include\tg\FbxTerrainGenerator.h" />
+    <ClInclude Include="..\include\tg\GltfTerrainGenerator.h" />
+    <ClInclude Include="..\include\tg\ObjTerrainGenerator.h" />
+    <ClInclude Include="..\include\tg\OpenFlightTerrainGenerator.h" />
     <ClInclude Include="..\include\tg\TerrainGenerator.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -783,6 +857,18 @@
     <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='cdb_exporter|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='meshgen|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -790,6 +876,20 @@
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='cdb_exporter|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v141</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='meshgen|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v141</PlatformToolset>
@@ -807,10 +907,22 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='cdb_exporter|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='meshgen|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='cdb_exporter|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='meshgen|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -819,12 +931,28 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(ProjectDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='cdb_exporter|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='meshgen|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='cdb_exporter|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='meshgen|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -849,7 +977,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions);WIN32;_CRT_SECURE_NO_WARNINGS;IPP_ENABLED</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\include;$(SolutionDir)..\include;$(SolutionDir)..\..\ThirdParty\glut\include;$(SolutionDir)..\..\ThirdParty\glew\debug\include;$(SolutionDir)..\..\ThirdParty\fbxsdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -857,6 +986,44 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal204\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='cdb_exporter|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal204\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='meshgen|Win32'">
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
@@ -885,7 +1052,8 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions);WIN32;;_CRT_SECURE_NO_WARNINGS;IPP_ENABLED</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\release\include;$(SolutionDir)..\include;$(SolutionDir)..\..\ThirdParty\ipp2019\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\release\include;$(SolutionDir)..\include;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\glut\include;$(SolutionDir)..\..\ThirdParty\glew\release\include;$(SolutionDir)..\..\ThirdParty\fbxsdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -893,6 +1061,55 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Lib>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\..\Vendor\boost\boost_1_69_0\stage\lib</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='cdb_exporter|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions);WIN32;_CRT_SECURE_NO_WARNINGS;IPP_ENABLED;FBXSDK_SHARED</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>./;$(ProjectDir)..\..\..\..\Vendor\jpeg-8c\include;$(ProjectDir)..\..\..\..\Vendor\lpng154\include;$(ProjectDir)..\..\..\..\Vendor\boost\boost_1_69_0;$(ProjectDir)..\..\..\..\Vendor\gdal\2.4.0_ext\include;$(ProjectDir)..\..\CDBtoGLTF\include;$(ProjectDir)..\..\..\..\Vendor\IPP6.1.5\em64t\include;$(ProjectDir)..\..\..\..\Vendor\jsoncpp\include;$(ProjectDir)..\..\..\..\Vendor\FBXSDK\2019.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\..\Vendor\boost\boost_1_69_0\stage\lib</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='meshgen|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions);WIN32;_CRT_SECURE_NO_WARNINGS;IPP_ENABLED;FBXSDK_SHARED</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>./;$(ProjectDir)..\..\..\..\Vendor\jpeg-8c\include;$(ProjectDir)..\..\..\..\Vendor\lpng154\include;$(ProjectDir)..\..\..\..\Vendor\boost\boost_1_69_0;$(ProjectDir)..\..\..\..\Vendor\gdal\2.4.0_ext\include;$(ProjectDir)..\..\CDBtoGLTF\include;$(ProjectDir)..\..\..\..\Vendor\IPP6.1.5\em64t\include;$(ProjectDir)..\..\..\..\Vendor\jsoncpp\include;$(ProjectDir)..\..\..\..\Vendor\FBXSDK\2019.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <AdditionalLibraryDirectories>$(ProjectDir)..\..\..\..\Vendor\boost\boost_1_69_0\stage\lib</AdditionalLibraryDirectories>
+    </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -16,7 +16,7 @@ namespace gltf
 		void writeBufferViews(rapidjson::Writer<rapidjson::FileWriteStream>& jsonWriter);
 		void writeBufferView(rapidjson::Writer<rapidjson::FileWriteStream>& jsonWriter, int offset, int length, int target);
 		void writeAccessors(rapidjson::Writer<rapidjson::FileWriteStream>& jsonWriter);
-		void writeAccessor(rapidjson::Writer<rapidjson::FileWriteStream>& jsonWriter, int bufferView, int componentType, std::string type);
+		void writeAccessor(rapidjson::Writer<rapidjson::FileWriteStream>& jsonWriter, int bufferViewIndex, int componentType, std::string type, int numVerts);
 		void writeAccessorMinMax(rapidjson::Writer<rapidjson::FileWriteStream>& jsonWriter, std::vector<float>& min, std::vector<float>& max);
 		void writeAccessorMinMax(rapidjson::Writer<rapidjson::FileWriteStream>& jsonWriter, std::vector<unsigned short>& min, std::vector<unsigned short>& max);
 		void writeAsset(rapidjson::Writer<rapidjson::FileWriteStream>& jsonWriter);

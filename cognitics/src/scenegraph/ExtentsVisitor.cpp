@@ -34,9 +34,9 @@ namespace scenegraph
 
     void ExtentsVisitor::visiting(Scene *scene)
     {
-        result = true;
         for(size_t i = 0, c = scene->faces.size(); i < c; ++i)
         {
+            result = true;
             sfa::Point min, max;
             scene->faces[i].getBoundingBox(min, max);
             minX = std::min<double>(minX, min.X());

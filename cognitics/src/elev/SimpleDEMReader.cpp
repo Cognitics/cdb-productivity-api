@@ -10,7 +10,7 @@ namespace elev {
     }
     
     SimpleDEMReader::SimpleDEMReader(const std::string &filename, 
-        OGRSpatialReference destinationSRS, int windowTop, int windowBottom, int windowRight, int windowLeft)
+        OGRSpatialReference destinationSRS, int windowTop, int windowBottom, int windowRight, int windowLeft, float scale)
     {
         //Bear in mind that the windowTop=0 is row 0 in the raster, not the top row geographically
         //since the DEM is inverted spatially from the row
@@ -19,16 +19,15 @@ namespace elev {
         this->windowBottom = windowBottom;
         this->windowRight = windowRight;
         this->windowLeft = windowLeft;
+        this->scaleFactor = scale;
         height = 0;
         width = 0;
         depth = 0;
         log.init("SimpleDEMReader", this);
         this->filename = filename;
-        app_srs = NULL;
-        file_srs = NULL;
     }
 
-    SimpleDEMReader::SimpleDEMReader(const std::string &filename, OGRSpatialReference destinationSRS)
+    SimpleDEMReader::SimpleDEMReader(const std::string &filename, OGRSpatialReference destinationSRS, float scale)
     {
         windowedMode = false;
         height = 0;
@@ -36,8 +35,7 @@ namespace elev {
         depth = 0;
         log.init("SimpleDEMReader", this);
         this->filename = filename;
-        app_srs = NULL;
-        file_srs = NULL;
+        this->scaleFactor = scale;
 }
 
 
@@ -330,6 +328,14 @@ namespace elev {
             return windowHeight;
         return height;
     }
+    int SimpleDEMReader::getScaledWidth() const
+    {
+        return ceil(getHeight() * scaleFactor);
+    }
+    int SimpleDEMReader::getScaledHeight() const
+    {
+        return ceil(getHeight() * scaleFactor);
+    }
     void SimpleDEMReader::getMBR(double &north, double &south, double &east, double &west)
     {
         if (windowedMode)
@@ -355,20 +361,22 @@ namespace elev {
         int offsetY = 0;
         int readWidth = width;
         int readHeight = height;
-        int len = width * height;
         if (windowedMode)
         {
             offsetX = windowLeft;
             offsetY = windowTop;
             readWidth = windowRight - windowLeft;
             readHeight = windowBottom - windowTop;
-            len = readWidth * readHeight;
         }
+
+        int scaledReadWidth = getScaledWidth();
+        int scaledReadHeight = getScaledHeight();
+        int len = scaledReadWidth * scaledReadHeight;
         double *fgrid = new double[len];
         GDALRasterBand *poBand = gdal_dataset->GetRasterBand(1);
 
         CPLErr error = poBand->RasterIO(GF_Read, offsetX, offsetY, readWidth, readHeight,
-            fgrid, readWidth, readHeight, GDT_Float64,
+            fgrid, scaledReadWidth, scaledReadHeight, GDT_Float64,
             0, 0);
         if (error != CPLErr::CE_None)
         {

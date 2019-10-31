@@ -128,8 +128,6 @@ namespace gdalsampler
 
     };
 
-    //static HINSTANCE g_ProjDLL = NULL; 
-
     #define projPJ void *
     typedef struct { double u, v; } projUV; 
 

@@ -23,7 +23,7 @@ DEALINGS IN THE SOFTWARE.
 #pragma warning ( disable : 4996 )        // deprecated access()
 
 #include "ccl/FileInfo.h"
-
+#include "ccl/StringUtils.h"
 #include <boost/algorithm/string.hpp>
 #include <boost/foreach.hpp>
 #include <fstream>
@@ -57,7 +57,7 @@ namespace ccl
         filename = standardizeSlashes(filename);        
     }
 
-    std::string FileInfo::getFileName()
+    std::string FileInfo::getFileName() const
     {
         return filename;
     }
@@ -69,7 +69,7 @@ namespace ccl
         return (pos == std::string::npos) ? "" : filename.substr(0, pos);
     }
 
-    std::string FileInfo::getBaseName(bool withoutSuffix)
+    std::string FileInfo::getBaseName(bool withoutSuffix) const
     {
         std::string::size_type pos = filename.rfind('/');
         if(pos == std::string::npos)
@@ -307,6 +307,31 @@ namespace ccl
       {
     return false;
       }
+  }
+
+  bool copyFilesRecursive(const std::string &srcDir, const std::string &destDir)
+  {
+      std::vector<FileInfo> files = FileInfo::getAllFiles(srcDir, "*.*", true);
+      for (auto&& fi : files)
+      {
+          std::string relativeFilename = fi.getDirName();
+          //Strip out the source directory
+          if (ccl::stringStartsWith(fi.getFileName(),srcDir))
+          {
+              relativeFilename = relativeFilename.substr(srcDir.length());
+          }
+          std::string destPath = ccl::joinPaths(destDir, relativeFilename);
+          //Make sure the directory exists for each file
+          makeDirectory(destPath, true);
+          
+          std::string destFilePath = ccl::joinPaths(destPath, fi.getBaseName());
+          if (!copyFile(fi.getFileName(), destFilePath))
+          {
+              return false;
+          }
+      }
+
+      return true;
   }
 
   uint64_t getFileSize(const std::string &filePath)

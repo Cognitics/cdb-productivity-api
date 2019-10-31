@@ -8,10 +8,10 @@
 $(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerEnvironment>PATH=$(PATH);C:\dev\cog\ThirdParty\gdal204\bin;
+    <LocalDebuggerEnvironment>PATH=$(PATH);C:\dev\cog\cognitics\cognitics\x64\Debug;
 $(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <LocalDebuggerCommandArguments>-bounds 12.7881 12.7826 45.0055 45 -output D:/Jobs/job0 -format .b3dm -ws</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>-elevation f:/CDB_Yemen_4.0.0/Tiles/N13/E045/001_Elevation/L06/U17/N13E045_D001_S001_T001_L06_U17_R5.tif -imagery f:/CDB_Yemen_4.0.0/Tiles/N13/E045//home/kbentley/cdb/CDB_Yemen_4.0.0/Tiles/N13/E045/004_Imagery -origin 13 45 -output f:/cdb_output</LocalDebuggerCommandArguments>
     <LocalDebuggerWorkingDirectory>$(TargetDir)</LocalDebuggerWorkingDirectory>
   </PropertyGroup>
 </Project>

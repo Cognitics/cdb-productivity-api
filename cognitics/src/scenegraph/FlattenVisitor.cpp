@@ -73,6 +73,14 @@ namespace scenegraph
             for(size_t k = 0, kc = keys.size(); k < kc; ++k)
                 face.attributes.setAttribute(keys.at(k), scene->faces.at(i).attributes.getAttributeAsVariant(keys.at(k)));
 
+            auto inverseTranspose = matrix;
+            inverseTranspose.invert();
+            double* data = inverseTranspose.getData();
+            double trans[16];
+            for (int i = 0; i < 4; ++i)
+                for (int j = 0; j < 4; ++j)
+                    trans[j * 4 + i] = data[i * 4 + j];
+            inverseTranspose.set(trans);
             
             int numVerts = face.getNumVertices();
             for(int i=0;i<numVerts;i++)
@@ -81,7 +89,8 @@ namespace scenegraph
                 pt = matrix * pt;
                 face.setVertN(i,pt);
                 sfa::Point n = face.getNormalN(i);
-                n = matrix * n;
+                n = inverseTranspose * n;
+                n.normalize();
                 face.setNormalN(i,n);
             }
             

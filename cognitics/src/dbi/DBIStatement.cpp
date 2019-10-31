@@ -45,13 +45,6 @@ namespace dbi
         {
             switch(value.type())
             {
-                /*
-                case ccl::Variant::TYPE_UUID:
-                    ctype = SQL_C_GUID;
-                    sqltype = SQL_GUID;
-                    size = sizeof(SQLGUID);
-                    break;
-                    */
                 case ccl::Variant::TYPE_STRING:
                     ctype = SQL_C_CHAR;
                     sqltype = SQL_VARCHAR;
@@ -78,25 +71,6 @@ namespace dbi
                     ctype = SQL_C_DOUBLE;
                     sqltype = SQL_DOUBLE;
                     break;
-                    /*
-                case ccl::Variant::TYPE_DATETIME:
-                    ctype = SQL_C_TYPE_TIMESTAMP;
-                    sqltype = SQL_TYPE_TIMESTAMP;
-                    size = sizeof(TIMESTAMP_STRUCT);
-                    break;
-                case ccl::Variant::TYPE_DATE:
-                    ctype = SQL_C_TYPE_DATE;
-                    sqltype = SQL_TYPE_DATE;
-                    size = sizeof(DATE_STRUCT);
-                    break;
-                case ccl::Variant::TYPE_TIME:
-                    ctype = SQL_C_TYPE_TIME;
-                    sqltype = SQL_TYPE_TIME;
-                    size = sizeof(TIME_STRUCT);
-                    break;
-                case ccl::Variant::TYPE_INTERVAL:
-                    throw std::runtime_error("SQL_INTERVAL_STRUCT not currently supported as a bind parameter");
-                */
                 case ccl::Variant::TYPE_BINARY:
                     ctype = SQL_C_BINARY;
                     sqltype = SQL_LONGVARBINARY;
@@ -194,61 +168,7 @@ namespace dbi
                             data[colInfo.name] = value;
                     }
                     break;
-                /*
-                case SQL_GUID:
-                    {
-                        boost::uuids::uuid value;
-                        SQLLEN datasize = 0;
-                        if(GetData(i, (SQLSMALLINT)SQL_C_GUID, (SQLPOINTER)&value, (SQLLEN)sizeof(SQLGUID), &datasize) && (datasize >= 0))
-                            data[colInfo.name] = value;
-                    }
-                    break;
-                
-                case SQL_TYPE_TIMESTAMP:        // this is datetime, the mssql timestamp is a binary column
-                    {
-                        TIMESTAMP_STRUCT value;
-                        SQLLEN datasize = 0;
-                        if(GetData(i, (SQLSMALLINT)SQL_C_TYPE_TIMESTAMP, (SQLPOINTER)&value, (SQLLEN)sizeof(TIMESTAMP_STRUCT), &datasize) && (datasize >= 0))
-                            data[colInfo.name] = value;
-                    }
-                    break;
-                case SQL_TYPE_DATE:
-                    {
-                        DATE_STRUCT value;
-                        SQLLEN datasize = 0;
-                        if(GetData(i, (SQLSMALLINT)SQL_C_TYPE_DATE, (SQLPOINTER)&value, (SQLLEN)sizeof(DATE_STRUCT), &datasize) && (datasize >= 0))
-                            data[colInfo.name] = value;
-                    }
-                    break;
-                case SQL_TYPE_TIME:
-                    {
-                        TIME_STRUCT value;
-                        SQLLEN datasize = 0;
-                        if(GetData(i, (SQLSMALLINT)SQL_C_TYPE_TIME, (SQLPOINTER)&value, (SQLLEN)sizeof(TIME_STRUCT), &datasize) && (datasize >= 0))
-                            data[colInfo.name] = value;
-                    }
-                    break;
-                case SQL_INTERVAL_MONTH:
-                case SQL_INTERVAL_YEAR:
-                case SQL_INTERVAL_YEAR_TO_MONTH:
-                case SQL_INTERVAL_DAY:
-                case SQL_INTERVAL_HOUR:
-                case SQL_INTERVAL_MINUTE:
-                case SQL_INTERVAL_SECOND:
-                case SQL_INTERVAL_DAY_TO_HOUR:
-                case SQL_INTERVAL_DAY_TO_MINUTE:
-                case SQL_INTERVAL_DAY_TO_SECOND:
-                case SQL_INTERVAL_HOUR_TO_MINUTE:
-                case SQL_INTERVAL_HOUR_TO_SECOND:
-                case SQL_INTERVAL_MINUTE_TO_SECOND:
-                    {
-                        SQL_INTERVAL_STRUCT value;
-                        SQLLEN datasize = 0;
-                        if(GetData(i, (SQLSMALLINT)colInfo.datatype, (SQLPOINTER)&value, (SQLLEN)sizeof(SQL_INTERVAL_STRUCT), &datasize) && (datasize >= 0))
-                            data[colInfo.name] = value;
-                    }
-                    break;
-                    */
+
                 case SQL_WCHAR:
                 case SQL_WVARCHAR:
                 case SQL_WLONGVARCHAR:

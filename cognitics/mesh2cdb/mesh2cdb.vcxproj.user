@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LocalDebuggerCommandArguments>J:\objs\MUTC_OBJ\MUTC_50m_OBJ j:\output\mutc_regress_1 11</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerEnvironment>GDAL_DATA=C:\dev\cog\cognitics\cognitics\x64\Debug\gdal-data
+GDAL_DRIVER_PATH=C:\dev\cog\cognitics\cognitics\x64\Debug\gdalplugins
+$(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LocalDebuggerCommandArguments>J:\objs\MUTC_OBJ\MUTC_50m_OBJ j:\output\mutc_regress_3 12</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerEnvironment>GDAL_DATA=C:\dev\cog\cognitics\cognitics\x64\Release\gdal-data
+GDAL_DRIVER_PATH=C:\dev\cog\cognitics\cognitics\x64\Release\gdalplugins
+$(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
+  </PropertyGroup>
+</Project>

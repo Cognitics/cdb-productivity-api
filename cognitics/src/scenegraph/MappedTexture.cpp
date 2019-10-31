@@ -25,7 +25,9 @@ DEALINGS IN THE SOFTWARE.
 //#pragma optimize( "", off )
 namespace scenegraph
 {
-    std::vector<std::string> MappedTexture::s_names;
+    //std::vector<std::string> MappedTexture::s_names;
+    std::map<std::string,int> MappedTexture::s_names;
+    std::map<int, std::string> MappedTexture::s_textureIDs;
     ccl::mutex MappedTexture::s_namesProt;
 
     MappedTexture::MappedTexture() 
@@ -45,24 +47,20 @@ namespace scenegraph
     void MappedTexture::SetTextureName(const std::string &name)
     {
         s_namesProt.lock();
-        for(size_t i=0;i<s_names.size();i++)
+        if(s_names.find(name)==s_names.end())
         {
-            if(s_names.at(i)==name)
-            {
-                textureNameIdx = int(i);
-                s_namesProt.unlock();
-                return;
-            }
+            int id = s_names.size();
+            s_names[name] = id;
+            s_textureIDs[id] = name;
         }
-        textureNameIdx = int(s_names.size());
-        s_names.push_back(name);
+        textureNameIdx = s_names[name];
         s_namesProt.unlock();
     }
 
     std::string MappedTexture::GetTextureName() const
     {
         s_namesProt.lock();
-        if(s_names.size()<=textureNameIdx)
+        if(s_textureIDs.find(textureNameIdx)==s_textureIDs.end())
         {
             ccl::ObjLog log;
             log.init("MappedTexture::GetTextureName()");
@@ -70,9 +68,10 @@ namespace scenegraph
             s_namesProt.unlock();
             return "InvalidTextureID";
         }
-        std::string ret = s_names.at(textureNameIdx);;
+        std::string ret = s_textureIDs[textureNameIdx];
         s_namesProt.unlock();
         return ret;
+
 
     }
 

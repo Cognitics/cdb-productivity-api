@@ -106,14 +106,15 @@
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions);WIN32;_CRT_SECURE_NO_WARNINGS_CONSOLE</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)..\..\ThirdParty\jpeg-8c\lib;$(SolutionDir)..\..\ThirdParty\lpng154\lib;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\lib;$(SolutionDir)..\..\ThirdParty\ipp2019\lib\intel64_win;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);ippcore.lib;ippvm.lib;ipps.lib;ippi.lib;cognitics.lib;gdal_i.lib;jpg8-c.lib;libpng15_static.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)..\..\ThirdParty\jpeg-8c\lib;$(SolutionDir)..\..\ThirdParty\lpng154\lib;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\lib;$(SolutionDir)..\..\ThirdParty\ipp2019\lib\intel64_win;$(SolutionDir)..\..\ThirdParty\fbxsdk\lib\vs2015\x64\debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);ippcore.lib;ippvm.lib;ipps.lib;ippi.lib;cognitics.lib;gdal_i.lib;jpg8-c.lib;libpng15_static.lib;zlib128.lib;libcurl.lib;libfbxsdk.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -146,16 +147,17 @@
       <PreprocessorDefinitions>_CONSOLE;NDEBUG;_LIB;%(PreprocessorDefinitions);WIN32;;_CRT_SECURE_NO_WARNINGS</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\release\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\release\include;$(SolutionDir)..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)..\..\ThirdParty\jpeg-8c\lib;$(SolutionDir)..\..\ThirdParty\lpng154\lib;$(SolutionDir)..\..\ThirdParty\gdal-cdb\release\lib;$(SolutionDir)..\..\ThirdParty\ipp2019\lib\intel64_win;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>cognitics.lib;gdal_i.lib;jpg8-c.lib;libpng15_static.lib;%(AdditionalDependencies);ippcore.lib;ippvm.lib;ipps.lib;ippi.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\;$(SolutionDir)..\..\ThirdParty\jpeg-8c\lib;$(SolutionDir)..\..\ThirdParty\lpng154\lib;$(SolutionDir)..\..\ThirdParty\gdal-cdb\release\lib;$(SolutionDir)..\..\ThirdParty\ipp2019\lib\intel64_win;$(SolutionDir)..\..\ThirdParty\fbxsdk\lib\vs2015\x64\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cognitics.lib;gdal_i.lib;jpg8-c.lib;libpng15_static.lib;%(AdditionalDependencies);ippcore.lib;ippvm.lib;ipps.lib;ippi.lib;zlib128.lib;libcurl.lib;libfbxsdk.lib</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

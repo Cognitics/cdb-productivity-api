@@ -44,6 +44,8 @@ namespace ccl
 
     public:
         ~FileInfo(void);
+        FileInfo() {};
+
         FileInfo(const std::string &filename);
 
         /**
@@ -75,7 +77,7 @@ namespace ccl
          *
          * @return    The base name.
          */
-        std::string getBaseName(bool withoutSuffix = false);
+        std::string getBaseName(bool withoutSuffix = false) const;
 
         /**
          * @fn    std::string FileInfo::getSuffix(void);
@@ -93,7 +95,7 @@ namespace ccl
          * @return    The file name including the path.
          */
 
-        std::string getFileName();
+        std::string getFileName() const;
 
         /**
          * @fn    static std::vector<FileInfo> FileInfo::getAllFiles(const std::string &basepath,
@@ -200,6 +202,7 @@ namespace ccl
     bool directoryExists(const std::string &directory);
 
     bool copyFile(const std::string &src, const std::string &dest);
+    bool copyFilesRecursive(const std::string &srcDir, const std::string &destDir);
 
     uint64_t getFileSize(const std::string &filePath);
 }

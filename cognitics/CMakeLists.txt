@@ -416,6 +416,7 @@ set(COG_HEADERS
     ./include/ogr/Field.h
     ./include/ogr/ogr.h
     ./include/scenegraphgltf/scenegraphgltf.h
+    ./include/scenegraph_gl/scenegraph_gl.h
     ./include/lmfit/lmmin.h
     ./include/lmfit/lmstruct.h
     ./include/lmfit/lmcurve_tyd.h
@@ -756,19 +757,20 @@ set(COG_SOURCES
     ./src/ogr/File.cpp
     ./src/ogr/Field.cpp
     ./src/meshgen/meshgen.cpp
+    ./src/scenegraph_gl/scenegraph_gl.cpp
     ./src/scenegraphgltf/buildGltfFromScene.cpp
-    ./src/b64/base64.cpp
-    ./meshgen/meshgen.cpp
+    ./src/b64/base64.cpp    
     ./meshgen/ws/WebServices.cpp
     ./include/sqlite/sqlite3.c
-#    ./include/sqlite/shell.c
     ./src/lmfit/lmmin.c
     ./src/lmfit/lmcurve.c
     ./src/lmfit/lmcurve_tyd.c
 )
 
 add_definitions(-DLINUX)
-add_executable(meshgen ${COG_SOURCES} ${COG_HEADERS} )
+add_executable(meshgen ./meshgen/meshgen.cpp ${COG_SOURCES} ${COG_HEADERS} )
+add_executable(objtest ./ObjTest/ObjTest.cpp ${COG_SOURCES} ${COG_HEADERS} )
+
 target_link_libraries(meshgen "dl")
 target_link_libraries(meshgen "pthread")
 target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
@@ -780,6 +782,19 @@ target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
 target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
 target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
 target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+
+
+
+target_link_libraries(ObjTest "dl")
+target_link_libraries(ObjTest "pthread")
+target_link_libraries(ObjTest "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+target_link_libraries(ObjTest "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
+target_link_libraries(ObjTest "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
+target_link_libraries(ObjTest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.so")
+target_link_libraries(ObjTest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippvm.so")
+target_link_libraries(ObjTest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.so")
+target_link_libraries(ObjTest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.so")
+
 
 install(TARGETS meshgen DESTINATION bin)
 #install(DIRECTORY ${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64_lin/ DESTINATION lib FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
