@@ -1,4 +1,3 @@
-#pragma once
 #include "b64/base64.h"
 #include <vector>
 

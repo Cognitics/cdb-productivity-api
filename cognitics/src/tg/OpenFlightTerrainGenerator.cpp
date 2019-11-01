@@ -1,6 +1,6 @@
 #include <tg/OpenFlightTerrainGenerator.h>
 #include <scenegraphflt/scenegraphflt.h>
-#include <ip\attr.h>
+#include <ip/attr.h>
 
 using namespace cognitics;
 

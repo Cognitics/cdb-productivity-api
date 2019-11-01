@@ -3,8 +3,8 @@
 #include <ccl/FileInfo.h>
 #include "scenegraphfbx/scenegraphfbx.h"
 #include <fbxsdk.h>
-#include <fbxsdk\scene\shading\fbxtexture.h>
-#include <fbxsdk\core\fbxmanager.h>
+#include <fbxsdk/scene/shading/fbxtexture.h>
+#include <fbxsdk/core/fbxmanager.h>
 #include <vector>
 #include <memory>
 

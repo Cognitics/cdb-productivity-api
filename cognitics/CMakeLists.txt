@@ -2,19 +2,22 @@
 
 cmake_minimum_required(VERSION 2.8)
 project (cognitics)
-
+#cmake -G "Unix Makefiles" -DTHIRD_PARTY_DIR=/home/kbentley/cognitics/ThirdParty -DCMAKE_INSTALL_PREFIX=/home/kbentley/meshgen ..
 set(CMAKE_CXX_FLAGS "-lstdc++fs -g")
-#set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath='${ORIGIN}'")
-#SET (CMAKE_EXE_LINKER_FLAGS
-#    "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags,-rpath,'$ORIGIN:.'" )
+set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath='/usr/local/lib',--start-group")
+set(IPP_STATIC "ON")
+
 
 include_directories("./include")
 include_directories("./include/ccl/Unix")
+include_directories("${THIRD_PARTY_DIR}/fbxsdk/include")
 include_directories("${THIRD_PARTY_DIR}/boost_1_69_0")
 include_directories("${THIRD_PARTY_DIR}/linux_x64/include")
+include_directories("${THIRD_PARTY_DIR}/glew/linux_x64/include")
+include_directories("${THIRD_PARTY_DIR}/glut/linux_x64/include")
 include_directories("${THIRD_PARTY_DIR}/ipp2019_linux_x64/include")
 
-set(COG_HEADERS
+set(COGCORE_HEADERS
     ./include/cad/AttributeDictionary.h
     ./include/scenegraphobj/scenegraphobj.h
     ./include/ccl/ccl.h
@@ -83,6 +86,10 @@ set(COG_HEADERS
     ./include/elev/Elevation.h
     ./include/scenegraphflt/scenegraphflt.h
     ./include/tg/TerrainGenerator.h
+    ./include/tg/FbxTerrainGenerator.h
+    ./include/tg/GltfTerrainGenerator.h
+    ./include/tg/ObjTerrainGenerator.h
+    ./include/tg/OpenFlightTerrainGenerator.h
     ./include/cts/ProjInfo.h
     ./include/cts/CS_CoordinateSystemFactory.h
     ./include/cts/CS_FittedCoordinateSystem.h
@@ -424,11 +431,28 @@ set(COG_HEADERS
     ./include/lmfit/lmcurve.h
     ./include/b64/base64.h
     ./meshgen/ws/WebServices.h
+    ./include/features/FeatureInfo.h
+    ./include/features/GMLParser.h
+    ./include/features/GsBuildings.h
+
+
+    ./include/cdb_tile/Coordinates.h
+    ./include/cdb_tile/CoordinatesRange.h
+    ./include/cdb_tile/Dataset.h
+    ./include/cdb_tile/LOD.h
+    ./include/cdb_tile/LODRange.h
+    ./include/cdb_tile/Latitude.h
+    ./include/cdb_tile/Longitude.h
+    ./include/cdb_tile/Tile.h
+    ./include/cdb_tile/TileCoordinates.h
+    ./include/cdb_tile/TileLatitude.h
+    ./include/cdb_tile/TileLongitude.h
+    ./include/cdb_tile/util.h
+
 )
 
 
-set(COG_SOURCES
-    ./cognitics/buildObjFromScene.cpp
+set(COGCORE_SOURCES
     ./src/cad/AttributeDictionary.cpp
     ./src/ccl/AttributeContainer.cpp
     ./src/ccl/time.cpp
@@ -440,7 +464,13 @@ set(COG_SOURCES
     ./src/ccl/ScopedTimer.cpp
     ./src/ccl/Log.cpp
     ./src/ccl/Profile.cpp
-
+    ./src/CoordinateSystems/EGM.cpp
+    ./src/CoordinateSystems/EGM2008.cpp
+    ./src/CoordinateSystems/EGMTransform.cpp
+    ./src/CoordinateSystems/EllipsoidTangentPlane.cpp
+    ./src/CoordinateSystems/GeoidTangentPlane.cpp
+    ./src/CoordinateSystems/SphereTangentPlane.cpp
+    ./src/CoordinateSystems/WGS84Transform.cpp
     ./src/ccl/Unix/Runnable.cpp
     ./src/ccl/Unix/mutex.cpp
     ./src/ccl/Unix/sem.cpp
@@ -486,6 +516,10 @@ set(COG_SOURCES
     ./src/scenegraphflt/buildSceneFromOpenFlight.cpp
     ./src/scenegraphflt/buildOpenFlightFromScene.cpp
     ./src/tg/TerrainGenerator.cpp
+    ./src/tg/FbxTerrainGenerator.cpp
+    ./src/tg/GltfTerrainGenerator.cpp
+    ./src/tg/ObjTerrainGenerator.cpp
+    ./src/tg/OpenFlightTerrainGenerator.cpp
     ./src/cts/WGS84ToFlatEarthMathTransform.cpp
     ./src/cts/CS_GeographicCoordinateSystem.cpp
     ./src/cts/ProjInfo.cpp
@@ -759,43 +793,74 @@ set(COG_SOURCES
     ./src/ogr/File.cpp
     ./src/ogr/Field.cpp
     ./src/meshgen/meshgen.cpp
-    ./src/scenegraph_gl/scenegraph_gl.cpp
     ./src/scenegraphgltf/buildGltfFromScene.cpp
+    ./src/scenegraphfbx/buildFbxFromScene.cpp
+    ./src/scenegraphobj/buildObjFromScene.cpp
+    ./src/scenegraphobj/buildSceneFromOBJ.cpp
     ./src/b64/base64.cpp    
     ./meshgen/ws/WebServices.cpp
     ./include/sqlite/sqlite3.c
     ./src/lmfit/lmmin.c
     ./src/lmfit/lmcurve.c
     ./src/lmfit/lmcurve_tyd.c
+    ./src/features/FeatureInfo.cpp
+    ./src/features/GMLParser.cpp
+    ./src/features/GsBuildings.cpp
+    ./src/cdb_tile/CDBLOD.cpp
+    ./src/cdb_tile/Coordinates.cpp
+    ./src/cdb_tile/CoordinatesRange.cpp
+    ./src/cdb_tile/Dataset.cpp
+    ./src/cdb_tile/LODRange.cpp
+    ./src/cdb_tile/Latitude.cpp
+    ./src/cdb_tile/Longitude.cpp
+    ./src/cdb_tile/Tile.cpp
+    ./src/cdb_tile/TileCoordinates.cpp
+    ./src/cdb_tile/TileLatitude.cpp
+    ./src/cdb_tile/TileLongitude.cpp
 )
 
-add_definitions(-DLINUX)
-add_executable(meshgen ./meshgen/meshgen.cpp ${COG_SOURCES} ${COG_HEADERS} )
-add_executable(objtest ./ObjTest/ObjTest.cpp ${COG_SOURCES} ${COG_HEADERS} )
+add_library(cogcore ${COGCORE_SOURCES} ${COGCORE_HEADERS})
 
-target_link_libraries(meshgen "dl")
+add_definitions(-DLINUX)
+add_executable(meshgen ./meshgen/meshgen.cpp  )
+
+
+target_link_libraries(meshgen ${CMAKE_DL_LIBS})
+target_link_libraries(meshgen cogcore)
 target_link_libraries(meshgen "pthread")
+target_link_libraries(meshgen "${THIRD_PARTY_DIR}/fbxsdk/lib/gcc4/x64/release/libfbxsdk.a")
+target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libcurl.so")
 target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
 target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
 target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
-target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.so")
-target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippvm.so")
-target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.so")
-target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.so")
+target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
+target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
+target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
 
 
-
-target_link_libraries(ObjTest "dl")
-target_link_libraries(ObjTest "pthread")
-target_link_libraries(ObjTest "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
-target_link_libraries(ObjTest "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
-target_link_libraries(ObjTest "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
-target_link_libraries(ObjTest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.so")
-target_link_libraries(ObjTest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippvm.so")
-target_link_libraries(ObjTest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.so")
-target_link_libraries(ObjTest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.so")
-
+IF(COG_BUILD_GL_TOOLS)
+    add_executable(mesh2cdb ./mesh2cdb/mesh2cdb.cpp ./mesh2cdb/mesh2cdb.h ./mesh2cdb/meshconvert.cpp ./mesh2cdb/MeshRender.h ./mesh2cdb/meshrender.cpp ./src/scenegraph_gl/scenegraph_gl.cpp)
+    target_link_libraries(mesh2cdb ${CMAKE_DL_LIBS})
+    target_link_libraries(mesh2cdb cogcore)
+    target_link_libraries(mesh2cdb "GL")
+    target_link_libraries(mesh2cdb "GLU")
+    target_link_libraries(mesh2cdb "pthread")
+    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/fbxsdk/lib/gcc4/x64/release/libfbxsdk.a")
+    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/linux_x64/lib/libcurl.so")
+    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
+    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
+    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.so")
+    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippvm.so")
+    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.so")
+    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.so")
+    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/glew/linux_x64/lib/libGLEW.a")
+    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/glut/linux_x64/lib/libglut.so")
+    install(TARGETS mesh2cdb DESTINATION bin)
+ENDIF(COG_BUILD_GL_TOOLS)
 
 install(TARGETS meshgen DESTINATION bin)
 install(DIRECTORY ${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64_lin/ DESTINATION lib FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
 install(DIRECTORY ${THIRD_PARTY_DIR}/linux_x64/ DESTINATION .)
+install(DIRECTORY ${THIRD_PARTY_DIR}/glew/linux_x64/lib/ DESTINATION lib FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
+

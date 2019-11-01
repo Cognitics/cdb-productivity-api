@@ -44,7 +44,7 @@ namespace Cognitics
         void EllipsoidTangentPlane::GeodeticToLocal(double latitude, double longitude, double altitude, double& east, double& north, double& up)
         {
             double x, y, z;
-            WGS84Transform.GeodeticToECEF(latitude, longitude, altitude, x, y, z);
+            _WGS84Transform.GeodeticToECEF(latitude, longitude, altitude, x, y, z);
             ECEFtoLocal(x, y, z, east, north, up);
         }
 
@@ -52,7 +52,7 @@ namespace Cognitics
         {
             double x, y, z;
             LocalToECEF(east, north, up, x, y, z);
-            WGS84Transform.ECEFtoGeodetic(x, y, z, latitude, longitude, altitude);
+            _WGS84Transform.ECEFtoGeodetic(x, y, z, latitude, longitude, altitude);
         }
 
 

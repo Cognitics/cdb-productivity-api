@@ -14,10 +14,10 @@ namespace Cognitics
             PostsPerDegree = postsPerDegree;
             Rows = (180 * PostsPerDegree) + 1;
             Columns = 360 * PostsPerDegree;
-            Image.Width = Columns;
-            Image.Height = Rows;
-            Image.Channels = 1;
-            Image.Data = new float[Image.Width * Image.Height];
+            _Image.Width = Columns;
+            _Image.Height = Rows;
+            _Image.Channels = 1;
+            _Image.Data = new float[_Image.Width * _Image.Height];
         }
 
         int EGM::Row(double latitude)
@@ -42,17 +42,17 @@ namespace Cognitics
 
         int EGM::Index(double latitude, double longitude)
         {
-            return (Row(latitude) * Image.Width) + Column(longitude);
+            return (Row(latitude) * _Image.Width) + Column(longitude);
         }
 
         std::pair<float, float> EGM::Range()
         {
             float min = std::numeric_limits<float>::max();
             float max = std::numeric_limits<float>::min();
-            for (int i = 0, c = Image.Width * Image.Height; i < c; ++i)
+            for (int i = 0, c = _Image.Width * _Image.Height; i < c; ++i)
             {
-                min = std::min(min, Image.Data[i]);
-                max = std::max(max, Image.Data[i]);
+                min = std::min(min, _Image.Data[i]);
+                max = std::max(max, _Image.Data[i]);
             }
             return std::pair<float, float>(min, max);
         }
@@ -69,10 +69,10 @@ namespace Cognitics
             int nw_index = (nw_row * Columns) + nw_col;
             double nw_lat = Latitude(nw_row);
             double nw_lon = Longitude(nw_col);
-            float nw_h = Image.Data[nw_index];
-            float ne_h = Image.Data[nw_index + 1 - rot_lon];
-            float sw_h = Image.Data[nw_index + Columns];
-            float se_h = Image.Data[nw_index + Columns + 1 - rot_lon];
+            float nw_h = _Image.Data[nw_index];
+            float ne_h = _Image.Data[nw_index + 1 - rot_lon];
+            float sw_h = _Image.Data[nw_index + Columns];
+            float se_h = _Image.Data[nw_index + Columns + 1 - rot_lon];
             float nx = (float)(lon - nw_lon) * PostsPerDegree;
             float ny = (float)(nw_lat - lat) * PostsPerDegree;
             float a00 = nw_h;

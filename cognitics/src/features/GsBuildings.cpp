@@ -1,6 +1,6 @@
-#include "rapidjson\filereadstream.h"
-#include "rapidjson\document.h"
-#include "features\GsBuildings.h"
+#include "rapidjson/filereadstream.h"
+#include "rapidjson/document.h"
+#include "features/GsBuildings.h"
 #include <fstream>
 #include <iostream>
 
@@ -31,7 +31,12 @@ GsBuildings::~GsBuildings()
 void GsBuildings::ProcessBuildingData(std::string datafile)
 {
     FILE* fp = nullptr;
+#ifndef _MSC_VER
+	fp = fopen(datafile.c_str(),"rb");
+#else
 	fopen_s(&fp, datafile.c_str(), "rb");
+#endif
+	
 
     if (fp == nullptr)
     {

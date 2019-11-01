@@ -6,6 +6,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <vector>
+#include <math.h>
 
 namespace cognitics {
 namespace cdb {

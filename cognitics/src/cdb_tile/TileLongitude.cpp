@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
+#include <math.h>
 
 namespace cognitics {
 namespace cdb {

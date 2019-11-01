@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include "scenegraph\Scene.h"
+#include "scenegraph/Scene.h"
 
 struct LatLon
 {

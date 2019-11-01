@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tg\TerrainGenerator.h"
+#include "tg/TerrainGenerator.h"
 
 namespace cognitics
 {

@@ -2,9 +2,9 @@
 #include <iomanip>
 #include <ccl/FileInfo.h>
 #include "scenegraphobj/scenegraphobj.h"
-#include "sfa\Point.h"
-#include "sfa\PointMath.h"
-#include "ctl\Vector.h"
+#include "sfa/Point.h"
+#include "sfa/PointMath.h"
+#include "ctl/Vector.h"
 #include <ctl/TIN.h>
 #include <boost/lexical_cast.hpp>
 

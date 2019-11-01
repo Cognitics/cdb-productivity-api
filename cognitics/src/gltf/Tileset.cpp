@@ -1,6 +1,6 @@
-#include "gltf\GltfInfo.h"
-#include "gltf\Tileset.h"
-#include "ccl\FileInfo.h"
+#include "gltf/GltfInfo.h"
+#include "gltf/Tileset.h"
+#include "ccl/FileInfo.h"
 
 namespace gltf
 {
@@ -172,7 +172,7 @@ namespace gltf
 				std::string quadkey = fi.getBaseName(true);
 				tileLods.insert(std::pair<std::string, 
 					TileInfo&>(quadkey, tiles[i]));
-				maxLod = max(maxLod, quadkey.size());
+				maxLod = std::max<int>(maxLod, quadkey.size());
 			}
 			else
 			{

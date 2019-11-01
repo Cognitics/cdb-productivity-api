@@ -8,10 +8,10 @@
 typedef std::vector<unsigned short> face_vec_t;
 ;
 
-void writeMtlFile(const std::string &textureName, const std::string &outputPath)
+void writeMtlFile(const std::string& textureName, const std::string& outputPath)
 {
     ccl::FileInfo fi(textureName);
-    std::string textureBase = fi.getBaseName(true);
+    const std::string textureBase = fi.getBaseName(true);
     std::string mtlPath = ccl::joinPaths(outputPath, textureBase);
     mtlPath += ".mtl";
     std::ofstream outfile(mtlPath.c_str());
@@ -25,76 +25,75 @@ void writeMtlFile(const std::string &textureName, const std::string &outputPath)
     outfile.close();
 }
 
-void writeOBJ(const std::string &objFileName, 
-            const std::string &mtfFile,
-            const std::vector<sfa::Point> &verts, 
-            const std::vector<sfa::Point> &uvs, 
-            const std::vector<face_vec_t> &faces)
+void writeOBJ(const std::string& objFileName,
+              const std::string& mtfFile,
+              const std::vector<sfa::Point>& verts,
+              const std::vector<sfa::Point>& uvs,
+              const std::vector<face_vec_t>& faces)
 {
     ccl::FileInfo fi(mtfFile);
-    std::string textureID = fi.getBaseName(true);
+    const std::string textureID = fi.getBaseName(true);
 
     std::ofstream outfile(objFileName.c_str());
     outfile << "mtllib " << mtfFile << std::endl;
-    for(auto &&vert : verts)
+    for (auto&& vert : verts)
     {
         outfile << "v " << vert.X() << " " << vert.Y() << " " << vert.Z() << std::endl;
     }
 
-    for (auto &&uv : uvs)
+    for (auto&& uv : uvs)
     {
         outfile << "vt " << uv.X() << " " << uv.Y() << std::endl;
     }
     outfile << "usemtl " << textureID << std::endl;
 
-    for(auto && face : faces)
+    for (auto&& face : faces)
     {
         outfile << "f ";
         outfile << face[2] << "/" << face[2] << " ";
         outfile << face[1] << "/" << face[1] << " ";
         outfile << face[0] << "/" << face[0] << "\n";
-        
     }
 
     outfile.close();
 }
 
-std::string getTileString(const std::string &fileName)
+std::string getTileString(const std::string& fileName)
 {
-    ccl::FileInfo fi(fileName);
-    std::string baseName = fi.getBaseName();
+    const ccl::FileInfo fi(fileName);
+    const std::string baseName = fi.getBaseName();
     //Extract the name without the LOD part.
     //Tile_+006_+015_L19_0.obj -> Tile_+006_+015
-    std::string::size_type pos = baseName.rfind("_L");
-    if(std::string::npos!=pos && pos > 0)
+    const std::string::size_type pos = baseName.rfind("_L");
+    if (std::string::npos != pos && pos > 0)
     {
-        std::string tileName = baseName.substr(0, pos);
+        const std::string tileName = baseName.substr(0, pos);
         return tileName;
     }
     return ".";
 }
 
-void convert(FILE *f, const std::string &texturePath, std::string outputPath)
+void convert(FILE* f, const std::string& texturePath, std::string outputPath)
 {
     //Read texture length
     unsigned char texture_name_len;
     fread(&texture_name_len, 1, 1, f);
 
     //Read texture name
-    char *texname = new char[texture_name_len + 1];
+    char* texname = new char[texture_name_len + 1];
     texname[texture_name_len] = 0;
     fread(texname, 1, texture_name_len, f);
 
-    std::string subdir = getTileString(texname);
+    const std::string subdir = getTileString(texname);
     outputPath = ccl::joinPaths(outputPath, subdir);
     ccl::makeDirectory(outputPath);
 
     ccl::FileInfo textureFileInfo(texname);
-    std::string objPath = ccl::joinPaths(outputPath, textureFileInfo.getBaseName(true) + ".obj");
+    const std::string objPath = ccl::joinPaths(outputPath, textureFileInfo.getBaseName(true) + ".obj");
 
     //Build mtl file
     writeMtlFile(texname, outputPath);
-    
+
     //Copy dds file
     ccl::copyFile(ccl::joinPaths(texturePath, texname), ccl::joinPaths(outputPath, texname));
     std::cout << "Copying texture: " << texname << std::endl;
@@ -140,7 +139,7 @@ void convert(FILE *f, const std::string &texturePath, std::string outputPath)
         {
             unsigned short idx;
             fread(&idx, 2, 1, f);
-            face.push_back(idx+1);//Verts start at 1, not 0
+            face.push_back(idx + 1); //Verts start at 1, not 0
         }
         faces.push_back(face);
     }
@@ -149,28 +148,26 @@ void convert(FILE *f, const std::string &texturePath, std::string outputPath)
     std::string mtlPath = textureBase + ".mtl";
     std::cout << "Creating : " << objPath << std::endl;
     writeOBJ(objPath, mtlPath, verts, uvs, faces);
-
 }
 
 
-
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     //E:\TestData\ATLAS v2 Latest\ATLAS v2 Latest\TerrainsAvailable\USC_LMAB_SEGT_ENU_5cm_170520\terrainMesh.lmab
-    if(argc < 4)
+    if (argc < 4)
     {
         std::cout << "Usage:" << std::endl;
         std::cout << "lmbundle2obj <lmab file path> <source texture path> <output_directory>" << std::endl;
         return 1;
     }
 
-    std::string output_path = argv[3];
-    std::string input_lmab = argv[1];
-    std::string texture_path = argv[2];
+    const std::string output_path = argv[3];
+    const std::string input_lmab = argv[1];
+    const std::string texture_path = argv[2];
     ccl::makeDirectory(output_path, true);
     ccl::FileInfo fi(input_lmab);
-    std::string metadataFilename = ccl::joinPaths(fi.getDirName(), "metadata.xml");
-    if(ccl::fileExists(metadataFilename))
+    const std::string metadataFilename = ccl::joinPaths(fi.getDirName(), "metadata.xml");
+    if (ccl::fileExists(metadataFilename))
     {
         ccl::copyFile(metadataFilename, ccl::joinPaths(output_path, "metadata.xml"));
     }
@@ -178,8 +175,8 @@ int main(int argc, char **argv)
     {
         std::cout << "Warning: No metadata.xml exists in input path.\n";
     }
-    
-    FILE *f = NULL;
+
+    FILE* f = NULL;
     fopen_s(&f, input_lmab.c_str(), "rb");
     if (!f)
     {
@@ -192,7 +189,7 @@ int main(int argc, char **argv)
     for (int i = 0; i < num_meshes; i++)
     {
         convert(f, texture_path,
-            output_path);
+                output_path);
     }
     fclose(f);
     return 0;

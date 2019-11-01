@@ -8,7 +8,7 @@
 
 #include "ccl/StringUtils.h"
 #include "mesh2cdb.h"
-#include "meshrender.h"
+#include "MeshRender.h"
 #include "ip/pngwrapper.h"
 #include "sfa/BSP.h"
 #include "rapidxml/rapidxml.hpp"
@@ -166,9 +166,9 @@ void Obj2CDB::buildBSP()
     //objFiles
     for (auto&& fi : objFiles)
     {
-        //HAAAAAACK
+        // HAAAAAACK
         //if (loop > 10)
-        //    break;
+//            break;
         loop++;
         scenegraph::ExtentsVisitor extentsVisitor;
         scenegraph::Scene *scene = scenegraph::buildSceneFromOBJ(fi.getFileName(), true);

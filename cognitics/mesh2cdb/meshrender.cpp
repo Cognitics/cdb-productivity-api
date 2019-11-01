@@ -20,6 +20,8 @@
 #include "ogr_spatialref.h"
 #pragma warning ( pop )
 
+#include <EGL/egl.h>
+
 
 namespace
 {
@@ -350,9 +352,7 @@ void renderToFile(RenderJob &job)
     scene = new scenegraph::Scene();
     for (auto&&obj : job.objFiles)
     {
-        std::cout << "[";
         scenegraph::Scene *childScene = scenegraph::buildSceneFromOBJ(obj, true);
-        std::cout << "]";
         if (job.offsetX || job.offsetY || job.offsetZ)
         {
             sfa::Matrix matrix;
@@ -446,19 +446,15 @@ void renderToFile(RenderJob &job)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glPushMatrix();
-    std::cout << "<";
     renderVisitor.visit(scene);
-    std::cout << ">";
     glPopMatrix();
 
     glMatrixMode(GL_PROJECTION);
     glDisable(GL_BLEND);
     glPopMatrix();
     glutSwapBuffers();
-    //std::cout << "i";
     unsigned char *pixels = new unsigned char[width * height * depth];
     glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
-    //std::cout << "o";
     FlipVertically(pixels, width, height, 3);
 
     float *grid = new float[width*height];
@@ -532,11 +528,13 @@ extentsVisitor.getExtents(left, right, bottom, top, minZ, maxZ);
 #endif
 
 bool renderingToFile = true;
-
+float totalCDBTileCount = 0;
 std::string rootCDBOutput;
 
 bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string &cdbRoot)
 {
+    totalCDBTileCount = jobs.size();
+
     rootCDBOutput = cdbRoot;
     GDALAllRegister();
 
@@ -589,9 +587,7 @@ int CPL_STDCALL GDALProgressObserver(CPL_UNUSED double dfComplete,
     CPL_UNUSED const char *pszMessage,
     void * /* pProgressArg */)
 {
-    int iComplete = dfComplete * 100;
-    if (iComplete % 10 == 0)
-        logger << dfComplete << "%..." << dfComplete * 100 << logger.endl;
+    logger << (dfComplete * 100.0f) << "% complete..." << logger.endl;
     return TRUE;
 }
 
@@ -602,9 +598,10 @@ int CPL_STDCALL GDALProgressObserver(CPL_UNUSED double dfComplete,
  */
 void finishBuild()
 {
-    logger << "Waiting for compression of JP2 files..." << logger.endl;
+    logger << "Waiting for compression of JP2 files to complete..." << logger.endl;
     jobManager.waitForCompletion();
-    logger << "Building Imagery LODs" << logger.endl;
+    logger << "============================" << logger.endl;
+    logger << "\nBuilding Imagery LODs" << logger.endl;    
     std::string cdbImageryOpenString = "CDB:" + rootCDBOutput + ":Imagery_Yearly";
     auto poDataset = (GDALDataset *)GDALOpen(cdbImageryOpenString.c_str(), GA_Update);
     if (poDataset == NULL)
@@ -618,7 +615,7 @@ void finishBuild()
         const char *gdalErrMsg = CPLGetLastErrorMsg();
         logger << gdalErrMsg << logger.endl;
     }
-
+    logger << "\n============================" << logger.endl;
     logger << "Building Elevation LODs" << logger.endl;
     std::string cdbElevationOpenString = "CDB:" + rootCDBOutput + ":Elevation_PrimaryTerrainElevation";
     auto poElevDataset = (GDALDataset *)GDALOpen(cdbElevationOpenString.c_str(), GA_Update);
@@ -637,6 +634,8 @@ void finishBuild()
     logger << "Build completed!" << logger.endl;
 }
 
+
+
 void renderScene(void)
 {
     if (renderJobs.empty())
@@ -650,75 +649,16 @@ void renderScene(void)
     {
         renderJobs.pop_back();
         renderToFile(job);
-    }
-    if (false)//(!scene)
-    {
-        scene = new scenegraph::Scene();
-        for (auto&&obj : job.objFiles)
+        float jobsLeft = renderJobs.size();
+        if((renderJobs.size() % 10)==0)
         {
-            scenegraph::Scene *childScene = scenegraph::buildSceneFromOBJ(obj, true);
-            scene->addChild(childScene);
+            std::stringstream ss;
+            ss.precision(2);
+            ss << ((1.0f - (jobsLeft / totalCDBTileCount))*100.0) << "%" << " complete...";
+            logger << ss.str() << logger.endl;
         }
-        resetAOIForScene(job);
+        return;
     }
-    /*
-    if (!scene)
-        exit(0);
-    if (renderingToFile)
-    {
-        renderToFile();
-    }
-    */
-    // Clear Color and Depth Buffers
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    //glClearColor(1.0f, 1.0f, 0.0f, 1.0f); //Chromakey background
-    // Reset transformations
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-
-    glPushMatrix();
-    glLoadIdentity();
-    //gluOrtho2D(0, width, 0, height);
-    glOrtho(0, width, 0, height, -5000, 5000);
-
-    glColor3f(1.0f, 1.0f, 1.0f);
-    glRasterPos2i(10, 10);
-    std::stringstream ss;
-    ss.precision(10);
-    ss << "x=" << cursor_world_x << " y=" << cursor_world_y;
-    if (!renderingToFile)
-        RenderBitmapText(ss.str());
-
-    ss.str() = "";
-
-    glPopMatrix();
-
-    // Set the camera
-    //gluOrtho2D(window_llx, window_urx, window_lly, window_ury);
-    glOrtho(window_llx, window_urx, window_lly, window_ury, -5000, 5000);
-    //glDisable(GL_DEPTH_TEST);
-    glMatrixMode(GL_MODELVIEW);
-
-    // Draw 
-    //
-    //glEnable(GL_MULTISAMPLE);
-    //glHint(GL_NICEST)
-    glEnable(GL_BLEND);
-    glEnable(GL_LINE_SMOOTH);
-    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glPushMatrix();
-    if (!renderingToFile)
-    {
-        renderVisitor.visit(scene);
-    }
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glDisable(GL_BLEND);
-    //glDisable(GL_LINE_SMOOTH);
-    glPopMatrix();
-    glutSwapBuffers();
 }
 
 GLuint LoadShaders(std::string vertexShader, std::string fragmentShader)
