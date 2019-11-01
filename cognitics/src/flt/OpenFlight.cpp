@@ -257,6 +257,7 @@ namespace flt
     {
         OpenFlight *flt = new OpenFlight;
         flt->inFile.open(filename.c_str(), std::ifstream::binary | std::ifstream::in);
+        flt->is = &flt->inFile;
         if(!flt->inFile.good())
         {
             flt->log << ccl::LERR << "open(" << filename << "): error opening file" << flt->log.endl; 
@@ -286,6 +287,39 @@ namespace flt
 
         // start over
         flt->inFile.seekg(0);
+        flt->bindStream.bind(flt->nextOpcode);
+
+        return flt;
+    }
+
+    OpenFlight *OpenFlight::open(std::istream &is)
+    {
+        OpenFlight *flt = new OpenFlight;
+        flt->is = &is;
+        flt->bindStream.setStream(is);
+
+        // preread the header for validation
+        flt->bindStream.bind(flt->nextOpcode);
+        if (flt->nextOpcode != Record::FLT_HEADER)
+        {
+            flt->log << ccl::LERR << "open(): invalid OpenFlight file (header not found)" << flt->log.endl;
+            delete flt;
+            return NULL;
+        }
+
+        Header *header = dynamic_cast<Header *>(flt->getNextRecord());
+        if (!header)
+        {
+            flt->log << ccl::LERR << "open(): invalid OpenFlight file (header not found)" << flt->log.endl;
+            delete flt;
+            return NULL;
+        }
+        flt->revision = header->formatRevisionLevel;
+        if (!supportsRevision(flt->revision))
+            flt->log << ccl::LWARNING << "open(): revision " << flt->revision << " not supported, attempting to continue" << flt->log.endl;
+
+        // start over
+        is.seekg(0);
         flt->bindStream.bind(flt->nextOpcode);
 
         return flt;
@@ -419,12 +453,10 @@ namespace flt
 
     Record *OpenFlight::getNextRecord(void)
     {
-        if(!inFile.is_open())
-            throw std::runtime_error("getNextRecord() called with invalid input file");
-        if(inFile.eof())
+        if(is->eof())
             return NULL;
         int position = bindStream.pos() - 2;
-        if(!inFile.good())
+        if(!is->good())
         {
             log << ccl::LERR << "getNextRecord(): file error at file position " << position << log.endl;
             return NULL;
@@ -434,7 +466,7 @@ namespace flt
         bindStream.bind(length);
         ccl::binary data;
         bindStream.bind(data, length - 4);
-        if(!inFile.good())
+        if(!is->good())
         {
             log << ccl::LERR << "getNextRecord(): file error at file position " << position << log.endl;
             return NULL;
@@ -446,7 +478,7 @@ namespace flt
             bindStream.bind(partLength);
             ccl::binary partData;
             bindStream.bind(partData, partLength - 4);
-            if(!inFile.good())
+            if(!is->good())
             {
                 log << ccl::LERR << "getNextRecord(): file error at file position " << position << log.endl;
                 return NULL;
@@ -469,8 +501,6 @@ namespace flt
 
     RecordList OpenFlight::getRecords(void)
     {
-        if(!inFile.is_open())
-            throw std::runtime_error("getRecords() called with invalid input file");
         RecordList result;
         Record *prev = NULL;
         std::vector<Record *> stack;

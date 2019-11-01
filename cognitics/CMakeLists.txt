@@ -64,6 +64,7 @@ set(COG_HEADERS
     ./include/ccl/cstdint.h
     ./include/ccl/ObjLog.h
     ./include/ccl/config.h
+    ./include/ccl/miniz.h
     ./include/sfa_file_factory/sfa_file_factory.h
     ./include/gltf/GltfData.h
     ./include/gltf/Tileset.h
@@ -466,6 +467,7 @@ set(COG_SOURCES
     ./src/ccl/Variant.cpp
     ./src/ccl/primitive.cpp
     ./src/ccl/ProgressObserver.cpp
+    ./src/ccl/miniz.c
     ./src/sfa_file_factory/sfa_file_factory.cpp
     ./src/gltf/GltfJson.cpp
     ./src/gltf/GltfInfo.cpp

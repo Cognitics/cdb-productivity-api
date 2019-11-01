@@ -127,6 +127,9 @@ public:
 
     std::string getFilename(void) const;
 
+    std::string Path() const;
+    std::string Filename() const;
+
     Tile(CoordinatesRange _coordinates, Dataset _ds, int lod, uint32_t _uref, uint32_t _rref, uint32_t _cs1 = 1,
          uint32_t _cs2 = 1);
 };

@@ -188,6 +188,7 @@ namespace ccl
         }
 #endif
 
+        ret.erase(std::remove_if(ret.begin(), ret.end(), [](const std::string& dirname) { return (dirname.empty() || (ccl::FileInfo(dirname).getBaseName() == ".") || (ccl::FileInfo(dirname).getBaseName() == "..")); }), ret.end());
         return ret;
     }
 

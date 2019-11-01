@@ -78,5 +78,45 @@ namespace cognitics
             coordinates(_coordinates), dataset(_ds), lod(_lod), uref(_uref), rref(_rref), cs1(_cs1), cs2(_cs2)
         {
         }
+
+        std::string Tile::Path() const
+        {
+            int32_t isouth = static_cast<int32_t>(floor(coordinates.low().latitude().value()));
+            int32_t iwest = static_cast<int32_t>(floor(coordinates.low().longitude().value()));
+            // LatLon_Dnnn_Snnn_Tnnn_LOD_Un_Rn.xxx (p117)
+            std::stringstream ss;
+            ss << "Tiles";
+            ss << "/" << getLatitudeString(isouth);
+            ss << "/" << getLongitudeString(iwest);
+            ss << "/";
+            ss << std::setw(3) << std::setfill('0') << int(dataset.code());
+            ss << "_" << dataset.name();
+            if (lod < 0)
+                ss << "/LC";
+            else
+                ss << "/L" << std::setw(2) << std::setfill('0') << int(lod);
+            ss << "/U" << uref;
+            return ss.str();
+        }
+
+        std::string Tile::Filename() const
+        {
+            int32_t isouth = static_cast<int32_t>(floor(coordinates.low().latitude().value()));
+            int32_t iwest = static_cast<int32_t>(floor(coordinates.low().longitude().value()));
+            std::stringstream ss;
+            ss << getLatitudeString(isouth);
+            ss << getLongitudeString(iwest);
+            ss << "_D" << std::setw(3) << std::setfill('0') << int(dataset.code());
+            ss << "_S" << std::setw(3) << std::setfill('0') << cs1;
+            ss << "_T" << std::setw(3) << std::setfill('0') << cs2;
+            if (lod < 0)
+                ss << "_LC";
+            else
+                ss << "_L" << std::setw(2) << std::setfill('0') << int(lod);
+            ss << "_U" << uref;
+            ss << "_R" << rref;
+            return ss.str();
+        }
+
     }
 }
