@@ -22,6 +22,9 @@ DEALINGS IN THE SOFTWARE.
 //#pragma optimize("", off)
 #pragma warning ( disable : 4996 )        // deprecated access()
 
+#include <ccl/ObjLog.h>
+#include <ccl/LogStream.h>
+
 #include "ccl/FileInfo.h"
 #include "ccl/StringUtils.h"
 #include <boost/algorithm/string.hpp>
@@ -256,6 +259,9 @@ namespace ccl
     {
         std::vector<std::string> ret;
         boost::split(ret, path, boost::is_any_of("\\/"));
+        //Handle the special case where the path begins with a / (unix absolute paths)
+        if(ret.size() > 0 && ret[0].empty())
+            ret[0] = "/";
         return ret;
     }
 
@@ -266,7 +272,7 @@ namespace ccl
 #ifdef WIN32
             return 0==_mkdir(dir.c_str());
 #else
-            return 0==mkdir(dir.c_str(),0);
+            return 0==mkdir(dir.c_str(),S_IRWXU);
 #endif
         }
         bool ret = true;

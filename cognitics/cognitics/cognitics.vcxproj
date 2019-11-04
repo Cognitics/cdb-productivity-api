@@ -995,7 +995,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_LIB;%(PreprocessorDefinitions);WIN32;_CRT_SECURE_NO_WARNINGS;IPP_ENABLED</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\include;$(SolutionDir)..\include;$(SolutionDir)..\..\ThirdParty\glut\include;$(SolutionDir)..\..\ThirdParty\glew\debug\include;$(SolutionDir)..\..\ThirdParty\fbxsdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\debug\include;$(SolutionDir)..\include;$(SolutionDir)..\..\ThirdParty\glut\include;$(SolutionDir)..\..\ThirdParty\glew\debug\include;$(SolutionDir)..\..\ThirdParty\fbxsdk\include;$(SolutionDir)..\..\ThirdParty\glfw\debug\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -1070,7 +1070,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_LIB;%(PreprocessorDefinitions);WIN32;;_CRT_SECURE_NO_WARNINGS;IPP_ENABLED</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\release\include;$(SolutionDir)..\include;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\glut\include;$(SolutionDir)..\..\ThirdParty\glew\release\include;$(SolutionDir)..\..\ThirdParty\fbxsdk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>./;$(SolutionDir)..\..\ThirdParty\jpeg-8c\include;$(SolutionDir)..\..\ThirdParty\lpng154\include;$(SolutionDir)..\..\ThirdParty\boost_1_69_0;$(SolutionDir)..\..\ThirdParty\gdal-cdb\release\include;$(SolutionDir)..\include;$(SolutionDir)..\..\ThirdParty\ipp2019\include;$(SolutionDir)..\..\ThirdParty\glut\include;$(SolutionDir)..\..\ThirdParty\glew\release\include;$(SolutionDir)..\..\ThirdParty\fbxsdk\include;$(SolutionDir)..\..\ThirdParty\glfw\release\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
