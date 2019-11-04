@@ -143,8 +143,11 @@ namespace ccl
                     }
                   else
                     {
-                    FileInfo file(basedir,dirp->d_name);
-                    ret.push_back(file);            
+                        if(strcmp(dirp->d_name,"..")!=0 && strcmp(dirp->d_name,".")!=0)
+                        {
+                            FileInfo file(basedir,dirp->d_name);
+                            ret.push_back(file);            
+                        }
                     }
                 }
                 closedir(dp);
@@ -182,7 +185,8 @@ namespace ccl
             dirent *dirp;
             while ((dirp = readdir(dp)) != NULL)
             {
-                ret.push_back(dirp->d_name);
+                FileInfo file(basepath, dirp->d_name);
+                ret.push_back(file.getFileName());
             }
             closedir(dp);
         }
