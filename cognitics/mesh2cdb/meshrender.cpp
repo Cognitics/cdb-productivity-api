@@ -5,9 +5,11 @@
 //#include "ip/pngwrapper.h"
 #include <scenegraph/ExtentsVisitor.h>
 #include <ccl/JobManager.h>
+#define GLEW_EGL 1
 #include <GL/glew.h>
 
 #include <GL/glut.h>
+#include <GL/glx.h>
 #include <GL/freeglut_ext.h>
 #include <scenegraph_gl/scenegraph_gl.h>
 #include "MeshRender.h"
@@ -305,7 +307,7 @@ bool writeDEM(RenderJob &job, float *grid, int width, int height)
     replace(demFileName, ".jp2", ".tif");
     ccl::FileInfo fi(demFileName);
     ccl::makeDirectory(fi.getDirName(), true);
-
+    std::cout << "Writing " << demFileName << std::endl;
     const char *pszFormat = "GTiff";
     GDALDriver *poDriver;
     poDriver = GetGDALDriverManager()->GetDriverByName(pszFormat);
@@ -317,6 +319,11 @@ bool writeDEM(RenderJob &job, float *grid, int width, int height)
     char **papszOptions = NULL;
     auto poDstDS = poDriver->Create((demFileName).c_str(), width, height, 1, GDT_Float32,
         papszOptions);
+    if(!poDstDS)
+    {
+        logger << "Unable to create file: " << demFileName << logger.endl;
+        return false;
+    }
     const cognitics::cdb::CoordinatesRange cdbExtents = job.cdbTile.getCoordinates();
     double adfGeoTransform[6];
     adfGeoTransform[0] = cdbExtents.low().longitude().value();//left geo
@@ -462,7 +469,7 @@ void renderToFile(RenderJob &job)
     glMatrixMode(GL_PROJECTION);
     glDisable(GL_BLEND);
     glPopMatrix();
-    glutSwapBuffers();
+    //glutSwapBuffers();
     unsigned char *pixels = new unsigned char[width * height * depth];
     glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, pixels);
     FlipVertically(pixels, width, height, 3);
@@ -488,61 +495,11 @@ void renderToFile(RenderJob &job)
     scene = NULL;
 }
 
-scenegraph::Scene *getCurrentScene()
-{
-#if 0
-    if (scene)
-        return scene;
-    /*
-    if (renderFiles.size() <= currentFileNum)
-    {
-        if (!scene)
-        {
-            scene = scenegraph::buildSceneFromOBJ(renderFiles[currentFileNum].getFileName(), true);
-        }
-        return scene;
-    }
-    */
-    if (fixedScene)
-        scene = fixedScene;
-    else
-        scene = scenegraph::buildSceneFromOBJ(renderFiles[currentFileNum].getFileName(), true);
-    double top = -DBL_MAX;
-    double bottom = DBL_MAX;
-    double left = DBL_MAX;
-    double right = -DBL_MAX;
-    double minZ = DBL_MAX;
-    double maxZ = -DBL_MAX;
-    extentsVisitor = scenegraph::ExtentsVisitor();
-    extentsVisitor.visit(scene);
-    extentsVisitor.getExtents(left, right, bottom, top, minZ, maxZ);
-    setAOI(left, bottom, right, top);
-
-    return scene;
-#endif
-    return NULL;
-}
-
-#if 0
-
-scenegraph::Scene *scene = scenegraph::buildSceneFromOBJ(fi.getFileName(), true);
-double top = -DBL_MAX;
-double bottom = DBL_MAX;
-double left = DBL_MAX;
-double right = -DBL_MAX;
-double minZ = DBL_MAX;
-double maxZ = -DBL_MAX;
-extentsVisitor.visit(scene);
-extentsVisitor.getExtents(left, right, bottom, top, minZ, maxZ);
-
-#endif
 
 bool renderingToFile = true;
 float totalCDBTileCount = 0;
 std::string rootCDBOutput;
 
-
-//#include <GLFW/glfw3.h>
 
 static const EGLint configAttribs[] = {
         EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
@@ -550,7 +507,7 @@ static const EGLint configAttribs[] = {
         EGL_GREEN_SIZE, EGL_DONT_CARE,
         EGL_RED_SIZE, EGL_DONT_CARE,
         EGL_DEPTH_SIZE, EGL_DONT_CARE,
-        //EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
         EGL_NONE
 };
 
@@ -566,7 +523,7 @@ static const EGLint pbufferAttribs[] = {
 #define CHECK_EGL_ERR do { EGLint err = eglGetError(); if (err != EGL_SUCCESS) { printf("Error line %d: 0x%.4x\n", __LINE__, err); } } while (false)
 bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string &cdbRoot)
 {
-#if 0
+#if WIN32
     auto eglModule = LoadLibraryA("libEGL.dll");
     PFNEGLGETPROCADDRESSPROC eglGetProcAddress = (PFNEGLGETPROCADDRESSPROC)GetProcAddress(eglModule, "eglGetProcAddress");
     if(!eglGetProcAddress)
@@ -585,10 +542,8 @@ bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string 
 
     PFNEGLGETERRORPROC eglGetError = (PFNEGLGETERRORPROC)eglGetProcAddress("eglGetError");
     PFNEGLBINDAPIPROC eglBindAPI = (PFNEGLBINDAPIPROC)eglGetProcAddress("eglBindAPI");
-
-    
-    
-
+#endif
+ 
     EGLDisplay eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 
     CHECK_EGL_ERR;
@@ -596,25 +551,28 @@ bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string 
     EGLint major, minor;
     eglInitialize(eglDpy, &major, &minor);
 
+    char const * client_apis = eglQueryString(eglDpy, EGL_CLIENT_APIS);
+    if(!client_apis)
+    {
+        std::cerr << "Failed to eglQueryString(display, EGL_CLIENT_APIS)" << std::endl;
+        return false;
+    }
+    std::cout << "Supported client rendering APIs: " << client_apis << std::endl;
     CHECK_EGL_ERR;
 
     static const int MAX_DEVICES = 4;
     EGLDeviceEXT eglDevs[MAX_DEVICES];
     EGLint numDevices;    
-    if (eglQueryDevicesEXT)
-    {
-        eglQueryDevicesEXT(MAX_DEVICES, eglDevs, &numDevices);
-        CHECK_EGL_ERR;
-        printf("Detected %d devices\n", numDevices);
-        eglDpy = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevs[0], 0);
-        CHECK_EGL_ERR;
-    }
-    eglDpy = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevs[0], 0);
 
     EGLConfig eglCfg;
     EGLint numConfigs = 20;
     eglGetConfigs(eglDpy, NULL, 0, &numConfigs);
     CHECK_EGL_ERR;
+    if(numConfigs<1)
+    {
+        printf("No configs match!\n");
+        return false;
+    }
     EGLConfig *configs = new EGLConfig[numConfigs];
     if (EGL_FALSE == eglGetConfigs(eglDpy, configs, numConfigs, &numConfigs))
     {
@@ -625,68 +583,34 @@ bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string 
 
     EGLBoolean res = eglChooseConfig(eglDpy, configAttribs, &eglCfg, 1, &numConfigs);
     CHECK_EGL_ERR;
+    eglBindAPI(EGL_OPENGL_API);    
     EGLContext eglCtx = eglCreateContext(eglDpy, eglCfg, EGL_NO_CONTEXT,
         NULL);
     CHECK_EGL_ERR;
 
     res = eglMakeCurrent(eglDpy, EGL_NO_SURFACE, EGL_NO_SURFACE, eglCtx);
     CHECK_EGL_ERR;
-    
-    eglBindAPI(EGL_OPENGL_API);
-#endif
-    //glutInit(&argc, argv);
-    //glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 
-    //glewExperimental = GL_TRUE;
-    //glewInit();
 
-    
+    printf("OpenGL version: %s\n", glGetString(GL_VERSION));
+    printf("OpenGL vender: %s\n", glGetString(GL_VENDOR));
+    printf("OpenGL renderer: %s: \n", glGetString(GL_RENDERER));
+    glewInit();
+
     totalCDBTileCount = jobs.size();
 
     rootCDBOutput = cdbRoot;
     GDALAllRegister();
 
     renderJobs = jobs;
-    //fixedScene = _fixedScene;
-    //glutInitDisplayMode(GLUT_RGB);
-    //renderFiles = files;
-    //scene = _scene;
+
     logger.init("OBJ Render");
     logger << ccl::LINFO;
-#if 1
-    // init GLUT and create window
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
-
-    glutInitWindowPosition(50, 50);
-    glutInitWindowSize(1024, 1024);
-    glutCreateWindow("OBJ Viewer");
-
-    glewExperimental = GL_TRUE;
-    glewInit();
-
-    // register callbacks
-    glutDisplayFunc(renderScene);
-    glutReshapeFunc(changeSize);
-    glutIdleFunc(renderScene);
-
-    glutIgnoreKeyRepeat(1);
-    glutKeyboardFunc(processNormalKeys);
-    glutSpecialFunc(pressKey);
-    glutSpecialUpFunc(releaseKey);
-
-    // here are the two new functions
-    glutMouseFunc(mouseButton);
-    glutMotionFunc(mouseMove);
-    glutPassiveMotionFunc(mouseMove);
-#endif
 
     // OpenGL init
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
-    // enter GLUT event processing cycle
-    //glutMainLoop();
     while(true)
     {
         renderScene();
@@ -754,7 +678,7 @@ void renderScene(void)
     if (renderJobs.empty())
     {
         finishBuild();
-        glutLeaveMainLoop();
+        //glutLeaveMainLoop();
         return;
     }
     RenderJob job = renderJobs.back();
@@ -852,214 +776,4 @@ GLuint LoadShaders(std::string vertexShader, std::string fragmentShader)
     }
 
     return ProgramID;
-}
-
-
-
-
-void processNormalKeys(unsigned char key, int xx, int yy)
-{
-
-    //glutSetMenu(mainMenu);
-    switch (key) {
-    case 27:
-        exit(0);
-        break;
-    case 'r':
-    {
-        renderingToFile = true;
-        break;
-    }
-    case 'n':
-    {
-        if (renderJobs.empty())
-        {
-            logger << "Out of render jobs, cannot advance." << logger.endl;
-        }
-        else
-        {
-            RenderJob job = renderJobs.back();
-            logger << "Rendering " << job.cdbFilename << logger.endl;
-            renderJobs.pop_back();
-            if (scene)
-                delete scene;
-            scene = new scenegraph::Scene();
-            for (auto&&obj : job.objFiles)
-            {
-                scenegraph::Scene *childScene = scenegraph::buildSceneFromOBJ(obj, true);
-                scene->addChild(childScene);
-            }
-            resetAOIForScene(job);
-        }
-        break;
-    }
-    case ' ':
-    {
-        // Reset view				
-        double centerx = (llx + urx) / 2;
-        double centery = (lly + ury) / 2;
-        setAOI(centerx - 5000, centery - 5000, centerx + 5000, centery + 5000);
-    }
-    break;
-    }
-    if (key == 27)
-        exit(0);
-}
-
-void pressKey(int key, int xx, int yy)
-{
-    /*
-        switch (key) {
-            case GLUT_KEY_UP : deltaMove = 0.5f; break;
-            case GLUT_KEY_DOWN : deltaMove = -0.5f; break;
-        }
-        */
-}
-
-void releaseKey(int key, int x, int y)
-{
-    /*
-    switch (key) {
-        case GLUT_KEY_UP :
-        case GLUT_KEY_DOWN : break;
-    }
-    */
-}
-
-void changeSize(int w, int h)
-{
-
-    // Prevent a divide by zero, when window is too short
-    // (you cant make a window of zero width).
-    if (h == 0)
-        h = 1;
-
-    float ratio = w * 1.0 / h;
-    height = h;
-    width = w;
-    // Set the viewport to be the entire window
-    glViewport(0, 0, w, h);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    // Set the camera
-    gluOrtho2D(window_llx, window_urx, window_lly, window_ury);
-    glMatrixMode(GL_MODELVIEW);
-
-}
-
-
-
-void mouseMove(int x, int y)
-{
-    mousex = x;
-    mousey = y;
-    double width_world = window_urx - window_llx;
-    double height_world = window_ury - window_lly;
-
-    cursor_world_x = window_llx + ((double(x) / double(width))*width_world);
-    cursor_world_y = window_ury - ((double(y) / double(height))*height_world);
-
-    if (leftMouseDown)
-    {
-        double mouseDeltaX = leftMouseDownX - x;
-        double mouseDeltaY = leftMouseDownY - y;
-
-        mouseDeltaX *= (width_world / width);
-        mouseDeltaY *= (height_world / height);
-
-        setAOI(window_llx + mouseDeltaX, window_lly - mouseDeltaY, window_urx + mouseDeltaX, window_ury - mouseDeltaY);
-        leftMouseDownX = x;
-        leftMouseDownY = y;
-    }
-    if (rightMouseDown)
-    {
-        double mouseDeltaX = rightMouseDownX - x;
-        double mouseDeltaY = rightMouseDownY - y;
-        double mdist = sqrt(double((mouseDeltaX*mouseDeltaX) + (mouseDeltaY*mouseDeltaY)));
-        if (mouseDeltaY < 0)
-            mdist *= -1;
-
-
-        double centerx = (window_llx + window_urx) / 2;
-        double centery = (window_lly + window_ury) / 2;
-        double factor = (mdist / 10) + 1;
-
-        //printf("f=%f\n",factor);
-        width_world *= factor;
-        height_world *= factor;
-
-        setAOI(centerx - (width_world / 2), centery - (height_world / 2), centerx + (width_world / 2), centery + (height_world / 2));
-
-        rightMouseDownX = x;
-        rightMouseDownY = y;
-    }
-}
-
-void mouseButton(int button, int state, int x, int y)
-{
-    double width_world = window_urx - window_llx;
-    double height_world = window_ury - window_lly;
-    // only start motion if the left button is pressed
-    if (button == GLUT_LEFT_BUTTON)
-    {
-        // when the button is released
-        if (state == GLUT_UP)
-        {
-            leftMouseDown = false;
-        }
-        else
-        {// state = GLUT_DOWN
-            leftMouseDown = true;
-            leftMouseDownX = x;
-            leftMouseDownY = y;
-        }
-    }
-    if (button == GLUT_RIGHT_BUTTON)
-    {
-        // when the button is released
-        if (state == GLUT_UP)
-        {
-            rightMouseDown = false;
-        }
-        else
-        {// state = GLUT_DOWN
-
-            rightMouseDown = true;
-            rightMouseDownX = x;
-            rightMouseDownY = y;
-        }
-    }
-    if (button == 4) // scroll up
-    {
-        if (state == GLUT_UP)
-        {
-            double centerx = (window_llx + window_urx) / 2;
-            double centery = (window_lly + window_ury) / 2;
-            double factor = 1.1;
-            width_world *= factor;
-            height_world *= factor;
-            setAOI(centerx - (width_world / 2), centery - (height_world / 2), centerx + (width_world / 2), centery + (height_world / 2));
-        }
-    }
-    if (button == 3) // scroll down
-    {
-        if (state == GLUT_UP)
-        {
-            double centerx = (window_llx + window_urx) / 2;
-            double centery = (window_lly + window_ury) / 2;
-            double factor = 0.90;
-            width_world *= factor;
-            height_world *= factor;
-            setAOI(centerx - (width_world / 2), centery - (height_world / 2), centerx + (width_world / 2), centery + (height_world / 2));
-        }
-    }
-}
-
-void RenderBitmapText(std::string str)
-{
-    BOOST_FOREACH(char c, str)
-    {
-        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, c);
-    }
 }
