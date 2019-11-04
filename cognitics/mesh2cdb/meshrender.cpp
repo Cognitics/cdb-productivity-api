@@ -20,8 +20,10 @@
 #include "ogr_spatialref.h"
 #pragma warning ( pop )
 
+#define EGL_EXT_PROTOTYPES
+#define EGL_EGLEXT_PROTOTYPES
 #include <EGL/egl.h>
-
+#include <EGL/eglext.h>
 
 namespace
 {
@@ -531,8 +533,106 @@ bool renderingToFile = true;
 float totalCDBTileCount = 0;
 std::string rootCDBOutput;
 
+
+//#include <GLFW/glfw3.h>
+
+static const EGLint configAttribs[] = {
+        EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
+        EGL_BLUE_SIZE, EGL_DONT_CARE,
+        EGL_GREEN_SIZE, EGL_DONT_CARE,
+        EGL_RED_SIZE, EGL_DONT_CARE,
+        EGL_DEPTH_SIZE, EGL_DONT_CARE,
+        //EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
+        EGL_NONE
+};
+
+static const int pbufferWidth = 9;
+static const int pbufferHeight = 9;
+
+static const EGLint pbufferAttribs[] = {
+      EGL_WIDTH, pbufferWidth,
+      EGL_HEIGHT, pbufferHeight,
+      EGL_NONE,
+};
+
+#define CHECK_EGL_ERR do { EGLint err = eglGetError(); if (err != EGL_SUCCESS) { printf("Error line %d: 0x%.4x\n", __LINE__, err); } } while (false)
 bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string &cdbRoot)
 {
+#if 0
+    auto eglModule = LoadLibraryA("libEGL.dll");
+    PFNEGLGETPROCADDRESSPROC eglGetProcAddress = (PFNEGLGETPROCADDRESSPROC)GetProcAddress(eglModule, "eglGetProcAddress");
+    if(!eglGetProcAddress)
+    {
+        return false;
+    } 
+    PFNEGLGETDISPLAYPROC eglGetDisplay = (PFNEGLGETDISPLAYPROC)eglGetProcAddress("eglGetDisplay");
+    PFNEGLINITIALIZEPROC eglInitialize = (PFNEGLINITIALIZEPROC)eglGetProcAddress("eglInitialize");
+    PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT = (PFNEGLGETPLATFORMDISPLAYEXTPROC)eglGetProcAddress("eglGetPlatformDisplayEXT");
+    PFNEGLQUERYDEVICESEXTPROC eglQueryDevicesEXT = (PFNEGLQUERYDEVICESEXTPROC)eglGetProcAddress("eglQueryDevicesEXT");
+    PFNEGLMAKECURRENTPROC eglMakeCurrent = (PFNEGLMAKECURRENTPROC)eglGetProcAddress("eglMakeCurrent");
+
+    PFNEGLCHOOSECONFIGPROC eglChooseConfig = (PFNEGLCHOOSECONFIGPROC)eglGetProcAddress("eglChooseConfig");
+    PFNEGLCREATECONTEXTPROC eglCreateContext = (PFNEGLCREATECONTEXTPROC)eglGetProcAddress("eglCreateContext");
+    PFNEGLGETCONFIGSPROC eglGetConfigs = (PFNEGLGETCONFIGSPROC)eglGetProcAddress("eglGetConfigs");
+
+    PFNEGLGETERRORPROC eglGetError = (PFNEGLGETERRORPROC)eglGetProcAddress("eglGetError");
+    PFNEGLBINDAPIPROC eglBindAPI = (PFNEGLBINDAPIPROC)eglGetProcAddress("eglBindAPI");
+
+    
+    
+
+    EGLDisplay eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
+
+    CHECK_EGL_ERR;
+
+    EGLint major, minor;
+    eglInitialize(eglDpy, &major, &minor);
+
+    CHECK_EGL_ERR;
+
+    static const int MAX_DEVICES = 4;
+    EGLDeviceEXT eglDevs[MAX_DEVICES];
+    EGLint numDevices;    
+    if (eglQueryDevicesEXT)
+    {
+        eglQueryDevicesEXT(MAX_DEVICES, eglDevs, &numDevices);
+        CHECK_EGL_ERR;
+        printf("Detected %d devices\n", numDevices);
+        eglDpy = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevs[0], 0);
+        CHECK_EGL_ERR;
+    }
+    eglDpy = eglGetPlatformDisplayEXT(EGL_PLATFORM_DEVICE_EXT, eglDevs[0], 0);
+
+    EGLConfig eglCfg;
+    EGLint numConfigs = 20;
+    eglGetConfigs(eglDpy, NULL, 0, &numConfigs);
+    CHECK_EGL_ERR;
+    EGLConfig *configs = new EGLConfig[numConfigs];
+    if (EGL_FALSE == eglGetConfigs(eglDpy, configs, numConfigs, &numConfigs))
+    {
+        printf("Error...\n");
+    }
+    CHECK_EGL_ERR;
+
+
+    EGLBoolean res = eglChooseConfig(eglDpy, configAttribs, &eglCfg, 1, &numConfigs);
+    CHECK_EGL_ERR;
+    EGLContext eglCtx = eglCreateContext(eglDpy, eglCfg, EGL_NO_CONTEXT,
+        NULL);
+    CHECK_EGL_ERR;
+
+    res = eglMakeCurrent(eglDpy, EGL_NO_SURFACE, EGL_NO_SURFACE, eglCtx);
+    CHECK_EGL_ERR;
+    
+    eglBindAPI(EGL_OPENGL_API);
+#endif
+    //glutInit(&argc, argv);
+    //glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
+
+    //glewExperimental = GL_TRUE;
+    //glewInit();
+
+    
     totalCDBTileCount = jobs.size();
 
     rootCDBOutput = cdbRoot;
@@ -545,6 +645,7 @@ bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string 
     //scene = _scene;
     logger.init("OBJ Render");
     logger << ccl::LINFO;
+#if 1
     // init GLUT and create window
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
@@ -570,14 +671,18 @@ bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string 
     glutMouseFunc(mouseButton);
     glutMotionFunc(mouseMove);
     glutPassiveMotionFunc(mouseMove);
+#endif
 
     // OpenGL init
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
     // enter GLUT event processing cycle
-    glutMainLoop();
-
+    //glutMainLoop();
+    while(true)
+    {
+        renderScene();
+    }
     return true;
 }
 
