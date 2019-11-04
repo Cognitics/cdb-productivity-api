@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#include "features\FeatureInfo.h"
+#include "features/FeatureInfo.h"
 
 class GsBuildings
 {

@@ -16,7 +16,7 @@ namespace Cognitics
             int Columns = 0;
 
             // image is +90,-180 in top left to -90,+180 in bottom right
-            Image<float> Image;
+            Image<float> _Image;
 
             std::pair<float, float> Range();
             float Height(double latitude, double longitude);

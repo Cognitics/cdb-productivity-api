@@ -1,22 +1,21 @@
-#pragma once
-#include "rapidjson\filereadstream.h"
-#include "rapidjson\document.h"
+#include "rapidjson/filereadstream.h"
+#include "rapidjson/document.h"
 
 #include "WebServices.h"
-#include "ip\GDALRasterSampler.h"
+#include "ip/GDALRasterSampler.h"
 #include <fstream>
 #include <vector>
 #include <iomanip>
 #include <iterator>
 #include <iostream>
 #include <string>
-#include "b64\base64.h"
+#include "b64/base64.h"
 #include <cctype>
 #include "gdal_utils.h"
 #include <string>
-#include "curl\curl.h"
-#include <direct.h>
-#include <filesystem>
+#include "curl/curl.h"
+//#include <direct.h>
+//#include <filesystem>
 #include <ccl/FileInfo.h>
 #include <elev/DataSourceManager.h>
 #include <thread>
@@ -357,8 +356,7 @@ namespace ws
     void GetFeatureData(const std::string& geoServerURL, std::string tmpPath, double north, double south, double east, double west)
     {
         std::string dataPath = ccl::joinPaths(tmpPath, "data");
-        int createDirError = _mkdir(dataPath.c_str());
-
+        ccl::makeDirectory(dataPath);
         CURL *curl;
         CURLcode res;
 
@@ -1827,37 +1825,39 @@ namespace ws
 
 		terrainGenerator.setBounds(north, south, east, west);
 		terrainGenerator.CreateMasterFile();
-
+        ccl::FileInfo fi(outputPath);
 		bool removeTextures = true;
 		if (removeTextures)
 		{
-			std::experimental::filesystem::path p(outputPath);
-			if (std::experimental::filesystem::exists(p) && std::experimental::filesystem::is_directory(p))
+            if(ccl::directoryExists(fi.getDirName()))
 			{
 				std::cout << "generate Cesium Lods: Removing image files from " << outputPath << std::endl;
-				std::experimental::filesystem::directory_iterator end;
-				for (std::experimental::filesystem::directory_iterator it(p); it != end; ++it)
+				auto files = ccl::FileInfo::getAllFiles(fi.getDirName(),"*.*");
+                for(auto&& file : files)
 				{
-					if (std::experimental::filesystem::is_regular_file(it->status()) )
+					if(ccl::FileInfo::fileExists(fi.getFileName()))
 					{
-						if (it->path().extension() == ".jpg"
-							|| it->path().extension() == ".jpeg"
-							|| it->path().extension() == ".png")
+                        auto ext = fi.getSuffix();
+						if (ext == "jpg"
+							|| ext == "jpeg"
+							|| ext == "png")
 						{
-							std::experimental::filesystem::remove(it->path());
+                            ccl::deleteFile(fi.getFileName());
 						}
 					}
 				}
 			}
 		}
-		std::experimental::filesystem::path tmpDir(outputPath + "/tmp");
-		if (std::experimental::filesystem::exists(tmpDir) && std::experimental::filesystem::is_directory(tmpDir))
-		{
-			std::cout << "generate Cesium Lods: Removing tmp directory " << tmpDir.string() << std::endl;
-			std::experimental::filesystem::remove_all(tmpDir);
-		}
-
-		
+        auto tmpDir = ccl::joinPaths(outputPath,"/tmp");
+        if(ccl::directoryExists(tmpDir))
+        {
+            auto files = ccl::FileInfo::getAllFiles(fi.getDirName(),"*.*");
+            for(auto&& file : files)
+            {
+                std::cout << "generate Cesium Lods: Removing tmp directory " << tmpDir << std::endl;
+                ccl::deleteFile(file.getFileName());
+            }
+        }
 	}
 
     void ParseJSON(const std::string & filename, const std::string & outputPath, scenegraph::Scene & scene)
@@ -1977,10 +1977,10 @@ namespace ws
                     mat.illumination = (*itr)["illumination"].GetInt(); // illum
 
                     std::string mapDiffuse = (*itr)["mapDiffuse"].GetString(); // material name  
-                    std::experimental::filesystem::path path = mapDiffuse;
+                    //std::experimental::filesystem::path path = mapDiffuse;
                     //path.replace_extension(""); //why was extension being removed?
-                    auto filenameOfModel = path.filename();
-                    mat.mapDiffuse = filenameOfModel.string();
+                    auto filenameOfModel = mapDiffuse;
+                    mat.mapDiffuse = filenameOfModel;
 
                     auto srcPath = ccl::joinPaths(fi.getDirName(), mapDiffuse);
                     if (!ccl::fileExists(srcPath))

@@ -6,7 +6,7 @@ namespace Cognitics
     namespace CoordinateSystems
     {
         GeoidTangentPlane::GeoidTangentPlane(EGM* egm, double originLatitude, double originLongitude, double originAltitude)
-            : EllipsoidTangentPlane(originLatitude, originLongitude, originAltitude), Transform(egm, &WGS84Transform)
+            : EllipsoidTangentPlane(originLatitude, originLongitude, originAltitude), Transform(egm, &_WGS84Transform)
         {
         }
 

@@ -1,6 +1,6 @@
 
 #include "CoordinateSystems/EGM2008.h"
-
+#include <memory>
 #include <fstream>
 
 namespace Cognitics
@@ -25,7 +25,7 @@ namespace Cognitics
                 {
                     int img_index = (row * col_count) + col;
                     int src_index = 1 + (row * (col_count + 2)) + col;
-                    egm->Image.Data[img_index] = *(float*)&bytes_ptr[src_index * sizeof(float)];
+                    egm->_Image.Data[img_index] = *(float*)&bytes_ptr[src_index * sizeof(float)];
                 }
             }
             return egm;

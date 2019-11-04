@@ -2,13 +2,13 @@
 #include <ctl/ctl.h>
 #include <ip/pngwrapper.h>
 #include <ip/jpgwrapper.h>
-#include <filesystem>
+//#include <filesystem>
 
 
 #undef max
 #undef min
 #define NOMINMAX
-#include <scenegraphgltf\scenegraphgltf.h>
+#include <scenegraphgltf/scenegraphgltf.h>
 
 using namespace cognitics;
 
@@ -405,31 +405,36 @@ void GltfTerrainGenerator::generateFixedGridWithLOD(std::string geoServerURL, do
 	CreateMasterFile();
 
 	bool removeTextures = true;
+	ccl::FileInfo fi(outputPath);
 	if (removeTextures)
 	{
-		std::experimental::filesystem::path p(outputPath);
-		if (std::experimental::filesystem::exists(p) && std::experimental::filesystem::is_directory(p))
+		if(ccl::directoryExists(fi.getDirName()))
 		{
 			std::cout << "generate Cesium Lods: Removing image files from " << outputPath << std::endl;
-			std::experimental::filesystem::directory_iterator end;
-			for (std::experimental::filesystem::directory_iterator it(p); it != end; ++it)
+			auto files = ccl::FileInfo::getAllFiles(fi.getDirName(),"*.*");
+			for(auto&& file : files)
 			{
-				if (std::experimental::filesystem::is_regular_file(it->status()))
+				if(ccl::FileInfo::fileExists(fi.getFileName()))
 				{
-					if (it->path().extension() == ".jpg"
-						|| it->path().extension() == ".jpeg"
-						|| it->path().extension() == ".png")
+					auto ext = fi.getSuffix();
+					if (ext == "jpg"
+						|| ext == "jpeg"
+						|| ext == "png")
 					{
-						std::experimental::filesystem::remove(it->path());
+						ccl::deleteFile(fi.getFileName());
 					}
 				}
 			}
 		}
 	}
-	std::experimental::filesystem::path tmpDir(outputPath + "/tmp");
-	if (std::experimental::filesystem::exists(tmpDir) && std::experimental::filesystem::is_directory(tmpDir))
+	auto tmpDir = ccl::joinPaths(outputPath,"/tmp");
+	if(ccl::directoryExists(tmpDir))
 	{
-		std::cout << "generate Cesium Lods: Removing tmp directory " << tmpDir.string() << std::endl;
-		std::experimental::filesystem::remove_all(tmpDir);
+		auto files = ccl::FileInfo::getAllFiles(fi.getDirName(),"*.*");
+		for(auto&& file : files)
+		{
+			std::cout << "generate Cesium Lods: Removing tmp directory " << tmpDir << std::endl;
+			ccl::deleteFile(file.getFileName());
+		}
 	}
 }
