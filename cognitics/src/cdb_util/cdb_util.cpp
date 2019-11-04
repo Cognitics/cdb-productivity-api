@@ -55,10 +55,10 @@ std::vector<TileInfo> FeatureTileInfoForTiledDataset(const std::string& cdb, int
 {
     auto filenames = cognitics::cdb::FileNamesForTiledDataset(cdb, dataset);
     auto tiles = cognitics::cdb::TileInfoForFileNames(filenames);
-    tiles.erase(std::remove_if(tiles.begin(), tiles.end(), [](auto tile) { return !((tile.selector2 == 1) || (tile.selector2 == 3) || (tile.selector2 == 5) || (tile.selector2 == 7) || (tile.selector2 == 9)); }), tiles.end());
+    tiles.erase(std::remove_if(tiles.begin(), tiles.end(), [](const TileInfo& tile) { return !((tile.selector2 == 1) || (tile.selector2 == 3) || (tile.selector2 == 5) || (tile.selector2 == 7) || (tile.selector2 == 9)); }), tiles.end());
     if (north != DBL_MAX)
     {
-        tiles.erase(std::remove_if(tiles.begin(), tiles.end(), [=](auto tile)
+        tiles.erase(std::remove_if(tiles.begin(), tiles.end(), [=](const TileInfo& tile)
             {
                 double tile_north, tile_south, tile_east, tile_west;
                 std::tie(tile_north, tile_south, tile_east, tile_west) = cognitics::cdb::NSEWBoundsForTileInfo(tile);
@@ -200,6 +200,8 @@ std::vector<ccl::AttributeContainer> AttributesForDBF(const std::string& filenam
         for(DBaseRecord& record : dbf.m_records)
         {
             auto attributes = ccl::AttributeContainer();
+            if(record.m_recordData.size() != dbf.m_colDef.size())
+                continue;
             for(size_t i = 0, c = dbf.m_colDef.size(); i < c; ++i)
             {
                 auto key = dbf.m_colDef[i].m_fieldName;
@@ -270,13 +272,13 @@ std::pair<bool, std::vector<std::string>> TextureFileNamesForModel(const std::st
     return std::make_pair(true, result);
 }
 
-std::vector<std::string> GSModelReferencesForTile(const std::string& cdb, const TileInfo& tileinfo)
+std::vector<std::string> GSModelReferencesForTile(const std::string& cdb, const TileInfo& tileinfo, double north, double south, double east, double west)
 {
     auto result = std::vector<std::string>();
     auto shp_filepath = cognitics::cdb::FilePathForTileInfo(tileinfo);
     auto shp_filename = cognitics::cdb::FileNameForTileInfo(tileinfo);
     auto shp = cdb + "/Tiles/" + shp_filepath + "/" + shp_filename + ".shp";
-    auto features = cognitics::cdb::FeaturesForOGRFile(shp);    // TODO: bounds filter
+    auto features = cognitics::cdb::FeaturesForOGRFile(shp, north, south, east, west);
     if(features.empty())
         return result;
 
@@ -316,13 +318,13 @@ std::vector<std::string> GSModelReferencesForTile(const std::string& cdb, const 
     return result;
 }
 
-std::vector<std::string> GTModelReferencesForTile(const std::string& cdb, const TileInfo& tileinfo)
+std::vector<std::string> GTModelReferencesForTile(const std::string& cdb, const TileInfo& tileinfo, double north, double south, double east, double west)
 {
     auto result = std::vector<std::string>();
     auto shp_filepath = cognitics::cdb::FilePathForTileInfo(tileinfo);
     auto shp_filename = cognitics::cdb::FileNameForTileInfo(tileinfo);
     auto shp = cdb + "/Tiles/" + shp_filepath + "/" + shp_filename + ".shp";
-    auto features = cognitics::cdb::FeaturesForOGRFile(shp);    // TODO: bounds filter
+    auto features = cognitics::cdb::FeaturesForOGRFile(shp, north, south, east, west);
     if(features.empty())
         return result;
 
@@ -361,19 +363,20 @@ bool TextureExists(const std::string& filename)
 {
     //you can iterate through all the files in an archive(using mz_zip_reader_get_num_files()) and retrieve detailed info on each file by calling mz_zip_reader_file_stat().
 
-
-    /*
-    auto path = std::filesystem::path(filename);
-    auto parent_path = path.parent_path();
-    if(parent_path.has_extension() && (parent_path.extension() == ".zip"))
+    auto parent_path = ccl::FileInfo(filename).getDirName();
+    if(ccl::FileInfo(parent_path).getSuffix() == "zip")
     {
-        auto texture_filename = path.filename();
+        auto texture_filename = ccl::FileInfo(filename).getBaseName();
         mz_zip_archive zip;
-        if(!mz_zip_reader_init_file(&zip, parent_path.string().c_str(), 0))
+        memset(&zip, 0, sizeof(zip));
+        //auto z = "D:/CDB/LosAngeles_CDB/Tiles/N34/W118/301_GSModelTexture/L06/U0/N34W118_D301_S001_T001_L06_U0_R1.zip";
+        //if(!mz_zip_reader_init_file(&zip, z, 0))
+        if(!mz_zip_reader_init_file(&zip, parent_path.c_str(), 0))
             return false;
-        return (mz_zip_reader_locate_file(&zip, texture_filename.string().c_str(), nullptr, 0) >= 0);
+        bool result = (mz_zip_reader_locate_file(&zip, texture_filename.c_str(), nullptr, 0) >= 0);
+        mz_zip_reader_end(&zip);
+        return result;
     }
-    */
 
     return ccl::FileInfo::fileExists(filename);
 }
