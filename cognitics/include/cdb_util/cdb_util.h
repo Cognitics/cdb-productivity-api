@@ -48,8 +48,8 @@ std::map<std::string, ccl::AttributeContainer> AttributesByCNAM(const std::vecto
 
 std::pair<bool, std::vector<std::string>> TextureFileNamesForModel(const std::string& filename);
 
-std::vector<std::string> GSModelReferencesForTile(const std::string& cdb, const TileInfo& tileinfo);
-std::vector<std::string> GTModelReferencesForTile(const std::string& cdb, const TileInfo& tileinfo);
+std::vector<std::string> GSModelReferencesForTile(const std::string& cdb, const TileInfo& tileinfo, double north = -DBL_MAX, double south = DBL_MAX, double east = -DBL_MAX, double west = DBL_MAX);
+std::vector<std::string> GTModelReferencesForTile(const std::string& cdb, const TileInfo& tileinfo, double north = -DBL_MAX, double south = DBL_MAX, double east = -DBL_MAX, double west = DBL_MAX);
 
 bool TextureExists(const std::string& filename);
 
