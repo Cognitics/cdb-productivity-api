@@ -19,13 +19,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ****************************************************************************/
-/*! \file flt/OpenFlight.h
-\headerfile flt/OpenFlight.h
-\brief Provides flt::OpenFlight
-\author Aaron Brinton <abrinton@cognitics.net>
-\date 04 February 2010
-\sa OpenFlight Scene Specification v16.3 (http://www.multigen-paradigm.com/support/dc_files/of_spec_16_3a.pdf)
-*/
 #pragma once
 
 #include "Record.h"
@@ -39,6 +32,7 @@ namespace flt
         ccl::ObjLog log;
         std::ifstream inFile;
         std::ofstream outFile;
+        std::istream *is { nullptr };
         ccl::BindStream bindStream;
         int revision;
         ccl::BigEndian<ccl::uint16_t> nextOpcode;    // prefetched opcode
@@ -48,6 +42,8 @@ namespace flt
     public:
         static OpenFlight *create(const std::string &filename, int revision = 0);
         static OpenFlight *open(const std::string &filename);
+
+        static OpenFlight *open(std::istream &is);
 
         ~OpenFlight(void);
 

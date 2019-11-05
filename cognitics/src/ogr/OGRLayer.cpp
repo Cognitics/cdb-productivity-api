@@ -739,6 +739,7 @@ namespace ogr
 
 	sfa::Geometry *Layer::getGeometry(OGRGeometry *ogr_geometry)
 	{
+        auto type = ogr_geometry->getGeometryType();
 		switch(ogr_geometry->getGeometryType())
 		{
 			case wkbPoint:
@@ -751,6 +752,12 @@ namespace ogr
 				{
 					OGRPoint *ogr = (OGRPoint *)ogr_geometry;
 					return new sfa::Point(ogr->getX(), ogr->getY(), ogr->getZ());
+				}
+				break;
+			case wkbPointZM:
+				{
+					OGRPoint *ogr = (OGRPoint *)ogr_geometry;
+					return new sfa::Point(ogr->getX(), ogr->getY(), ogr->getZ(), ogr->getM());
 				}
 				break;
 			case wkbLineString:

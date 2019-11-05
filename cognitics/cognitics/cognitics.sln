@@ -17,6 +17,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mesh2cdb", "..\mesh2cdb\mes
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "lmbundle2obj", "..\lmbundle2obj\lmbundle2obj.vcxproj", "{2276CAA0-0FB4-4E2E-8003-96820437A97E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdbinfo", "..\cdbinfo\cdbinfo.vcxproj", "{AE11FB58-DD3F-4BBA-831F-12E7CCDFB04F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01734A89-FE1D-427C-8CF9-E6E644FABCAA} = {01734A89-FE1D-427C-8CF9-E6E644FABCAA}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -57,6 +62,14 @@ Global
 		{2276CAA0-0FB4-4E2E-8003-96820437A97E}.Release|x64.Build.0 = Release|x64
 		{2276CAA0-0FB4-4E2E-8003-96820437A97E}.Release|x86.ActiveCfg = Release|Win32
 		{2276CAA0-0FB4-4E2E-8003-96820437A97E}.Release|x86.Build.0 = Release|Win32
+		{AE11FB58-DD3F-4BBA-831F-12E7CCDFB04F}.Debug|x64.ActiveCfg = Debug|x64
+		{AE11FB58-DD3F-4BBA-831F-12E7CCDFB04F}.Debug|x64.Build.0 = Debug|x64
+		{AE11FB58-DD3F-4BBA-831F-12E7CCDFB04F}.Debug|x86.ActiveCfg = Debug|Win32
+		{AE11FB58-DD3F-4BBA-831F-12E7CCDFB04F}.Debug|x86.Build.0 = Debug|Win32
+		{AE11FB58-DD3F-4BBA-831F-12E7CCDFB04F}.Release|x64.ActiveCfg = Release|x64
+		{AE11FB58-DD3F-4BBA-831F-12E7CCDFB04F}.Release|x64.Build.0 = Release|x64
+		{AE11FB58-DD3F-4BBA-831F-12E7CCDFB04F}.Release|x86.ActiveCfg = Release|Win32
+		{AE11FB58-DD3F-4BBA-831F-12E7CCDFB04F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

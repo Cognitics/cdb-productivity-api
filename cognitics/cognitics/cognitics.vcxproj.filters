@@ -172,6 +172,18 @@
     <Filter Include="Header Files\scenegraphfbx">
       <UniqueIdentifier>{ca0780b0-f786-4480-a890-9d01855b3cf3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\cdb_util">
+      <UniqueIdentifier>{6693ca90-38b3-42c3-b805-86bcbdcfaa83}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\cdb_util">
+      <UniqueIdentifier>{b1ae5241-d700-451c-b2e3-0e66a306907d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\dbflib">
+      <UniqueIdentifier>{77c2fab4-dc73-4cc2-87e6-89c0c1805291}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\dbflib">
+      <UniqueIdentifier>{031c92be-8c56-41c1-8680-412a4d891644}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\cad\AttributeDictionary.cpp">
@@ -1179,6 +1191,9 @@
     <ClCompile Include="..\src\scenegraphgltf\buildGltfFromScene.cpp">
       <Filter>Source Files\scenegraphgltf</Filter>
     </ClCompile>
+    <ClCompile Include="buildObjFromScene.cpp">
+      <Filter>Source Files\scenegraphobj</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\b64\base64.cpp">
       <Filter>Source Files\b64</Filter>
     </ClCompile>
@@ -1266,8 +1281,32 @@
     <ClCompile Include="..\src\tg\OpenFlightTerrainGenerator.cpp">
       <Filter>Source Files\tg</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\scenegraphobj\buildObjFromScene.cpp">
-      <Filter>Source Files\scenegraphobj</Filter>
+    <ClCompile Include="..\src\cdb_util\cdb_util.cpp">
+      <Filter>Source Files\cdb_util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dbflib\DBaseFieldProperty.cpp">
+      <Filter>Source Files\dbflib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dbflib\DBaseFile.cpp">
+      <Filter>Source Files\dbflib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dbflib\DBaseHeader.cpp">
+      <Filter>Source Files\dbflib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dbflib\DBaseRecord.cpp">
+      <Filter>Source Files\dbflib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dbflib\DBaseColDef.cpp">
+      <Filter>Source Files\dbflib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\dbflib\DBaseField.cpp">
+      <Filter>Source Files\dbflib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cdb_util\FeatureDataDictionary.cpp">
+      <Filter>Source Files\cdb_util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccl\miniz.c">
+      <Filter>Source Files\ccl</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -2571,6 +2610,33 @@
     </ClInclude>
     <ClInclude Include="..\include\scenegraphfbx\scenegraphfbx.h">
       <Filter>Header Files\scenegraphfbx</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cdb_util\cdb_util.h">
+      <Filter>Header Files\cdb_util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\dbflib\DBaseColDef.h">
+      <Filter>Header Files\dbflib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\dbflib\DBaseField.h">
+      <Filter>Header Files\dbflib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\dbflib\DBaseFieldProperty.h">
+      <Filter>Header Files\dbflib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\dbflib\DBaseFile.h">
+      <Filter>Header Files\dbflib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\dbflib\DBaseHeader.h">
+      <Filter>Header Files\dbflib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\dbflib\DBaseRecord.h">
+      <Filter>Header Files\dbflib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\cdb_util\FeatureDataDictionary.h">
+      <Filter>Header Files\cdb_util</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ccl\miniz.h">
+      <Filter>Header Files\ccl</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

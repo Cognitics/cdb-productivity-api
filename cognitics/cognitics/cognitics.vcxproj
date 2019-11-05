@@ -53,6 +53,7 @@
     <ClCompile Include="..\src\ccl\LogBuffer.cpp" />
     <ClCompile Include="..\src\ccl\LogStream.cpp" />
     <ClCompile Include="..\src\ccl\md5.cpp" />
+    <ClCompile Include="..\src\ccl\miniz.c" />
     <ClCompile Include="..\src\ccl\Number.cpp" />
     <ClCompile Include="..\src\ccl\object.cpp" />
     <ClCompile Include="..\src\ccl\ObjLog.cpp" />
@@ -80,6 +81,8 @@
     <ClCompile Include="..\src\cdb_tile\TileCoordinates.cpp" />
     <ClCompile Include="..\src\cdb_tile\TileLatitude.cpp" />
     <ClCompile Include="..\src\cdb_tile\TileLongitude.cpp" />
+    <ClCompile Include="..\src\cdb_util\cdb_util.cpp" />
+    <ClCompile Include="..\src\cdb_util\FeatureDataDictionary.cpp" />
     <ClCompile Include="..\src\CoordinateSystems\EGM.cpp" />
     <ClCompile Include="..\src\CoordinateSystems\EGM2008.cpp" />
     <ClCompile Include="..\src\CoordinateSystems\EGMTransform.cpp" />
@@ -133,6 +136,12 @@
     <ClCompile Include="..\src\cts\WGS84Orthographic.cpp" />
     <ClCompile Include="..\src\cts\WGS84ToFlatEarthMathTransform.cpp" />
     <ClCompile Include="..\src\cts\WGS84ToOrthographicMathTransform.cpp" />
+    <ClCompile Include="..\src\dbflib\DBaseColDef.cpp" />
+    <ClCompile Include="..\src\dbflib\DBaseField.cpp" />
+    <ClCompile Include="..\src\dbflib\DBaseFieldProperty.cpp" />
+    <ClCompile Include="..\src\dbflib\DBaseFile.cpp" />
+    <ClCompile Include="..\src\dbflib\DBaseHeader.cpp" />
+    <ClCompile Include="..\src\dbflib\DBaseRecord.cpp" />
     <ClCompile Include="..\src\dbi\Connection.cpp" />
     <ClCompile Include="..\src\dbi\Diag.cpp" />
     <ClCompile Include="..\src\dbi\Environment.cpp" />
@@ -435,6 +444,7 @@
     <ClInclude Include="..\include\ccl\LogStream.h" />
     <ClInclude Include="..\include\ccl\LSBitField.h" />
     <ClInclude Include="..\include\ccl\md5.h" />
+    <ClInclude Include="..\include\ccl\miniz.h" />
     <ClInclude Include="..\include\ccl\MSBitField.h" />
     <ClInclude Include="..\include\ccl\mutex.h" />
     <ClInclude Include="..\include\ccl\Number.h" />
@@ -466,6 +476,8 @@
     <ClInclude Include="..\include\cdb_tile\TileCoordinates.h" />
     <ClInclude Include="..\include\cdb_tile\TileLatitude.h" />
     <ClInclude Include="..\include\cdb_tile\TileLongitude.h" />
+    <ClInclude Include="..\include\cdb_util\cdb_util.h" />
+    <ClInclude Include="..\include\cdb_util\FeatureDataDictionary.h" />
     <ClInclude Include="..\include\CoordinateSystems\EGM.h" />
     <ClInclude Include="..\include\CoordinateSystems\EGM2008.h" />
     <ClInclude Include="..\include\CoordinateSystems\EGMTransform.h" />
@@ -529,6 +541,12 @@
     <ClInclude Include="..\include\cts\WGS84Orthographic.h" />
     <ClInclude Include="..\include\cts\WGS84ToFlatEarthMathTransform.h" />
     <ClInclude Include="..\include\cts\WGS84ToOrthographicMathTransform.h" />
+    <ClInclude Include="..\include\dbflib\DBaseColDef.h" />
+    <ClInclude Include="..\include\dbflib\DBaseField.h" />
+    <ClInclude Include="..\include\dbflib\DBaseFieldProperty.h" />
+    <ClInclude Include="..\include\dbflib\DBaseFile.h" />
+    <ClInclude Include="..\include\dbflib\DBaseHeader.h" />
+    <ClInclude Include="..\include\dbflib\DBaseRecord.h" />
     <ClInclude Include="..\include\dbi\Connection.h" />
     <ClInclude Include="..\include\dbi\dbi.h" />
     <ClInclude Include="..\include\dbi\Diag.h" />

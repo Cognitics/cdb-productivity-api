@@ -45,12 +45,14 @@ namespace flt
     void MeshPrimitive::bind(ccl::BindStream &bs, int length, int revision)
     {
         /*   4 */ bs.bind(primitiveType);
+        /*   6 */ bs.bind(indexSize);
 
         ccl::BigEndian<ccl::uint32_t> vertexCount;
         if(primitiveType == 1)
         {
             vertexCount = ccl::int32_t(vertices1.size());    // overwritten if reading
             bs.bind(vertexCount);
+            vertices1.resize(vertexCount);
             for(ccl::int32_t i = 0, n = vertexCount; i < n; ++i)
                 bs.bind(vertices1[i]);
         }
@@ -58,6 +60,7 @@ namespace flt
         {
             vertexCount = ccl::int32_t(vertices2.size());    // overwritten if reading
             bs.bind(vertexCount);
+            vertices2.resize(vertexCount);
             for(ccl::int32_t i = 0, n = vertexCount; i < n; ++i)
                 bs.bind(vertices2[i]);
         }
@@ -65,6 +68,7 @@ namespace flt
         {
             vertexCount = ccl::int32_t(vertices4.size());    // overwritten if reading
             bs.bind(vertexCount);
+            vertices4.resize(vertexCount);
             for(ccl::int32_t i = 0, n = vertexCount; i < n; ++i)
                 bs.bind(vertices4[i]);
         }

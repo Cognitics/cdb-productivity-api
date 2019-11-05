@@ -146,8 +146,11 @@ namespace ccl
                     }
                   else
                     {
-                    FileInfo file(basedir,dirp->d_name);
-                    ret.push_back(file);            
+                        if(strcmp(dirp->d_name,"..")!=0 && strcmp(dirp->d_name,".")!=0)
+                        {
+                            FileInfo file(basedir,dirp->d_name);
+                            ret.push_back(file);            
+                        }
                     }
                 }
                 closedir(dp);
@@ -185,12 +188,14 @@ namespace ccl
             dirent *dirp;
             while ((dirp = readdir(dp)) != NULL)
             {
-                ret.push_back(dirp->d_name);
+                FileInfo file(basepath, dirp->d_name);
+                ret.push_back(file.getFileName());
             }
             closedir(dp);
         }
 #endif
 
+        ret.erase(std::remove_if(ret.begin(), ret.end(), [](const std::string& dirname) { return (dirname.empty() || (ccl::FileInfo(dirname).getBaseName() == ".") || (ccl::FileInfo(dirname).getBaseName() == "..")); }), ret.end());
         return ret;
     }
 

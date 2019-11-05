@@ -3,7 +3,8 @@
 cmake_minimum_required(VERSION 2.8)
 project (cognitics)
 #cmake -G "Unix Makefiles" -DTHIRD_PARTY_DIR=/home/kbentley/cognitics/ThirdParty -DCMAKE_INSTALL_PREFIX=/home/kbentley/meshgen ..
-set(CMAKE_CXX_FLAGS "-lstdc++fs -g")
+set(CMAKE_CXX_FLAGS "-lstdc++fs -std=c++11 -g -o3")
+
 set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath='/usr/local/lib',--start-group")
 set(IPP_STATIC "ON")
 
@@ -67,6 +68,8 @@ set(COGCORE_HEADERS
     ./include/ccl/cstdint.h
     ./include/ccl/ObjLog.h
     ./include/ccl/config.h
+    ./include/ccl/miniz.h
+    ./include/ccl/ArgumentParser.h
     ./include/sfa_file_factory/sfa_file_factory.h
     ./include/gltf/GltfData.h
     ./include/gltf/Tileset.h
@@ -448,6 +451,16 @@ set(COGCORE_HEADERS
     ./include/cdb_tile/TileLongitude.h
     ./include/cdb_tile/util.h
 
+	./include/dbflib/DBaseColDef.h
+	./include/dbflib/DBaseField.h
+	./include/dbflib/DBaseFieldProperty.h
+	./include/dbflib/DBaseFile.h
+	./include/dbflib/DBaseHeader.h
+	./include/dbflib/DBaseRecord.h
+
+	./include/cdb_util/cdb_util.h
+	./include/cdb_util/FeatureDataDictionary.h
+
 )
 
 
@@ -496,6 +509,8 @@ set(COGCORE_SOURCES
     ./src/ccl/Variant.cpp
     ./src/ccl/primitive.cpp
     ./src/ccl/ProgressObserver.cpp
+    ./src/ccl/miniz.c
+    ./src/ccl/ArgumentParser.cpp
     ./src/sfa_file_factory/sfa_file_factory.cpp
     ./src/gltf/GltfJson.cpp
     ./src/gltf/GltfInfo.cpp
@@ -815,13 +830,29 @@ set(COGCORE_SOURCES
     ./src/cdb_tile/TileCoordinates.cpp
     ./src/cdb_tile/TileLatitude.cpp
     ./src/cdb_tile/TileLongitude.cpp
+
+	./src/dbflib/DBaseColDef.cpp
+	./src/dbflib/DBaseField.cpp
+	./src/dbflib/DBaseFieldProperty.cpp
+	./src/dbflib/DBaseFile.cpp
+	./src/dbflib/DBaseHeader.cpp
+	./src/dbflib/DBaseRecord.cpp
+
+	./src/cdb_util/cdb_util.cpp
+	./src/cdb_util/FeatureDataDictionary.cpp
 )
 
 add_library(cogcore ${COGCORE_SOURCES} ${COGCORE_HEADERS})
 
 add_definitions(-DLINUX)
-add_executable(meshgen ./meshgen/meshgen.cpp  )
 
+add_executable(cdbinfo ./cdbinfo/cdbinfo.cpp  )
+target_link_libraries(cdbinfo ${CMAKE_DL_LIBS})
+target_link_libraries(cdbinfo cogcore)
+target_link_libraries(cdbinfo "pthread")
+target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+
+add_executable(meshgen ./meshgen/meshgen.cpp  )
 
 target_link_libraries(meshgen ${CMAKE_DL_LIBS})
 target_link_libraries(meshgen cogcore)
