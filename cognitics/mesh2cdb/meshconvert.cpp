@@ -12,6 +12,7 @@
 #include "ip/pngwrapper.h"
 #include "sfa/BSP.h"
 #include "rapidxml/rapidxml.hpp"
+#include "quickobj.h"
 
 using namespace rapidxml;
 bool Obj2CDB::readMetadataXML(const std::string &sourceDir)
@@ -170,14 +171,32 @@ void Obj2CDB::buildBSP()
         //if (loop > 10)
 //            break;
         loop++;
-        scenegraph::ExtentsVisitor extentsVisitor;
-        scenegraph::Scene *scene = scenegraph::buildSceneFromOBJ(fi.getFileName(), true);
+
+
+#if 1//def QUICK_OBJ
+        float top = -DBL_MAX;
+        float bottom = DBL_MAX;
+        float left = DBL_MAX;
+        float right = -DBL_MAX;
+        float minZ = DBL_MAX;
+        float maxZ = -DBL_MAX;
+        cognitics::QuickObj qo(fi.getFileName());
+        if(!qo.isValid())
+        {
+            log << "Unable to read " << fi.getFileName() << log.endl;
+            continue;
+        }
+        qo.getBounds(left,right,bottom,top,minZ,maxZ);
+#else
         double top = -DBL_MAX;
         double bottom = DBL_MAX;
         double left = DBL_MAX;
         double right = -DBL_MAX;
         double minZ = DBL_MAX;
         double maxZ = -DBL_MAX;
+        scenegraph::ExtentsVisitor extentsVisitor;
+        scenegraph::Scene *scene = scenegraph::buildSceneFromOBJ(fi.getFileName(), true);
+        
         extentsVisitor = scenegraph::ExtentsVisitor();
         extentsVisitor.visit(scene);
         if (!extentsVisitor.getExtents(left, right, bottom, top, minZ, maxZ) ||
@@ -193,7 +212,7 @@ void Obj2CDB::buildBSP()
             scenegraph::TransformVisitor transform_visitor(matrix);
             transform_visitor.visit(scene);
         }
-
+#endif
         log << fi.getBaseName() << " : " << left << " <-> " << right << " | " << top << " ^ " << bottom << log.endl;
         dbLeft = std::min<double>(left, dbLeft);
         dbRight = std::max<double>(right, dbRight);
@@ -213,7 +232,7 @@ void Obj2CDB::buildBSP()
         //Keep track of the geometry and its associated file
         bestTileLOD[aoi_poly] = fi;
         bsp.addGeometry(aoi_poly);
-        delete scene;
+        //delete scene;
     }
 
     bsp.generate(envelopes);
@@ -268,7 +287,7 @@ void Obj2CDB::collectHighestLODTiles()
         objFiles.push_back(fileLODPair.second);
         //"OBJ count limit enabled!!!!"
         //if (objFiles.size() > 10)
-        //    break;
+         //   break;
     }
 
 

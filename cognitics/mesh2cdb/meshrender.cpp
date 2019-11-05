@@ -14,7 +14,7 @@
 #include <scenegraph_gl/scenegraph_gl.h>
 #include "MeshRender.h"
 #include "ip/pngwrapper.h"
-
+#include "quickobj.h"
 #pragma warning ( push )
 #pragma warning ( disable : 4251 )        // C4251: 'GDALColorTable::aoEntries' : class 'std::vector<_Ty>' needs to have dll-interface to be used by clients of class 'GDALColorTable'
 #include "gdal_priv.h"
@@ -307,7 +307,7 @@ bool writeDEM(RenderJob &job, float *grid, int width, int height)
     replace(demFileName, ".jp2", ".tif");
     ccl::FileInfo fi(demFileName);
     ccl::makeDirectory(fi.getDirName(), true);
-    std::cout << "Writing " << demFileName << std::endl;
+    //std::cout << "Writing " << demFileName << std::endl;
     const char *pszFormat = "GTiff";
     GDALDriver *poDriver;
     poDriver = GetGDALDriverManager()->GetDriverByName(pszFormat);
@@ -350,13 +350,15 @@ bool writeDEM(RenderJob &job, float *grid, int width, int height)
     return true;
 }
 
+
+#define QUICK_OBJ
 void renderToFile(RenderJob &job)
 {
     int width = 1024;
     int height = 1024;
     int depth = 3;
     GLenum glErr;
-
+#ifndef QUICK_OBJ
     if (scene)
         delete scene;
     scene = new scenegraph::Scene();
@@ -372,6 +374,7 @@ void renderToFile(RenderJob &job)
         }
         scene->addChild(childScene);
     }
+#endif
     resetAOIForScene(job);
 
     // Build the texture that will serve as the depth attachment for the framebuffer.
@@ -463,7 +466,24 @@ void renderToFile(RenderJob &job)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glPushMatrix();
+#ifdef QUICK_OBJ
+    for(auto&& file : job.objFiles)
+    {
+        ccl::FileInfo objFi(file);
+        cognitics::QuickObj qo(file,job.offsetX,job.offsetY,job.offsetZ,objFi.getDirName(),true);
+        if(qo.isValid())
+        {
+            logger << "Rendering " << file << logger.endl;
+            qo.glRender();
+        }
+        else
+        {
+            logger << "Unable to load " << file << logger.endl;
+        }
+    }
+#else
     renderVisitor.visit(scene);
+#endif
     glPopMatrix();
 
     glMatrixMode(GL_PROJECTION);
@@ -613,11 +633,11 @@ bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string 
 
     while(true)
     {
-        renderScene();
+        if(!renderScene())
+            return true;
     }
     return true;
 }
-
 
 
 int CPL_STDCALL GDALProgressObserver(CPL_UNUSED double dfComplete,
@@ -673,13 +693,13 @@ void finishBuild()
 
 
 
-void renderScene(void)
+bool renderScene(void)
 {
     if (renderJobs.empty())
     {
-        finishBuild();
+        //finishBuild();
         //glutLeaveMainLoop();
-        return;
+        return false;
     }
     RenderJob job = renderJobs.back();
     if (renderingToFile)
@@ -694,7 +714,7 @@ void renderScene(void)
             ss << ((1.0f - (jobsLeft / totalCDBTileCount))*100.0) << "%" << " complete...";
             logger << ss.str() << logger.endl;
         }
-        return;
+        return true;
     }
 }
 
