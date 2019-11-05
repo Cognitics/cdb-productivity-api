@@ -3,7 +3,7 @@
 cmake_minimum_required(VERSION 2.8)
 project (cognitics)
 #cmake -G "Unix Makefiles" -DTHIRD_PARTY_DIR=/home/kbentley/cognitics/ThirdParty -DCMAKE_INSTALL_PREFIX=/home/kbentley/meshgen ..
-set(CMAKE_CXX_FLAGS "-lstdc++fs -g -o3")
+set(CMAKE_CXX_FLAGS "-lstdc++fs -g")
 set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath='/usr/local/lib',--start-group")
 set(IPP_STATIC "ON")
 
@@ -837,7 +837,7 @@ target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/
 
 
 IF(COG_BUILD_GL_TOOLS)
-    add_executable(mesh2cdb ./mesh2cdb/mesh2cdb.cpp ./mesh2cdb/mesh2cdb.h ./mesh2cdb/meshconvert.cpp ./mesh2cdb/MeshRender.h ./mesh2cdb/meshrender.cpp ./src/scenegraph_gl/scenegraph_gl.cpp)
+    add_executable(mesh2cdb ./mesh2cdb/quickobj.cpp ./mesh2cdb/mesh2cdb.cpp ./mesh2cdb/mesh2cdb.h ./mesh2cdb/meshconvert.cpp ./mesh2cdb/MeshRender.h ./mesh2cdb/meshrender.cpp ./src/scenegraph_gl/scenegraph_gl.cpp)
     target_link_libraries(mesh2cdb ${CMAKE_DL_LIBS})
     target_link_libraries(mesh2cdb "/usr/lib/x86_64-linux-gnu/libEGL.so")
     target_link_libraries(mesh2cdb "/usr/lib/x86_64-linux-gnu/libGLX.so")
