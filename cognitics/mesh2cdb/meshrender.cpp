@@ -401,8 +401,6 @@ void renderToFile(RenderJob &job)
     // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
     GLuint FramebufferName = 0;
     glGenFramebuffers(1, &FramebufferName);
-    glErr = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-
     glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
 
     // The texture we're going to render to
@@ -420,8 +418,6 @@ void renderToFile(RenderJob &job)
     // Give an empty image to OpenGL ( the last "0" )
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
 
-    
-
     // Set "renderedTexture" as our colour attachement #0
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
 
@@ -433,8 +429,8 @@ void renderToFile(RenderJob &job)
     auto err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (err != GL_FRAMEBUFFER_COMPLETE)
     {
-       // GLenum gl_error = glGetError();
-        //logger << "Frame Buffer Error! (" << err << "). glError: " << gl_error << logger.endl;
+        GLenum gl_error = glGetError();
+        logger << "Frame Buffer Error! (" << err << "). glError: " << gl_error << logger.endl;
         //return;
     }
 
@@ -484,7 +480,7 @@ void renderToFile(RenderJob &job)
         cognitics::QuickObj qo(file,job.offsetX,job.offsetY,job.offsetZ,objFi.getDirName(),true);
         if(qo.isValid())
         {
-            logger << "Rendering " << file << logger.endl;
+            //logger << "Rendering " << file << logger.endl;
             qo.glRender();
         }
         else
@@ -553,9 +549,14 @@ static const EGLint pbufferAttribs[] = {
 };
 
 #endif //USE_EGL
+
 void glutRenderScene()
 {
-    renderScene();
+    if(!renderScene())
+    {
+        //Glut doesn't give us a chance to return, so just exit.
+        exit(1);
+    }
 }
 
 #define CHECK_EGL_ERR do { EGLint err = eglGetError(); if (err != EGL_SUCCESS) { printf("Error line %d: 0x%.4x\n", __LINE__, err); } } while (false)
@@ -742,7 +743,7 @@ bool renderScene(void)
 {
     if (renderJobs.empty())
     {
-        //finishBuild();
+        finishBuild();
         //glutLeaveMainLoop();
         return false;
     }
