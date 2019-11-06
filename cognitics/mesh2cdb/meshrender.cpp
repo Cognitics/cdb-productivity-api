@@ -1,3 +1,7 @@
+#ifndef WIN32
+#define USE_EGL
+#endif
+
 #include <ccl/ObjLog.h>
 #include <ccl/LogStream.h>
 #include <ccl/Timer.h>
@@ -5,11 +9,15 @@
 //#include "ip/pngwrapper.h"
 #include <scenegraph/ExtentsVisitor.h>
 #include <ccl/JobManager.h>
+#ifdef USE_EGL
 #define GLEW_EGL 1
+#endif //USE_EGL
 #include <GL/glew.h>
 
 #include <GL/glut.h>
+#ifndef WIN32
 #include <GL/glx.h>
+#endif
 #include <GL/freeglut_ext.h>
 #include <scenegraph_gl/scenegraph_gl.h>
 #include "MeshRender.h"
@@ -22,11 +30,13 @@
 #include "ogr_spatialref.h"
 #pragma warning ( pop )
 
+#ifdef USE_EGL
 #define EGL_EXT_PROTOTYPES
 #define EGL_EGLEXT_PROTOTYPES
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 
+#endif
 namespace
 {
     ccl::ObjLog logger;
@@ -391,8 +401,6 @@ void renderToFile(RenderJob &job)
     // The framebuffer, which regroups 0, 1, or more textures, and 0 or 1 depth buffer.
     GLuint FramebufferName = 0;
     glGenFramebuffers(1, &FramebufferName);
-    glErr = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-
     glBindFramebuffer(GL_FRAMEBUFFER, FramebufferName);
 
     // The texture we're going to render to
@@ -410,8 +418,6 @@ void renderToFile(RenderJob &job)
     // Give an empty image to OpenGL ( the last "0" )
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, 0);
 
-    
-
     // Set "renderedTexture" as our colour attachement #0
     glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, renderedTexture, 0);
 
@@ -423,8 +429,9 @@ void renderToFile(RenderJob &job)
     auto err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (err != GL_FRAMEBUFFER_COMPLETE)
     {
-        logger << "Frame Buffer Error! (" << err << ")" << logger.endl;
-        return;
+        GLenum gl_error = glGetError();
+        logger << "Frame Buffer Error! (" << err << "). glError: " << gl_error << logger.endl;
+        //return;
     }
 
     //GLuint ProgramID = LoadShaders("", "layout(location = 0) out vec3 color;");
@@ -473,7 +480,7 @@ void renderToFile(RenderJob &job)
         cognitics::QuickObj qo(file,job.offsetX,job.offsetY,job.offsetZ,objFi.getDirName(),true);
         if(qo.isValid())
         {
-            logger << "Rendering " << file << logger.endl;
+            //logger << "Rendering " << file << logger.endl;
             qo.glRender();
         }
         else
@@ -520,6 +527,7 @@ bool renderingToFile = true;
 float totalCDBTileCount = 0;
 std::string rootCDBOutput;
 
+#ifdef USE_EGL
 
 static const EGLint configAttribs[] = {
         EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
@@ -540,10 +548,22 @@ static const EGLint pbufferAttribs[] = {
       EGL_NONE,
 };
 
+#endif //USE_EGL
+
+void glutRenderScene()
+{
+    if(!renderScene())
+    {
+        //Glut doesn't give us a chance to return, so just exit.
+        exit(1);
+    }
+}
+
 #define CHECK_EGL_ERR do { EGLint err = eglGetError(); if (err != EGL_SUCCESS) { printf("Error line %d: 0x%.4x\n", __LINE__, err); } } while (false)
 bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string &cdbRoot)
 {
-#if WIN32
+#ifdef WIN32
+#ifdef USE_EGL
     auto eglModule = LoadLibraryA("libEGL.dll");
     PFNEGLGETPROCADDRESSPROC eglGetProcAddress = (PFNEGLGETPROCADDRESSPROC)GetProcAddress(eglModule, "eglGetProcAddress");
     if(!eglGetProcAddress)
@@ -562,8 +582,11 @@ bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string 
 
     PFNEGLGETERRORPROC eglGetError = (PFNEGLGETERRORPROC)eglGetProcAddress("eglGetError");
     PFNEGLBINDAPIPROC eglBindAPI = (PFNEGLBINDAPIPROC)eglGetProcAddress("eglBindAPI");
-#endif
- 
+    PFNEGLQUERYSTRINGPROC eglQueryString = (PFNEGLQUERYSTRINGPROC)eglGetProcAddress("eglQueryString");
+#endif //USE_EGL
+#endif //WIN32
+
+#ifdef USE_EGL
     EGLDisplay eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 
     CHECK_EGL_ERR;
@@ -616,7 +639,22 @@ bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string 
     printf("OpenGL vender: %s\n", glGetString(GL_VENDOR));
     printf("OpenGL renderer: %s: \n", glGetString(GL_RENDERER));
     glewInit();
+#endif //USE_EGL
 
+
+#ifndef USE_EGL
+    // init GLUT and create window
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
+
+    glutInitWindowPosition(50, 50);
+    glutInitWindowSize(1024, 1024);
+    glutCreateWindow("OBJ Viewer");
+
+    glewExperimental = GL_TRUE;
+    glewInit();
+
+#endif
     totalCDBTileCount = jobs.size();
 
     rootCDBOutput = cdbRoot;
@@ -631,6 +669,14 @@ bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
+#ifndef USE_EGL
+    // enter GLUT event processing cycle
+       // register callbacks
+    glutDisplayFunc(glutRenderScene);
+    glutIdleFunc(glutRenderScene);
+
+    glutMainLoop();
+#endif
     while(true)
     {
         if(!renderScene())
@@ -697,7 +743,7 @@ bool renderScene(void)
 {
     if (renderJobs.empty())
     {
-        //finishBuild();
+        finishBuild();
         //glutLeaveMainLoop();
         return false;
     }
@@ -716,6 +762,7 @@ bool renderScene(void)
         }
         return true;
     }
+    return false;
 }
 
 GLuint LoadShaders(std::string vertexShader, std::string fragmentShader)

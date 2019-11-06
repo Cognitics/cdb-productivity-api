@@ -38,6 +38,7 @@
     <ClCompile Include="..\src\b64\base64.cpp" />
     <ClCompile Include="..\src\cad\AttributeDictionary.cpp" />
     <ClCompile Include="..\src\ccl\Action.cpp" />
+    <ClCompile Include="..\src\ccl\ArgumentParser.cpp" />
     <ClCompile Include="..\src\ccl\AttributeContainer.cpp" />
     <ClCompile Include="..\src\ccl\binary.cpp" />
     <ClCompile Include="..\src\ccl\config.cpp" />
@@ -418,6 +419,7 @@
     <ClInclude Include="..\include\b64\base64.h" />
     <ClInclude Include="..\include\cad\AttributeDictionary.h" />
     <ClInclude Include="..\include\ccl\Action.h" />
+    <ClInclude Include="..\include\ccl\ArgumentParser.h" />
     <ClInclude Include="..\include\ccl\AttributeContainer.h" />
     <ClInclude Include="..\include\ccl\attributes.h" />
     <ClInclude Include="..\include\ccl\BigEndian.h" />

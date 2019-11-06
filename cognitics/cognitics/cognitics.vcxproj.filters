@@ -1191,9 +1191,6 @@
     <ClCompile Include="..\src\scenegraphgltf\buildGltfFromScene.cpp">
       <Filter>Source Files\scenegraphgltf</Filter>
     </ClCompile>
-    <ClCompile Include="buildObjFromScene.cpp">
-      <Filter>Source Files\scenegraphobj</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\b64\base64.cpp">
       <Filter>Source Files\b64</Filter>
     </ClCompile>
@@ -1306,6 +1303,12 @@
       <Filter>Source Files\cdb_util</Filter>
     </ClCompile>
     <ClCompile Include="..\src\ccl\miniz.c">
+      <Filter>Source Files\ccl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\scenegraphobj\buildObjFromScene.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ccl\ArgumentParser.cpp">
       <Filter>Source Files\ccl</Filter>
     </ClCompile>
   </ItemGroup>
@@ -2636,6 +2639,9 @@
       <Filter>Header Files\cdb_util</Filter>
     </ClInclude>
     <ClInclude Include="..\include\ccl\miniz.h">
+      <Filter>Header Files\ccl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ccl\ArgumentParser.h">
       <Filter>Header Files\ccl</Filter>
     </ClInclude>
   </ItemGroup>

@@ -24,12 +24,18 @@
     <ClCompile Include="meshrender.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="quickobj.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MeshRender.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="mesh2cdb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="quickobj.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

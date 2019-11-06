@@ -1,3 +1,7 @@
+#ifdef WIN32
+#define _CRT_SECURE_NO_WARNINGS 1
+#include <windows.h>
+#endif
 
 #include "quickobj.h"
 #include <stdio.h>
@@ -5,9 +9,54 @@
 #include <float.h>
 #include <ccl/FileInfo.h>
 #include <ccl/StringUtils.h>
+
 #include <fstream>
+#include <GL/glew.h>
 #include <GL/gl.h>
 #include <ip/jpgwrapper.h>
+
+#include <errno.h>
+
+#ifndef GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG
+#define GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG 0x8C01
+#endif
+#ifndef GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG
+#define GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG 0x8C03
+#endif
+#ifndef GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG
+#define GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG 0x8C00
+#endif
+#ifndef GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG
+#define GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG 0x8C02
+#endif
+
+// S3TC/DXT (GL_EXT_texture_compression_s3tc) : Most desktop/console gpus
+#ifndef GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
+#define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT 0x83F1
+#endif
+#ifndef GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
+#define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT 0x83F2
+#endif
+#ifndef GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+#define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT 0x83F3
+#endif
+
+// ATC (GL_AMD_compressed_ATC_texture) : Qualcomm/Adreno based gpus
+#ifndef ATC_RGB_AMD
+#define ATC_RGB_AMD 0x8C92
+#endif
+#ifndef ATC_RGBA_EXPLICIT_ALPHA_AMD
+#define ATC_RGBA_EXPLICIT_ALPHA_AMD 0x8C93
+#endif
+#ifndef ATC_RGBA_INTERPOLATED_ALPHA_AMD
+#define ATC_RGBA_INTERPOLATED_ALPHA_AMD 0x87EE
+#endif
+
+// ETC1 (OES_compressed_ETC1_RGB8_texture) : All OpenGL ES chipsets
+#ifndef ETC1_RGB8
+#define ETC1_RGB8 0x8D64
+#endif
+
 
 
 namespace cognitics {
@@ -28,17 +77,24 @@ namespace cognitics {
         //Make a buffer for the text
         char *fileContents = new char[fileSize+1];
         //Open the file
-        FILE *f = fopen(objFilename.c_str(),"rt");
+        FILE *f = fopen(objFilename.c_str(),"rb");
         if(!f)
         {
             delete[] fileContents;
-            log << "Unable to open " << objFilename << log.endl;
+            log << "Unable to open " << objFilename << ". error: " << strerror(errno) << log.endl;
             return;
         }
         //Read the entire file
         fread(fileContents,1,fileSize,f);
         int pos = 0;
-        
+
+        //OBJ indexes start at 1, so we put a placeholder in 0
+        QuickVert placeholder3;
+        placeholder3.x = 0; placeholder3.y = 0; placeholder3.z = 0;
+        verts.push_back(placeholder3);
+        uvs.push_back(placeholder3);
+        norms.push_back(placeholder3);
+
         while(pos < fileSize)
         {
             int lineStart = pos;
@@ -136,16 +192,16 @@ namespace cognitics {
                         }
                         tok++;
                     }
-                    ushort vertId = atoi(vp);
+                    uint32_t vertId = atoi(vp);
                     vertIdxs.push_back(vertId);
                     if(vtp)
                     {
-                        ushort uvId = atoi(vtp);
+                        uint32_t uvId = atoi(vtp);
                         uvIdxs.push_back(uvId);
                     }
                     if(vnp)
                     {
-                        ushort normId = atoi(vnp);
+                        uint32_t normId = atoi(vnp);
                         normIdxs.push_back(normId);
                     }
                     tok = strtok(NULL," ");
@@ -174,7 +230,7 @@ namespace cognitics {
             }
 
         }//end of while parsing lines
-
+        fclose(f);
         _isValid = true;
         delete[] fileContents;
     }
@@ -438,58 +494,34 @@ namespace cognitics {
 
     bool QuickObj::glRender()
     {
-        /*
-        //Setup vertex buffer
-        float *vertBuffer = new float[verts.size()*3];
-        int pos = 0;
-        for(auto&& vert : verts)
-        {
-            vertBuffer[pos] = vert.x; pos++;
-            vertBuffer[pos] = vert.x; pos++;
-            vertBuffer[pos] = vert.x; pos++;
-        }
-
-        //UV buffer
-        pos = 0;
-        float *texCoords = new float[uvs.size()*2];
-        for(auto&& uv : uvs)
-        {
-            texCoords[pos] = uv.x; pos++;
-            texCoords[pos] = uv.y; pos++;
-        }
-        
-
-        //Normals ?
-
-        //Faces
-        */
-       //int numVerts(firstface->verts.size());
-
         glPushAttrib(GL_ALL_ATTRIB_BITS);
             
         glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
         
         GLuint texid = getOrLoadTextureID(materialMap[materialName].textureFile);
         glBindTexture(GL_TEXTURE_2D, texid);
-        
         glEnable(GL_TEXTURE_2D);
-
         glBegin(GL_TRIANGLES);
         if(vertIdxs.size()!=uvIdxs.size())
         {
             log << "The number of vertices does not match the number of UV coordinates." << log.endl;
             return false;
         }
-        for(size_t i=0,ic=vertIdxs.size();i<ic;i+=3)
+
+        for(size_t i=0,ic=vertIdxs.size();i<ic;i++)
         {
-            for(int j=0;j<3;j++)
+            uint32_t idx = vertIdxs[i];
+            uint32_t uvidx = uvIdxs[i];
+            if(idx==0 || uvidx==0)
             {
-                ushort idx = vertIdxs[i+j];
-                ushort uvidx = uvIdxs[i+j];
-                glVertex3f(verts[idx].x,verts[idx].y,verts[idx].z);
-                glTexCoord2d(uvs[uvidx].x,uvs[uvidx].y);
-            //glNormal3f(x, y, z);
+                log << "Vert/UV index of 0 is invalid for OBJ." << log.endl;
+                return false;
             }
+            glTexCoord2f(uvs[uvidx].x,uvs[uvidx].y);
+            glVertex3f(verts[idx].x,verts[idx].y,verts[idx].z);
+            
+            //glNormal3f(x, y, z);
+            
         }
 
         glEnd();
