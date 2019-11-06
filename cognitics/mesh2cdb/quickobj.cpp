@@ -94,7 +94,7 @@ namespace cognitics {
         verts.push_back(placeholder3);
         uvs.push_back(placeholder3);
         norms.push_back(placeholder3);
-        
+
         while(pos < fileSize)
         {
             int lineStart = pos;
@@ -192,16 +192,16 @@ namespace cognitics {
                         }
                         tok++;
                     }
-                    uint16_t vertId = atoi(vp);
+                    uint32_t vertId = atoi(vp);
                     vertIdxs.push_back(vertId);
                     if(vtp)
                     {
-                        uint16_t uvId = atoi(vtp);
+                        uint32_t uvId = atoi(vtp);
                         uvIdxs.push_back(uvId);
                     }
                     if(vnp)
                     {
-                        uint16_t normId = atoi(vnp);
+                        uint32_t normId = atoi(vnp);
                         normIdxs.push_back(normId);
                     }
                     tok = strtok(NULL," ");
@@ -494,63 +494,34 @@ namespace cognitics {
 
     bool QuickObj::glRender()
     {
-        /*
-        //Setup vertex buffer
-        float *vertBuffer = new float[verts.size()*3];
-        int pos = 0;
-        for(auto&& vert : verts)
-        {
-            vertBuffer[pos] = vert.x; pos++;
-            vertBuffer[pos] = vert.x; pos++;
-            vertBuffer[pos] = vert.x; pos++;
-        }
-
-        //UV buffer
-        pos = 0;
-        float *texCoords = new float[uvs.size()*2];
-        for(auto&& uv : uvs)
-        {
-            texCoords[pos] = uv.x; pos++;
-            texCoords[pos] = uv.y; pos++;
-        }
-        
-
-        //Normals ?
-
-        //Faces
-        */
-       //int numVerts(firstface->verts.size());
-
         glPushAttrib(GL_ALL_ATTRIB_BITS);
             
         glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
         
         GLuint texid = getOrLoadTextureID(materialMap[materialName].textureFile);
         glBindTexture(GL_TEXTURE_2D, texid);
-        
         glEnable(GL_TEXTURE_2D);
-
         glBegin(GL_TRIANGLES);
         if(vertIdxs.size()!=uvIdxs.size())
         {
             log << "The number of vertices does not match the number of UV coordinates." << log.endl;
             return false;
         }
-        for(size_t i=0,ic=vertIdxs.size();i<ic;i+=3)
+
+        for(size_t i=0,ic=vertIdxs.size();i<ic;i++)
         {
-            for(int j=0;j<3;j++)
+            uint32_t idx = vertIdxs[i];
+            uint32_t uvidx = uvIdxs[i];
+            if(idx==0 || uvidx==0)
             {
-                uint16_t idx = vertIdxs[i+j];
-                uint16_t uvidx = uvIdxs[i+j];
-                if(idx==0 || uvidx==0)
-                {
-                    log << "Vert/UV index of 0 is invalid for OBJ." << log.endl;
-                    return false;
-                }
-                glVertex3f(verts[idx].x,verts[idx].y,verts[idx].z);
-                glTexCoord2d(uvs[uvidx].x,uvs[uvidx].y);
-            //glNormal3f(x, y, z);
+                log << "Vert/UV index of 0 is invalid for OBJ." << log.endl;
+                return false;
             }
+            glTexCoord2f(uvs[uvidx].x,uvs[uvidx].y);
+            glVertex3f(verts[idx].x,verts[idx].y,verts[idx].z);
+            
+            //glNormal3f(x, y, z);
+            
         }
 
         glEnd();

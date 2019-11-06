@@ -1,3 +1,7 @@
+#ifndef WIN32
+#define USE_EGL
+#endif
+
 #include <ccl/ObjLog.h>
 #include <ccl/LogStream.h>
 #include <ccl/Timer.h>
@@ -636,8 +640,8 @@ bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string 
     glewInit();
 #endif //USE_EGL
 
-#define USE_WINDOW
-#ifdef USE_WINDOW
+
+#ifndef USE_EGL
     // init GLUT and create window
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
@@ -664,13 +668,14 @@ bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
+#ifndef USE_EGL
     // enter GLUT event processing cycle
        // register callbacks
     glutDisplayFunc(glutRenderScene);
     glutIdleFunc(glutRenderScene);
 
     glutMainLoop();
-
+#endif
     while(true)
     {
         if(!renderScene())
