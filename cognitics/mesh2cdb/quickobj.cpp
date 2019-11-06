@@ -15,6 +15,8 @@
 #include <GL/gl.h>
 #include <ip/jpgwrapper.h>
 
+#include <errno.h>
+
 #ifndef GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG
 #define GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG 0x8C01
 #endif
@@ -75,16 +77,23 @@ namespace cognitics {
         //Make a buffer for the text
         char *fileContents = new char[fileSize+1];
         //Open the file
-        FILE *f = fopen(objFilename.c_str(),"rt");
+        FILE *f = fopen(objFilename.c_str(),"rb");
         if(!f)
         {
             delete[] fileContents;
-            log << "Unable to open " << objFilename << log.endl;
+            log << "Unable to open " << objFilename << ". error: " << strerror(errno) << log.endl;
             return;
         }
         //Read the entire file
         fread(fileContents,1,fileSize,f);
         int pos = 0;
+
+        //OBJ indexes start at 1, so we put a placeholder in 0
+        QuickVert placeholder3;
+        placeholder3.x = 0; placeholder3.y = 0; placeholder3.z = 0;
+        verts.push_back(placeholder3);
+        uvs.push_back(placeholder3);
+        norms.push_back(placeholder3);
         
         while(pos < fileSize)
         {
@@ -221,7 +230,7 @@ namespace cognitics {
             }
 
         }//end of while parsing lines
-
+        fclose(f);
         _isValid = true;
         delete[] fileContents;
     }
@@ -533,6 +542,11 @@ namespace cognitics {
             {
                 uint16_t idx = vertIdxs[i+j];
                 uint16_t uvidx = uvIdxs[i+j];
+                if(idx==0 || uvidx==0)
+                {
+                    log << "Vert/UV index of 0 is invalid for OBJ." << log.endl;
+                    return false;
+                }
                 glVertex3f(verts[idx].x,verts[idx].y,verts[idx].z);
                 glTexCoord2d(uvs[uvidx].x,uvs[uvidx].y);
             //glNormal3f(x, y, z);

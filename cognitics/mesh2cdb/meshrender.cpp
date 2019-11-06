@@ -5,7 +5,9 @@
 //#include "ip/pngwrapper.h"
 #include <scenegraph/ExtentsVisitor.h>
 #include <ccl/JobManager.h>
+#ifdef USE_EGL
 #define GLEW_EGL 1
+#endif //USE_EGL
 #include <GL/glew.h>
 
 #include <GL/glut.h>
@@ -24,11 +26,13 @@
 #include "ogr_spatialref.h"
 #pragma warning ( pop )
 
+#ifdef USE_EGL
 #define EGL_EXT_PROTOTYPES
 #define EGL_EGLEXT_PROTOTYPES
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 
+#endif
 namespace
 {
     ccl::ObjLog logger;
@@ -425,8 +429,9 @@ void renderToFile(RenderJob &job)
     auto err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (err != GL_FRAMEBUFFER_COMPLETE)
     {
-        logger << "Frame Buffer Error! (" << err << ")" << logger.endl;
-        return;
+       // GLenum gl_error = glGetError();
+        //logger << "Frame Buffer Error! (" << err << "). glError: " << gl_error << logger.endl;
+        //return;
     }
 
     //GLuint ProgramID = LoadShaders("", "layout(location = 0) out vec3 color;");
@@ -522,6 +527,7 @@ bool renderingToFile = true;
 float totalCDBTileCount = 0;
 std::string rootCDBOutput;
 
+#ifdef USE_EGL
 
 static const EGLint configAttribs[] = {
         EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
@@ -542,10 +548,17 @@ static const EGLint pbufferAttribs[] = {
       EGL_NONE,
 };
 
+#endif //USE_EGL
+void glutRenderScene()
+{
+    renderScene();
+}
+
 #define CHECK_EGL_ERR do { EGLint err = eglGetError(); if (err != EGL_SUCCESS) { printf("Error line %d: 0x%.4x\n", __LINE__, err); } } while (false)
 bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string &cdbRoot)
 {
 #ifdef WIN32
+#ifdef USE_EGL
     auto eglModule = LoadLibraryA("libEGL.dll");
     PFNEGLGETPROCADDRESSPROC eglGetProcAddress = (PFNEGLGETPROCADDRESSPROC)GetProcAddress(eglModule, "eglGetProcAddress");
     if(!eglGetProcAddress)
@@ -565,9 +578,10 @@ bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string 
     PFNEGLGETERRORPROC eglGetError = (PFNEGLGETERRORPROC)eglGetProcAddress("eglGetError");
     PFNEGLBINDAPIPROC eglBindAPI = (PFNEGLBINDAPIPROC)eglGetProcAddress("eglBindAPI");
     PFNEGLQUERYSTRINGPROC eglQueryString = (PFNEGLQUERYSTRINGPROC)eglGetProcAddress("eglQueryString");
-#endif
+#endif //USE_EGL
+#endif //WIN32
 
-#ifndef WIN32
+#ifdef USE_EGL
     EGLDisplay eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 
     CHECK_EGL_ERR;
@@ -620,7 +634,7 @@ bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string 
     printf("OpenGL vender: %s\n", glGetString(GL_VENDOR));
     printf("OpenGL renderer: %s: \n", glGetString(GL_RENDERER));
     glewInit();
-#endif
+#endif //USE_EGL
 
 #define USE_WINDOW
 #ifdef USE_WINDOW
@@ -649,6 +663,13 @@ bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string 
     // OpenGL init
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
+
+    // enter GLUT event processing cycle
+       // register callbacks
+    glutDisplayFunc(glutRenderScene);
+    glutIdleFunc(glutRenderScene);
+
+    glutMainLoop();
 
     while(true)
     {
