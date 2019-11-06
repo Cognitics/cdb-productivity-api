@@ -1,3 +1,7 @@
+#ifdef WIN32
+#define _CRT_SECURE_NO_WARNINGS 1
+#include <windows.h>
+#endif
 
 #include "quickobj.h"
 #include <stdio.h>
@@ -5,9 +9,52 @@
 #include <float.h>
 #include <ccl/FileInfo.h>
 #include <ccl/StringUtils.h>
+
 #include <fstream>
+#include <GL/glew.h>
 #include <GL/gl.h>
 #include <ip/jpgwrapper.h>
+
+#ifndef GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG
+#define GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG 0x8C01
+#endif
+#ifndef GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG
+#define GL_COMPRESSED_RGBA_PVRTC_2BPPV1_IMG 0x8C03
+#endif
+#ifndef GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG
+#define GL_COMPRESSED_RGB_PVRTC_4BPPV1_IMG 0x8C00
+#endif
+#ifndef GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG
+#define GL_COMPRESSED_RGBA_PVRTC_4BPPV1_IMG 0x8C02
+#endif
+
+// S3TC/DXT (GL_EXT_texture_compression_s3tc) : Most desktop/console gpus
+#ifndef GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
+#define GL_COMPRESSED_RGBA_S3TC_DXT1_EXT 0x83F1
+#endif
+#ifndef GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
+#define GL_COMPRESSED_RGBA_S3TC_DXT3_EXT 0x83F2
+#endif
+#ifndef GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+#define GL_COMPRESSED_RGBA_S3TC_DXT5_EXT 0x83F3
+#endif
+
+// ATC (GL_AMD_compressed_ATC_texture) : Qualcomm/Adreno based gpus
+#ifndef ATC_RGB_AMD
+#define ATC_RGB_AMD 0x8C92
+#endif
+#ifndef ATC_RGBA_EXPLICIT_ALPHA_AMD
+#define ATC_RGBA_EXPLICIT_ALPHA_AMD 0x8C93
+#endif
+#ifndef ATC_RGBA_INTERPOLATED_ALPHA_AMD
+#define ATC_RGBA_INTERPOLATED_ALPHA_AMD 0x87EE
+#endif
+
+// ETC1 (OES_compressed_ETC1_RGB8_texture) : All OpenGL ES chipsets
+#ifndef ETC1_RGB8
+#define ETC1_RGB8 0x8D64
+#endif
+
 
 
 namespace cognitics {
@@ -136,16 +183,16 @@ namespace cognitics {
                         }
                         tok++;
                     }
-                    ushort vertId = atoi(vp);
+                    uint16_t vertId = atoi(vp);
                     vertIdxs.push_back(vertId);
                     if(vtp)
                     {
-                        ushort uvId = atoi(vtp);
+                        uint16_t uvId = atoi(vtp);
                         uvIdxs.push_back(uvId);
                     }
                     if(vnp)
                     {
-                        ushort normId = atoi(vnp);
+                        uint16_t normId = atoi(vnp);
                         normIdxs.push_back(normId);
                     }
                     tok = strtok(NULL," ");
@@ -484,8 +531,8 @@ namespace cognitics {
         {
             for(int j=0;j<3;j++)
             {
-                ushort idx = vertIdxs[i+j];
-                ushort uvidx = uvIdxs[i+j];
+                uint16_t idx = vertIdxs[i+j];
+                uint16_t uvidx = uvIdxs[i+j];
                 glVertex3f(verts[idx].x,verts[idx].y,verts[idx].z);
                 glTexCoord2d(uvs[uvidx].x,uvs[uvidx].y);
             //glNormal3f(x, y, z);

@@ -174,12 +174,12 @@ void Obj2CDB::buildBSP()
 
 
 #if 1//def QUICK_OBJ
-        float top = -DBL_MAX;
-        float bottom = DBL_MAX;
-        float left = DBL_MAX;
-        float right = -DBL_MAX;
-        float minZ = DBL_MAX;
-        float maxZ = -DBL_MAX;
+        float top = -FLT_MAX;
+        float bottom = FLT_MAX;
+        float left = FLT_MAX;
+        float right = -FLT_MAX;
+        float minZ = FLT_MAX;
+        float maxZ = -FLT_MAX;
         cognitics::QuickObj qo(fi.getFileName());
         if(!qo.isValid())
         {

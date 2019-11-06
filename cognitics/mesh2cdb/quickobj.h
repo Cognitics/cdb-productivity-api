@@ -111,9 +111,9 @@ namespace cognitics {
         std::vector<QuickVert> verts;
         std::vector<QuickVert> norms;
         std::vector<QuickVert> uvs;
-        std::vector<ushort> vertIdxs;
-        std::vector<ushort> uvIdxs;
-        std::vector<ushort> normIdxs;
+        std::vector<uint16_t> vertIdxs;
+        std::vector<uint16_t> uvIdxs;
+        std::vector<uint16_t> normIdxs;
         std::string objFilename;
         std::string textureFilename;
         std::string textureDirectory;

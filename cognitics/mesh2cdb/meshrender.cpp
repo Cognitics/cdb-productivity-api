@@ -9,7 +9,9 @@
 #include <GL/glew.h>
 
 #include <GL/glut.h>
+#ifndef WIN32
 #include <GL/glx.h>
+#endif
 #include <GL/freeglut_ext.h>
 #include <scenegraph_gl/scenegraph_gl.h>
 #include "MeshRender.h"
@@ -543,7 +545,7 @@ static const EGLint pbufferAttribs[] = {
 #define CHECK_EGL_ERR do { EGLint err = eglGetError(); if (err != EGL_SUCCESS) { printf("Error line %d: 0x%.4x\n", __LINE__, err); } } while (false)
 bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string &cdbRoot)
 {
-#if WIN32
+#ifdef WIN32
     auto eglModule = LoadLibraryA("libEGL.dll");
     PFNEGLGETPROCADDRESSPROC eglGetProcAddress = (PFNEGLGETPROCADDRESSPROC)GetProcAddress(eglModule, "eglGetProcAddress");
     if(!eglGetProcAddress)
@@ -562,8 +564,10 @@ bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string 
 
     PFNEGLGETERRORPROC eglGetError = (PFNEGLGETERRORPROC)eglGetProcAddress("eglGetError");
     PFNEGLBINDAPIPROC eglBindAPI = (PFNEGLBINDAPIPROC)eglGetProcAddress("eglBindAPI");
+    PFNEGLQUERYSTRINGPROC eglQueryString = (PFNEGLQUERYSTRINGPROC)eglGetProcAddress("eglQueryString");
 #endif
- 
+
+#ifndef WIN32
     EGLDisplay eglDpy = eglGetDisplay(EGL_DEFAULT_DISPLAY);
 
     CHECK_EGL_ERR;
@@ -616,7 +620,22 @@ bool renderInit(int argc, char **argv, renderJobList_t &jobs, const std::string 
     printf("OpenGL vender: %s\n", glGetString(GL_VENDOR));
     printf("OpenGL renderer: %s: \n", glGetString(GL_RENDERER));
     glewInit();
+#endif
 
+#define USE_WINDOW
+#ifdef USE_WINDOW
+    // init GLUT and create window
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
+
+    glutInitWindowPosition(50, 50);
+    glutInitWindowSize(1024, 1024);
+    glutCreateWindow("OBJ Viewer");
+
+    glewExperimental = GL_TRUE;
+    glewInit();
+
+#endif
     totalCDBTileCount = jobs.size();
 
     rootCDBOutput = cdbRoot;
@@ -716,6 +735,7 @@ bool renderScene(void)
         }
         return true;
     }
+    return false;
 }
 
 GLuint LoadShaders(std::string vertexShader, std::string fragmentShader)

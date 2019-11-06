@@ -25,6 +25,10 @@ DEALINGS IN THE SOFTWARE.
 #include <string>
 #include <vector>
 #include <algorithm>
+#ifndef WIN32
+#include <strings.h>
+#endif
+
 namespace ccl
 {
 
