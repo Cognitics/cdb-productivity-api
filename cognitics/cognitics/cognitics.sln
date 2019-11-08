@@ -25,6 +25,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdbinfo", "..\cdbinfo\cdbin
 		{01734A89-FE1D-427C-8CF9-E6E644FABCAA} = {01734A89-FE1D-427C-8CF9-E6E644FABCAA}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdb-inject", "..\cdb-inject\cdb-inject.vcxproj", "{B9CCE887-B05D-4A3F-A4A4-08A765FC579A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -73,6 +75,14 @@ Global
 		{AE11FB58-DD3F-4BBA-831F-12E7CCDFB04F}.Release|x64.Build.0 = Release|x64
 		{AE11FB58-DD3F-4BBA-831F-12E7CCDFB04F}.Release|x86.ActiveCfg = Release|Win32
 		{AE11FB58-DD3F-4BBA-831F-12E7CCDFB04F}.Release|x86.Build.0 = Release|Win32
+		{B9CCE887-B05D-4A3F-A4A4-08A765FC579A}.Debug|x64.ActiveCfg = Debug|x64
+		{B9CCE887-B05D-4A3F-A4A4-08A765FC579A}.Debug|x64.Build.0 = Debug|x64
+		{B9CCE887-B05D-4A3F-A4A4-08A765FC579A}.Debug|x86.ActiveCfg = Debug|Win32
+		{B9CCE887-B05D-4A3F-A4A4-08A765FC579A}.Debug|x86.Build.0 = Debug|Win32
+		{B9CCE887-B05D-4A3F-A4A4-08A765FC579A}.Release|x64.ActiveCfg = Release|x64
+		{B9CCE887-B05D-4A3F-A4A4-08A765FC579A}.Release|x64.Build.0 = Release|x64
+		{B9CCE887-B05D-4A3F-A4A4-08A765FC579A}.Release|x86.ActiveCfg = Release|Win32
+		{B9CCE887-B05D-4A3F-A4A4-08A765FC579A}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

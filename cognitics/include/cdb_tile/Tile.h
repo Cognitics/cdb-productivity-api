@@ -51,6 +51,34 @@ public:
     {
     }
 
+    Tile(const Tile& rhs) = default;
+    bool operator==(const Tile& rhs) { return (lod == rhs.lod) && (uref == rhs.uref) && (rref == rhs.rref) && (cs1 == rhs.cs1) && (cs2 == rhs.cs2); }
+    bool operator!=(const Tile& rhs) { return !(*this == rhs); } 
+    bool operator<(const Tile& rhs)
+    {
+        if(lod < rhs.lod)
+            return true;
+        if(lod > rhs.lod)
+            return false;
+        if(uref < rhs.uref)
+            return true;
+        if(uref > rhs.uref)
+            return false;
+        if(rref < rhs.rref)
+            return true;
+        if(rref > rhs.rref)
+            return false;
+        if(cs1 < rhs.cs1)
+            return true;
+        if(cs1 > rhs.cs1)
+            return false;
+        if(cs2 < rhs.cs2)
+            return true;
+        if(cs2 > rhs.cs2)
+            return false;
+        return false;
+    }
+
 private:
     Dataset dataset;
     int lod;
@@ -130,8 +158,7 @@ public:
     std::string Path() const;
     std::string Filename() const;
 
-    Tile(CoordinatesRange _coordinates, Dataset _ds, int lod, uint32_t _uref, uint32_t _rref, uint32_t _cs1 = 1,
-         uint32_t _cs2 = 1);
+    Tile(CoordinatesRange _coordinates, Dataset _ds, int lod, uint32_t _uref, uint32_t _rref, uint32_t _cs1 = 1, uint32_t _cs2 = 1);
 };
 
 std::vector<Tile> generate_tiles(const CoordinatesRange &coordinates, Dataset ds, LOD lod);

@@ -12,12 +12,44 @@
 #include <flt/OpenFlight.h>
 #include <flt/TexturePalette.h>
 
+#include <array>
 #include <cctype>
 #include <locale>
 #include <iomanip>
 
 namespace cognitics {
 namespace cdb {
+
+int LodForPixelSize(double pixel_size)
+{
+    for(int i = -10; i <= 23; ++i)
+    {
+        double lod_pixel_size = (1.0 / 1024) / std::pow(2, i);
+        if(lod_pixel_size < pixel_size)
+            return i;
+    }
+    return 23;
+}
+
+double PixelSizeForLod(int lod)
+{
+    auto div = std::max<int>(std::pow(2, lod), 1);
+    return 1.0 / div;
+}
+
+int TileDimensionForLod(int lod)
+{
+    return std::min<int>(std::pow(2, lod + 10), 1024);
+}
+
+double MinimumPixelSizeForLod(int lod, double latitude)
+{
+    auto div = std::max<int>(std::pow(2, lod), 1);
+    auto lat_spacing = 1.0 / div;
+    auto tile_width = (int)get_tile_width(latitude);
+    auto lon_spacing = (double)tile_width / div;
+    return std::min<double>(lat_spacing, lon_spacing);
+}
 
 std::vector<std::string> FileNamesForTiledDataset(const std::string& cdb, int dataset)
 {
@@ -51,18 +83,18 @@ std::vector<std::string> FileNamesForTiledDataset(const std::string& cdb, int da
     return result;
 }
 
-std::vector<TileInfo> FeatureTileInfoForTiledDataset(const std::string& cdb, int dataset, double north, double south, double east, double west)
+std::vector<TileInfo> FeatureTileInfoForTiledDataset(const std::string& cdb, int dataset, std::tuple<double, double, double, double> nsew)
 {
     auto filenames = cognitics::cdb::FileNamesForTiledDataset(cdb, dataset);
     auto tiles = cognitics::cdb::TileInfoForFileNames(filenames);
     tiles.erase(std::remove_if(tiles.begin(), tiles.end(), [](const TileInfo& tile) { return !((tile.selector2 == 1) || (tile.selector2 == 3) || (tile.selector2 == 5) || (tile.selector2 == 7) || (tile.selector2 == 9)); }), tiles.end());
-    if (north != DBL_MAX)
+    if (std::get<0>(nsew) != DBL_MAX)
     {
         tiles.erase(std::remove_if(tiles.begin(), tiles.end(), [=](const TileInfo& tile)
             {
                 double tile_north, tile_south, tile_east, tile_west;
                 std::tie(tile_north, tile_south, tile_east, tile_west) = cognitics::cdb::NSEWBoundsForTileInfo(tile);
-                return (tile_north <= south) || (tile_south >= north) || (tile_east <= west) || (tile_west >= east);
+                return (tile_north <= std::get<1>(nsew)) || (tile_south >= std::get<0>(nsew)) || (tile_east <= std::get<3>(nsew)) || (tile_west >= std::get<2>(nsew));
             }
         ), tiles.end());
     }
@@ -136,12 +168,26 @@ std::string FileNameForTileInfo(const TileInfo& tileinfo)
     return ss.str();
 }
 
+TileInfo TileInfoForTile(const Tile& tile)
+{
+    auto info = TileInfo();
+    info.latitude = std::floor(tile.getCoordinates().low().latitude().value());
+    info.longitude = std::floor(tile.getCoordinates().low().longitude().value());
+    info.dataset = tile.getDataset().code();
+    info.lod = tile.getLod();
+    info.selector1 = tile.getCs1();
+    info.selector2 = tile.getCs2();
+    info.rref = tile.getRref();
+    info.uref = tile.getUref();
+    return info;
+}
+
 std::tuple<double, double, double, double> NSEWBoundsForTileInfo(const TileInfo& tileinfo)
 {
-    auto ref_dimension = std::max<int>(int(std::pow(2, tileinfo.lod)), 1);
-    auto lat_spacing = 1.0 / ref_dimension;
+    auto div = std::max<int>(std::pow(2, tileinfo.lod), 1);
+    auto lat_spacing = 1.0 / div;
     auto tile_width = (int)get_tile_width(double(tileinfo.latitude));
-    auto lon_spacing = (double)tile_width / ref_dimension;
+    auto lon_spacing = (double)tile_width / div;
     double south = tileinfo.latitude + (lat_spacing * tileinfo.uref);
     double north = south + lat_spacing;
     double west = tileinfo.longitude + (lon_spacing * tileinfo.rref);
@@ -152,21 +198,15 @@ std::tuple<double, double, double, double> NSEWBoundsForTileInfo(const TileInfo&
 std::vector<TileInfo> TileInfoForFileNames(const std::vector<std::string>& filenames)
 {
     auto files = std::vector<std::string>();
-    for (auto entry : filenames)
-    {
-        auto filename = ccl::FileInfo(entry).getBaseName(true);
-        files.push_back(filename);
-    }
+    std::transform(filenames.begin(), filenames.end(), std::back_inserter(files), [](const std::string& fn) { return ccl::FileInfo(fn).getBaseName(); });
     std::sort(files.begin(), files.end());
     files.erase(std::unique(files.begin(), files.end()), files.end());
-
     auto result = std::vector<TileInfo>();
-    for (auto filename : files)
-        result.push_back(TileInfoForFileName(filename));
+    std::transform(files.begin(), files.end(), std::back_inserter(result), [](const std::string& fn) { return TileInfoForFileName(fn); });
     return result;
 }
 
-std::vector<sfa::Feature*> FeaturesForOGRFile(const std::string& filename, double north, double south, double east, double west)
+std::vector<sfa::Feature*> FeaturesForOGRFile(const std::string& filename, std::tuple<double, double, double, double> nsew)
 {
     auto result = std::vector<sfa::Feature*>();
     if(!ccl::fileExists(filename))
@@ -177,8 +217,8 @@ std::vector<sfa::Feature*> FeaturesForOGRFile(const std::string& filename, doubl
     auto layers = file.getLayers();
     for(auto layer : layers)
     {
-        if(north != -DBL_MAX)
-            layer->setSpatialFilter(west, south, east, north);
+        if(std::get<0>(nsew) != DBL_MAX)
+            layer->setSpatialFilter(std::get<3>(nsew), std::get<1>(nsew), std::get<2>(nsew), std::get<0>(nsew));
         layer->resetReading();
         while (sfa::Feature *feature = layer->getNextFeature())
             result.push_back(feature);
@@ -272,13 +312,13 @@ std::pair<bool, std::vector<std::string>> TextureFileNamesForModel(const std::st
     return std::make_pair(true, result);
 }
 
-std::vector<std::string> GSModelReferencesForTile(const std::string& cdb, const TileInfo& tileinfo, double north, double south, double east, double west)
+std::vector<std::string> GSModelReferencesForTile(const std::string& cdb, const TileInfo& tileinfo, std::tuple<double, double, double, double> nsew)
 {
     auto result = std::vector<std::string>();
     auto shp_filepath = cognitics::cdb::FilePathForTileInfo(tileinfo);
     auto shp_filename = cognitics::cdb::FileNameForTileInfo(tileinfo);
     auto shp = cdb + "/Tiles/" + shp_filepath + "/" + shp_filename + ".shp";
-    auto features = cognitics::cdb::FeaturesForOGRFile(shp, north, south, east, west);
+    auto features = cognitics::cdb::FeaturesForOGRFile(shp, nsew);
     if(features.empty())
         return result;
 
@@ -318,13 +358,13 @@ std::vector<std::string> GSModelReferencesForTile(const std::string& cdb, const 
     return result;
 }
 
-std::vector<std::string> GTModelReferencesForTile(const std::string& cdb, const TileInfo& tileinfo, double north, double south, double east, double west)
+std::vector<std::string> GTModelReferencesForTile(const std::string& cdb, const TileInfo& tileinfo, std::tuple<double, double, double, double> nsew)
 {
     auto result = std::vector<std::string>();
     auto shp_filepath = cognitics::cdb::FilePathForTileInfo(tileinfo);
     auto shp_filename = cognitics::cdb::FileNameForTileInfo(tileinfo);
     auto shp = cdb + "/Tiles/" + shp_filepath + "/" + shp_filename + ".shp";
-    auto features = cognitics::cdb::FeaturesForOGRFile(shp, north, south, east, west);
+    auto features = cognitics::cdb::FeaturesForOGRFile(shp, nsew);
     if(features.empty())
         return result;
 
@@ -381,8 +421,191 @@ bool TextureExists(const std::string& filename)
     return ccl::FileInfo::fileExists(filename);
 }
 
+std::vector<unsigned char> BuildImageryTileBytesFromSampler(GDALRasterSampler& sampler, const TileInfo& tileinfo)
+{
+    auto extents = gdalsampler::GeoExtents();
+    std::tie(extents.north, extents.south, extents.east, extents.west) = NSEWBoundsForTileInfo(tileinfo);
+    extents.width = TileDimensionForLod(tileinfo.lod);
+    extents.height = extents.width;
+    auto bytes = std::vector<unsigned char>(extents.width * extents.height * 3);
+    if(sampler.Sample(extents, &bytes[0]))
+        return bytes;
+    return std::vector<unsigned char>();
+}
 
+RasterInfo ReadRasterInfo(const std::string& filename)
+{
+    auto info = RasterInfo();
+    auto ds = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
+    if(ds == nullptr)
+        return info;
 
+    info.Width = ds->GetRasterXSize();
+    info.Height = ds->GetRasterYSize();
+    auto geotransform = std::array<double, 6>();
+    auto has_geotransform = (ds->GetGeoTransform(&geotransform[0]) == CE_None);
+    auto projref = ds->GetProjectionRef();
+    GDALClose(ds);
+
+    if(!has_geotransform)
+        return info;
+
+    auto file_srs = OGRSpatialReference(projref);
+    auto app_srs = OGRSpatialReference();
+    app_srs.SetWellKnownGeogCS("WGS84");
+    auto transform = OGRCreateCoordinateTransformation(&file_srs, &app_srs);
+
+    info.OriginX = geotransform[0];
+    info.OriginY = geotransform[3];
+    info.PixelSizeX = geotransform[1];
+    info.PixelSizeY = geotransform[5];
+
+    auto x_min = info.OriginX;
+    auto y_min = info.OriginY;
+    auto x_max = info.OriginX + (info.Width * info.PixelSizeX);
+    auto y_max = info.OriginY + (info.Height * info.PixelSizeY);
+
+    info.South = (y_max > y_min) ? y_min : y_max;
+    info.North = (y_max > y_min) ? y_max : y_min;
+    info.West = (x_max > x_min) ? x_min : x_max;
+    info.East = (x_max > x_min) ? x_max : x_min;
+
+    if(transform)
+    {
+        transform->Transform(1, &info.West, &info.South);
+        transform->Transform(1, &info.East, &info.North);
+        OGRCoordinateTransformation::DestroyCT(transform);
+    }
+
+    return info;
+}
+
+bool WriteBytesToJP2(const std::string& filename, const RasterInfo& rasterinfo, const std::vector<unsigned char>& bytes)
+{
+    auto mem = GetGDALDriverManager()->GetDriverByName("MEM");
+    if(mem == NULL)
+        return false;
+    auto jp2 = GetGDALDriverManager()->GetDriverByName("JP2OpenJPEG");
+    if(jp2 == NULL)
+        return false;
+
+    double geotransform[6] = { rasterinfo.OriginX, rasterinfo.PixelSizeX, 0.0, rasterinfo.OriginY, 0.0, rasterinfo.PixelSizeY };
+
+    auto mem_ds = mem->Create("mem.tmp", rasterinfo.Width, rasterinfo.Height, 3, GDT_Byte, nullptr);
+    mem_ds->SetGeoTransform(geotransform);
+
+    OGRSpatialReference oSRS;
+    oSRS.SetWellKnownGeogCS("WGS84");
+    char *wkt = NULL;
+    oSRS.exportToWkt(&wkt);
+    mem_ds->SetProjection(wkt);
+    CPLFree(wkt);
+
+    auto discard1 = mem_ds->GetRasterBand(1)->RasterIO(GF_Write, 0, 0, rasterinfo.Width, rasterinfo.Height, (unsigned char*)&bytes[0], rasterinfo.Width, rasterinfo.Height, GDT_Byte, 3, rasterinfo.Width * 3);
+    auto discard2 = mem_ds->GetRasterBand(2)->RasterIO(GF_Write, 0, 0, rasterinfo.Width, rasterinfo.Height, (unsigned char*)&bytes[1], rasterinfo.Width, rasterinfo.Height, GDT_Byte, 3, rasterinfo.Width * 3);
+    auto discard3 = mem_ds->GetRasterBand(3)->RasterIO(GF_Write, 0, 0, rasterinfo.Width, rasterinfo.Height, (unsigned char*)&bytes[2], rasterinfo.Width, rasterinfo.Height, GDT_Byte, 3, rasterinfo.Width * 3);
+
+    auto out_ds = jp2->CreateCopy(filename.c_str(), mem_ds, 1, NULL, NULL, NULL);
+    GDALClose(out_ds);
+
+    GDALClose(mem_ds);
+
+    return true;
+}
+
+RasterInfo RasterInfoFromTileInfo(const cognitics::cdb::TileInfo& tileinfo)
+{
+    auto result = RasterInfo();
+    std::tie(result.North, result.South, result.East, result.West) = cognitics::cdb::NSEWBoundsForTileInfo(tileinfo);
+    result.OriginX = result.West;
+    result.OriginY = result.North;
+    result.Width = cognitics::cdb::TileDimensionForLod(tileinfo.lod);
+    result.Height = result.Width;
+    result.PixelSizeX = (result.East - result.West) / result.Width;
+    result.PixelSizeY = (result.South - result.North) / result.Height;
+    return result;
+}
+
+std::vector<unsigned char> FlippedVertically(const std::vector<unsigned char>& bytes, size_t width, size_t height, size_t depth)
+{
+    auto result = std::vector<unsigned char>(bytes.size());
+    size_t row_size = width * depth;
+    for(size_t y = 0; y < height; ++y)
+    {
+        size_t source_begin = (height - y - 1) * row_size;
+        size_t source_end = source_begin + row_size - 1;
+        size_t result_begin = y * row_size;
+        std::copy(bytes.begin() + source_begin, bytes.begin() + source_end, result.begin() + result_begin);
+    }
+    return result;
+}
+
+bool BuildImageryTileFromSampler(const std::string& cdb, GDALRasterSampler& sampler, const TileInfo& tileinfo)
+{
+    auto jp2_filepath = cognitics::cdb::FilePathForTileInfo(tileinfo);
+    auto jp2_filename = cognitics::cdb::FileNameForTileInfo(tileinfo);
+    auto outfilename = cdb + "/Tiles/" + jp2_filepath + "/" + jp2_filename + ".jp2";
+
+    auto bytes = cognitics::cdb::BuildImageryTileBytesFromSampler(sampler, tileinfo);
+    auto dim = cognitics::cdb::TileDimensionForLod(tileinfo.lod);
+    bytes = cognitics::cdb::FlippedVertically(bytes, dim, dim, 3);
+    auto info = RasterInfoFromTileInfo(tileinfo);
+    ccl::makeDirectory(ccl::FileInfo(outfilename).getDirName());
+    std::remove(outfilename.c_str());
+    return cognitics::cdb::WriteBytesToJP2(outfilename, info, bytes);
+}
+
+namespace
+{
+    ccl::ObjLog log;
+    int CPL_STDCALL GDALProgressObserver(CPL_UNUSED double dfComplete, CPL_UNUSED const char *pszMessage, void * /* pProgressArg */)
+    {
+        log << (dfComplete * 100.0f) << "% complete..." << log.endl;
+        return TRUE;
+    }
+}
+
+bool BuildImageryOverviews(const std::string& cdb)
+{
+    CPLSetConfigOption("LODMIN", "-10");
+    //CPLSetConfigOption("LODMAX", argv[3]);
+
+    //std::string cdbElevationOpenString = "CDB:" + rootCDBOutput + ":Elevation_PrimaryTerrainElevation";
+    //const char *gdalErrMsg = CPLGetLastErrorMsg();
+
+    auto open = "CDB:" + cdb + ":Imagery_Yearly";
+    auto dataset = (GDALDataset *)GDALOpen(open.c_str(), GA_Update);
+    if (dataset == NULL)
+        return false;
+    if (dataset->BuildOverviews("average", 0, NULL, 0, NULL, GDALProgressObserver, NULL) != CE_None)
+        return false;
+    GDALClose(dataset);
+    return true;
+}
+
+bool IsCDB(const std::string& cdb)
+{
+    return ccl::fileExists(cdb + "/Metadata/Version.xml");
+}
+
+bool MakeCDB(const std::string& cdb)
+{
+    if(IsCDB(cdb))
+        return false;
+    if(!ccl::makeDirectory(cdb + "/Metadata"))
+        return false;
+    auto filename = cdb + "/Metadata/Version.xml";
+    std::ofstream outfile(filename.c_str());
+    if(!outfile.good())
+        return false;
+    outfile << "<?xml version = \"1.0\"?>\n";
+    outfile << "<Version xmlns:xsi = \"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n";
+    outfile << "<PreviousIncrementalRootDirectory name = \"\" />\n";
+    outfile << "<Comment>Created by mesh2cdb</Comment>\n";
+    outfile << "</Version>\n";
+    outfile.close();
+    return true;
+}
 
 }
 }
