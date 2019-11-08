@@ -210,9 +210,7 @@ namespace ccl
 #else
     struct stat st;
     if(stat(directory.c_str(),&st) == 0)
-        if(st.st_mode & S_IFDIR != 0)
-            return true;
-        
+        return S_ISDIR(st.st_mode);
 #endif
         return false;
     }

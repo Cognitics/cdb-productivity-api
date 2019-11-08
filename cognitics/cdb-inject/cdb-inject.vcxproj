@@ -20,8 +20,8 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{AE11FB58-DD3F-4BBA-831F-12E7CCDFB04F}</ProjectGuid>
-    <RootNamespace>cdbinfo</RootNamespace>
+    <ProjectGuid>{B9CCE887-B05D-4A3F-A4A4-08A765FC579A}</ProjectGuid>
+    <RootNamespace>cdbinject</RootNamespace>
     <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -77,13 +77,10 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../include;../../ThirdParty/gdal-cdb/$(Configuration)/include;../../ThirdParty/boost_1_69_0</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);_DEBUG;WIN32</PreprocessorDefinitions>
     </ClCompile>
-    <Link />
-    <Link />
     <Link>
-      <AdditionalDependencies>gdal_i.lib;ippcore.lib;ippvm.lib;ipps.lib;ippi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../ThirdParty/gdal-cdb/$(Configuration)/lib;../../ThirdParty/ipp2019/lib/intel64_win</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gdal_i.lib;ippcore.lib;ippvm.lib;ipps.lib;ippi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -117,17 +114,16 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>../include;../../ThirdParty/gdal-cdb/$(Configuration)/include;../../ThirdParty/boost_1_69_0</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);WIN32;NDEBUG</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>gdal_i.lib;ippcore.lib;ippvm.lib;ipps.lib;ippi.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>../../ThirdParty/gdal-cdb/$(Configuration)/lib;../../ThirdParty/ipp2019/lib/intel64_win</AdditionalLibraryDirectories>
+      <AdditionalDependencies>gdal_i.lib;ippcore.lib;ippvm.lib;ipps.lib;ippi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="cdbinfo.cpp" />
+    <ClCompile Include="cdb-inject.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\cognitics\cognitics.vcxproj">

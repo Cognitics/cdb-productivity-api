@@ -26,17 +26,40 @@ void flt_test()
     flt::OpenFlight::destroy(flt);
 }
 
+#include <ccl/OpenFlightParser.h>
+void newflt()
+{
+    auto fn = "D:/CDB/LosAngeles_CDB/Tiles/N34/W118/300_GSModelGeometry/L00/U0/N34W118_D300_S001_T001_L00_U0_R0_AL015_000_6_0_10_0000242.flt";
+    std::ifstream infile(fn, std::ios_base::in | std::ios_base::binary);
+    auto flt = cognitics::OpenFlightParser(infile);
+    for(auto record : flt)
+    {
+        //std::cout << record.OpCode << std::endl;
+        if (record.OpCode != cognitics::OpenFlightParser::TEXTUREPALETTE)
+            continue;
+        auto texture_filename = std::string();
+        texture_filename.resize(200);
+        infile.read(&texture_filename[0], 200);
+        texture_filename = std::string(texture_filename.c_str());
+        std::cout << texture_filename << std::endl;
+
+
+        continue;
+    }
+    return;
+}
 
 
 
-void ReportMissingGSFeatureData(const std::string& cdb, double north = DBL_MAX, double south = -DBL_MAX, double east = DBL_MAX, double west = -DBL_MAX)
+
+void ReportMissingGSFeatureData(const std::string& cdb, std::tuple<double, double, double, double> nsew = std::make_tuple(DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX) )
 {
     ccl::ObjLog log;
-    auto tiles = cognitics::cdb::FeatureTileInfoForTiledDataset(cdb, 100, north, south, east, west);
+    auto tiles = cognitics::cdb::FeatureTileInfoForTiledDataset(cdb, 100, nsew);
     auto model_filenames = std::vector<std::string>();
     for(auto tile : tiles)
     {
-        auto tile_models = cognitics::cdb::GSModelReferencesForTile(cdb, tile, north, south, east, west);
+        auto tile_models = cognitics::cdb::GSModelReferencesForTile(cdb, tile, nsew);
         if(tile_models.empty())
             continue;
         log << "GS TILE: " << cognitics::cdb::FileNameForTileInfo(tile) << " (" << tile_models.size() << " model references)" << log.endl;
@@ -85,14 +108,14 @@ void ReportMissingGSFeatureData(const std::string& cdb, double north = DBL_MAX, 
     }
 }
 
-void ReportMissingGTFeatureData(const std::string& cdb, double north = DBL_MAX, double south = -DBL_MAX, double east = DBL_MAX, double west = -DBL_MAX)
+void ReportMissingGTFeatureData(const std::string& cdb, std::tuple<double, double, double, double> nsew = std::make_tuple(DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX) )
 {
     ccl::ObjLog log;
-    auto tiles = cognitics::cdb::FeatureTileInfoForTiledDataset(cdb, 101, north, south, east, west);
+    auto tiles = cognitics::cdb::FeatureTileInfoForTiledDataset(cdb, 101, nsew);
     auto model_filenames = std::vector<std::string>();
     for(auto tile : tiles)
     {
-        auto tile_models = cognitics::cdb::GTModelReferencesForTile(cdb, tile, north, south, east, west);
+        auto tile_models = cognitics::cdb::GTModelReferencesForTile(cdb, tile, nsew);
         if(tile_models.empty())
             continue;
         log << "GT TILE: " << cognitics::cdb::FileNameForTileInfo(tile) << " (" << tile_models.size() << " model references)" << log.endl;
@@ -174,9 +197,9 @@ int main(int argc, char** argv)
 
     auto ts_start = std::chrono::steady_clock::now();
     if(args.Option("gtfeatures"))
-        ReportMissingGTFeatureData(cdb, north, south, east, west);
+        ReportMissingGTFeatureData(cdb, std::make_tuple(north, south, east, west));
     if(args.Option("gsfeatures"))
-        ReportMissingGSFeatureData(cdb, north, south, east, west);
+        ReportMissingGSFeatureData(cdb, std::make_tuple(north, south, east, west));
     auto ts_stop = std::chrono::steady_clock::now();
     log << "ReportMissingFeatureData: " << std::chrono::duration<double>(ts_stop - ts_start).count() << "s" << log.endl;
     

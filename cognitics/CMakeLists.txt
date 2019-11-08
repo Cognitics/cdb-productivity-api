@@ -851,6 +851,18 @@ target_link_libraries(cdbinfo ${CMAKE_DL_LIBS})
 target_link_libraries(cdbinfo cogcore)
 target_link_libraries(cdbinfo "pthread")
 target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
+target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
+target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+
+add_executable(cdb-inject ./cdb-inject/cdb-inject.cpp  )
+target_link_libraries(cdb-inject ${CMAKE_DL_LIBS})
+target_link_libraries(cdb-inject cogcore)
+target_link_libraries(cdb-inject "pthread")
+target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
+target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
+target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
 
 add_executable(meshgen ./meshgen/meshgen.cpp  )
 

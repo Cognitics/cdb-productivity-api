@@ -71,7 +71,7 @@ namespace cognitics
                 record = Record(is);
                 return *this;
             }
-            iterator& operator++(int) { iterator ret = *this; ++(*this); return ret; }
+            iterator operator++(int) { iterator ret = *this; ++(*this); return ret; }
             bool operator==(iterator other) const { return record == other.record; }
             bool operator!=(iterator other) const { return !(*this == other); }
             reference operator*() const { return record; }
