@@ -23,6 +23,32 @@ public:
     cognitics::cdb::Tile cdbTile;
     std::vector<std::string> objFiles;
 
+    std::string ToString()
+    {
+        std::stringstream ss;
+        ss.precision(6);
+        ss << "<RenderJob ";
+        ss << "enu-max-x=\"" << enuMinX << "\" " ;
+        ss << "enu-max-x=\"" << enuMaxX << "\" " ;
+        ss << "enu-min-y=\"" << enuMinY << "\" " ;
+        ss << "enu-max-y=\"" << enuMaxY << "\" " ;
+        ss << "offset-x=\"" << offsetX << "\" " ;
+        ss << "offset-y=\"" << offsetY << "\" " ;
+        ss << "offset-z=\"" << offsetZ << "\" " ;
+        ss << ">\n";
+
+        ss << "\t<CDBTileName>";
+        ss << cdbTile.getFilename();
+        ss << "</CDBTileName>\n";
+        for(auto &&inputFilename : objFiles)
+        {
+            ss << "\t<InputFile>";
+            ss << inputFilename;
+            ss << "</InputFile>\n";
+        }
+        ss << "</RenderJob>\n";
+        return ss.str();
+    }
 
     RenderJob(const cognitics::cdb::Tile tile) : cdbTile(tile)
     {

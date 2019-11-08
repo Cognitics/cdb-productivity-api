@@ -23,9 +23,52 @@
 #pragma warning ( pop )
 ccl::ObjLog logger;
 
+#include <curl/curl.h>
+
+
+bool testRequest()
+{
+    std::string url = "https://jsonplaceholder.typicode.com/todos/1";
+    CURLcode res;
+    CURLcode code;
+    static char errorBuffer[CURL_ERROR_SIZE];
+    static std::string buffer;
+    //curl_global_init(CURL_GLOBAL_DEFAULT);
+
+    CURL *conn = curl_easy_init();
+    if(conn == NULL) {
+        fprintf(stderr, "Failed to create CURL connection\n");
+        exit(EXIT_FAILURE);
+    }
+
+    code = curl_easy_setopt(conn, CURLOPT_ERRORBUFFER, errorBuffer);
+        if(code != CURLE_OK) {
+        fprintf(stderr, "Failed to set error buffer [%d]\n", code);
+        return false;
+    }
+    code = curl_easy_setopt(conn, CURLOPT_URL, "https://jsonplaceholder.typicode.com/todos/1");
+    if(code != CURLE_OK) {
+        fprintf(stderr, "Failed to set URL [%s]\n", errorBuffer);
+        return false;
+    }
+ 
+    code = curl_easy_setopt(conn, CURLOPT_FOLLOWLOCATION, 1L);
+    if(code != CURLE_OK) {
+        fprintf(stderr, "Failed to set redirect option [%s]\n", errorBuffer);
+        return false;
+    }
+
+    curl_easy_setopt(conn, CURLOPT_WRITEDATA, stdout); 
+    code = curl_easy_perform(conn);
+    curl_easy_cleanup(conn);
+    std::cout << "code: " << code << " res: " << buffer << "\n";
+    return true;
+}
 
 int main(int argc, char **argv)
 {
+    testRequest();
+    return 1;
     //argv[1] = Input OBJ directory (where metadata.xml exists)
     //argv[2] = Output  CDB directory (the parent directory where Tiles lives)
     //argv[3] = The LOD to generate
@@ -67,13 +110,15 @@ int main(int argc, char **argv)
 #ifndef WIN32
     char *gdal_data_var = getenv("GDAL_DATA");
     if(gdal_data_var==NULL)
-    {        
-        putenv("GDAL_DATA=/usr/local/share/gdal");
-    }
-    char *gdal_plugins_var = getenv("GDAL_DRIVER_PATH");
-    if(gdal_plugins_var==NULL)
-    {        
-        putenv("GDAL_DRIVER_PATH=/usr/local/lib/gdalplugins");
+    {
+        ccl::FileInfo fi(argv[0]);
+        int bufSize = 1024;
+        //This memory becomes owned by the environment,
+        //so do not delete the pointer.
+        char *envBuffer = new char[bufSize];      
+        std::string dataDir = ccl::joinPaths(fi.getDirName(), "gdal-data");  
+        sprintf(envBuffer, "GDAL_DATA=%s", dataDir.c_str());
+        putenv(envBuffer);
     }
 #else
     size_t requiredSize;
