@@ -73,7 +73,7 @@ int main(int argc, char **argv)
     char *gdal_plugins_var = getenv("GDAL_DRIVER_PATH");
     if(gdal_plugins_var==NULL)
     {        
-        putenv("GDAL_DRIVER_PATH=/usr/local/lib/gdalplugins");
+        putenv("GDAL_DRIVER_PATH=/usr/local/bin/gdalplugins");
     }
 #else
     size_t requiredSize;
