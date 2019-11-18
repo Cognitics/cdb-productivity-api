@@ -1,22 +1,39 @@
 
-
 cmake_minimum_required(VERSION 2.8)
-project (cognitics)
-#cmake -G "Unix Makefiles" -DTHIRD_PARTY_DIR=/home/kbentley/cognitics/ThirdParty -DCMAKE_INSTALL_PREFIX=/home/kbentley/meshgen ..
-set(CMAKE_CXX_FLAGS "-lstdc++fs -std=c++11 -g -o3")
+project(cognitics)
 
-set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath='/usr/local/lib',--start-group")
+#cmake -G "Unix Makefiles" -DTHIRD_PARTY_DIR=/home/kbentley/cognitics/ThirdParty -DCMAKE_INSTALL_PREFIX=/home/kbentley/meshgen ..
+
+################################################################################
+
+if(WIN32)
+    SET(CMAKE_CONFIGURATION_TYPES "Release;Debug")
+endif(WIN32)
+
+if(UNIX)
+    add_definitions(-DLINUX)
+endif(UNIX)
+
+if(NOT DEFINED THIRD_PARTY_DIR)
+    if(WIN32)
+        set(THIRD_PARTY_DIR "${CMAKE_SOURCE_DIR}/ThirdParty.win32")
+    endif(WIN32)
+    if(UNIX)
+        set(THIRD_PARTY_DIR "${CMAKE_SOURCE_DIR}/ThirdParty.linux")
+    endif(UNIX)
+endif(NOT DEFINED THIRD_PARTY_DIR)
+
 set(IPP_STATIC "ON")
 
+if(UNIX)
+    set(CMAKE_CXX_FLAGS "-std=c++17 -g -o3")
+    set(CMAKE_EXE_LINKER_FLAGS "-Wl,-rpath='/usr/local/lib',--start-group")
+    link_libraries(stdc++fs)
+endif(UNIX)
 
-include_directories("./include")
-include_directories("./include/ccl/Unix")
-include_directories("${THIRD_PARTY_DIR}/fbxsdk/include")
-include_directories("${THIRD_PARTY_DIR}/boost_1_69_0")
-include_directories("${THIRD_PARTY_DIR}/linux_x64/include")
-include_directories("${THIRD_PARTY_DIR}/glew/linux_x64/include")
-include_directories("${THIRD_PARTY_DIR}/glut/linux_x64/include")
-include_directories("${THIRD_PARTY_DIR}/ipp2019_linux_x64/include")
+message("THIRD_PARTY_DIR: ${THIRD_PARTY_DIR}")
+
+################################################################################
 
 set(COGCORE_HEADERS
     ./include/cad/AttributeDictionary.h
@@ -437,7 +454,6 @@ set(COGCORE_HEADERS
     ./include/features/GMLParser.h
     ./include/features/GsBuildings.h
 
-
     ./include/cdb_tile/Coordinates.h
     ./include/cdb_tile/CoordinatesRange.h
     ./include/cdb_tile/Dataset.h
@@ -460,9 +476,14 @@ set(COGCORE_HEADERS
 
 	./include/cdb_util/cdb_util.h
 	./include/cdb_util/FeatureDataDictionary.h
-
 )
 
+################################################################################
+
+set(COGCORE_OS "Win32")
+if(UNIX)
+    set(COGCORE_OS "Unix")
+endif(UNIX)
 
 set(COGCORE_SOURCES
     ./src/cad/AttributeDictionary.cpp
@@ -483,10 +504,10 @@ set(COGCORE_SOURCES
     ./src/CoordinateSystems/GeoidTangentPlane.cpp
     ./src/CoordinateSystems/SphereTangentPlane.cpp
     ./src/CoordinateSystems/WGS84Transform.cpp
-    ./src/ccl/Unix/Runnable.cpp
-    ./src/ccl/Unix/mutex.cpp
-    ./src/ccl/Unix/sem.cpp
-    ./src/ccl/Unix/Timer.cpp
+    ./src/ccl/${COGCORE_OS}/Runnable.cpp
+    ./src/ccl/${COGCORE_OS}/mutex.cpp
+    ./src/ccl/${COGCORE_OS}/sem.cpp
+    ./src/ccl/${COGCORE_OS}/Timer.cpp
     ./src/ccl/ObjLog.cpp
     ./src/ccl/datetime.cpp
     ./src/ccl/Op.cpp
@@ -500,10 +521,6 @@ set(COGCORE_SOURCES
     ./src/ccl/inspection.cpp
     ./src/ccl/FileInfo.cpp
     ./src/ccl/Expression.cpp
-#    ./src/ccl/Win32/Runnable.cpp
-#    ./src/ccl/Win32/mutex.cpp
-#    ./src/ccl/Win32/sem.cpp
-#    ./src/ccl/Win32/Timer.cpp
     ./src/ccl/JobManager.cpp
     ./src/ccl/Number.cpp
     ./src/ccl/Variant.cpp
@@ -842,41 +859,100 @@ set(COGCORE_SOURCES
 	./src/cdb_util/FeatureDataDictionary.cpp
 )
 
+################################################################################
+
+include_directories("${CMAKE_SOURCE_DIR}/include")
+include_directories("${THIRD_PARTY_DIR}/boost_1_69_0")
+include_directories("${THIRD_PARTY_DIR}/fbxsdk/include")
+if(WIN32)
+    include_directories("${THIRD_PARTY_DIR}/gdal-cdb/$(Configuration)/include")
+    include_directories("${THIRD_PARTY_DIR}/ipp2019/include")
+    include_directories("${THIRD_PARTY_DIR}/jpeg-8c/include")
+    include_directories("${THIRD_PARTY_DIR}/lpng154/include")
+endif(WIN32)
+if(UNIX)
+    include_directories("${THIRD_PARTY_DIR}/linux_x64/include")
+    include_directories("${THIRD_PARTY_DIR}/ipp2019_linux_x64/include")
+endif(UNIX)
+
 add_library(cogcore ${COGCORE_SOURCES} ${COGCORE_HEADERS})
 
-add_definitions(-DLINUX)
+link_libraries(cogcore)
 
-add_executable(cdbinfo ./cdbinfo/cdbinfo.cpp  )
-target_link_libraries(cdbinfo ${CMAKE_DL_LIBS})
-target_link_libraries(cdbinfo cogcore)
-target_link_libraries(cdbinfo "pthread")
-target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
-target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
-target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
-target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+add_executable(cdbinfo cdbinfo/cdbinfo.cpp)
+if(WIN32)
+    target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/gdal-cdb/$(Configuration)/lib/gdal_i.lib")
+    target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+    target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+    target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+endif(WIN32)
+if(UNIX)
+    target_link_libraries(cdbinfo ${CMAKE_DL_LIBS})
+    target_link_libraries(cdbinfo "pthread")
+    target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+    target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
+    target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
+    target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+endif(UNIX)
 
-add_executable(cdb-inject ./cdb-inject/cdb-inject.cpp  )
-target_link_libraries(cdb-inject ${CMAKE_DL_LIBS})
-target_link_libraries(cdb-inject cogcore)
-target_link_libraries(cdb-inject "pthread")
-target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
-target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
-target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
-target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+add_executable(cdb-inject cdb-inject/cdb-inject.cpp)
+if(WIN32)
+    target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/gdal-cdb/$(Configuration)/lib/gdal_i.lib")
+    target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+    target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+    target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+endif(WIN32)
+if(UNIX)
+    target_link_libraries(cdb-inject ${CMAKE_DL_LIBS})
+    target_link_libraries(cdb-inject "pthread")
+    target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+    target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
+    target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
+    target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+endif(UNIX)
 
-add_executable(meshgen ./meshgen/meshgen.cpp  )
+add_executable(meshgen meshgen/meshgen.cpp)
+if(WIN32)
+    target_link_libraries(meshgen "${THIRD_PARTY_DIR}/gdal-cdb/$(Configuration)/lib/gdal_i.lib")
+    target_link_libraries(meshgen "${THIRD_PARTY_DIR}/gdal-cdb/$(Configuration)/lib/libcurl.lib")
+    target_link_libraries(meshgen "${THIRD_PARTY_DIR}/lpng154/lib/libpng15.lib")
+    target_link_libraries(meshgen "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")
+    target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+    target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+    target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+    target_link_libraries(meshgen "${THIRD_PARTY_DIR}/fbxsdk/lib/vs2015/x64/$(Configuration)/libfbxsdk.lib")
+endif(WIN32)
+if(UNIX)
+    target_link_libraries(meshgen ${CMAKE_DL_LIBS})
+    target_link_libraries(meshgen "pthread")
+    target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+    target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libcurl.so")
+    target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
+    target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
+    target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
+    target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
+    target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+    target_link_libraries(meshgen "${THIRD_PARTY_DIR}/fbxsdk/lib/gcc4/x64/release/libfbxsdk.a")
+endif(UNIX)
 
-target_link_libraries(meshgen ${CMAKE_DL_LIBS})
-target_link_libraries(meshgen cogcore)
-target_link_libraries(meshgen "pthread")
-target_link_libraries(meshgen "${THIRD_PARTY_DIR}/fbxsdk/lib/gcc4/x64/release/libfbxsdk.a")
-target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libcurl.so")
-target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
-target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
-target_link_libraries(meshgen "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
-target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
-target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
-target_link_libraries(meshgen "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+
+
+################################################################################
+
+if(SKIP_THE_REST)
+
+
+
+
+
+
+include_directories("${THIRD_PARTY_DIR}/glew/linux_x64/include")
+include_directories("${THIRD_PARTY_DIR}/glut/linux_x64/include")
+include_directories("${THIRD_PARTY_DIR}/ipp2019_linux_x64/include")
+
+
+
+
 
 
 IF(COG_BUILD_GL_TOOLS)
@@ -907,3 +983,4 @@ install(DIRECTORY ${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64_lin/ DESTINAT
 install(DIRECTORY ${THIRD_PARTY_DIR}/linux_x64/ DESTINATION .)
 install(DIRECTORY ${THIRD_PARTY_DIR}/glew/linux_x64/lib/ DESTINATION lib FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
 
+endif(SKIP_THE_REST)
