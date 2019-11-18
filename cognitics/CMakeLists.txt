@@ -3,6 +3,13 @@ cmake_minimum_required(VERSION 2.8)
 project(cognitics)
 
 #cmake -G "Unix Makefiles" -DTHIRD_PARTY_DIR=/home/kbentley/cognitics/ThirdParty -DCMAKE_INSTALL_PREFIX=/home/kbentley/meshgen ..
+<<<<<<< HEAD
+=======
+#cmake -G "Unix Makefiles" -DCOG_BUILD_GL_TOOLS=1 -DTHIRD_PARTY_DIR=/home/ubuntu/cognitics/ThirdParty -DCMAKE_INSTALL_PREFIX=/usr/local ..
+#make DESTDIR=/home/ubuntu/cdbtools install
+
+set(CMAKE_CXX_FLAGS "-lstdc++fs -std=c++11 -g -o3")
+>>>>>>> 3d1a6340e3e84824726f0ca3813d202c5cdfb9f6
 
 ################################################################################
 
@@ -976,11 +983,32 @@ IF(COG_BUILD_GL_TOOLS)
     target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/glew/linux_x64/lib/libGLEW.a")
     target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/glut/linux_x64/lib/libglut.so")
     install(TARGETS mesh2cdb DESTINATION bin)
+
+    add_executable(mesh2cdb-rest ./mesh2cdb/quickobj.cpp ./mesh2cdb/mesh2cdb-rest.cpp ./mesh2cdb/mesh2cdb.h ./mesh2cdb/meshconvert.cpp ./mesh2cdb/MeshRender.h ./mesh2cdb/meshrender.cpp ./src/scenegraph_gl/scenegraph_gl.cpp)
+    target_link_libraries(mesh2cdb-rest ${CMAKE_DL_LIBS})
+    target_link_libraries(mesh2cdb-rest "/usr/lib/x86_64-linux-gnu/libEGL.so")
+    target_link_libraries(mesh2cdb-rest "/usr/lib/x86_64-linux-gnu/libGLX.so")
+    target_link_libraries(mesh2cdb-rest cogcore)
+    target_link_libraries(mesh2cdb-rest "OpenGL.so")
+    target_link_libraries(mesh2cdb-rest "GLU")
+    target_link_libraries(mesh2cdb-rest "pthread")
+    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/fbxsdk/lib/gcc4/x64/release/libfbxsdk.a")
+    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/linux_x64/lib/libcurl.so")
+    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
+    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
+    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.so")
+    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippvm.so")
+    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.so")
+    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.so")
+    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/glew/linux_x64/lib/libGLEW.a")
+    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/glut/linux_x64/lib/libglut.so")
+    install(TARGETS mesh2cdb-rest DESTINATION bin)
 ENDIF(COG_BUILD_GL_TOOLS)
 
 install(TARGETS meshgen DESTINATION bin)
-install(DIRECTORY ${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64_lin/ DESTINATION lib FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
-install(DIRECTORY ${THIRD_PARTY_DIR}/linux_x64/ DESTINATION .)
-install(DIRECTORY ${THIRD_PARTY_DIR}/glew/linux_x64/lib/ DESTINATION lib FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
+install(DIRECTORY ${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64_lin/ DESTINATION lib USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
+install(DIRECTORY ${THIRD_PARTY_DIR}/linux_x64/ DESTINATION . USE_SOURCE_PERMISSIONS)
+install(DIRECTORY ${THIRD_PARTY_DIR}/glew/linux_x64/lib/ DESTINATION lib USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
 
 endif(SKIP_THE_REST)
