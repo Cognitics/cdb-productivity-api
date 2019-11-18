@@ -2,14 +2,8 @@
 cmake_minimum_required(VERSION 2.8)
 project(cognitics)
 
-#cmake -G "Unix Makefiles" -DTHIRD_PARTY_DIR=/home/kbentley/cognitics/ThirdParty -DCMAKE_INSTALL_PREFIX=/home/kbentley/meshgen ..
-<<<<<<< HEAD
-=======
 #cmake -G "Unix Makefiles" -DCOG_BUILD_GL_TOOLS=1 -DTHIRD_PARTY_DIR=/home/ubuntu/cognitics/ThirdParty -DCMAKE_INSTALL_PREFIX=/usr/local ..
 #make DESTDIR=/home/ubuntu/cdbtools install
-
-set(CMAKE_CXX_FLAGS "-lstdc++fs -std=c++11 -g -o3")
->>>>>>> 3d1a6340e3e84824726f0ca3813d202c5cdfb9f6
 
 ################################################################################
 
