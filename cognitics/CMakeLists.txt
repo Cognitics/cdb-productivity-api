@@ -940,69 +940,110 @@ endif(UNIX)
 
 ################################################################################
 
-if(SKIP_THE_REST)
 
+#if(COG_BUILD_GL_TOOLS)
+    if(WIN32)
+        include_directories("${THIRD_PARTY_DIR}/glew/$(Configuration)/include")
+        include_directories("${THIRD_PARTY_DIR}/glut/include")
+    endif(WIN32)
+    if(UNIX)
+        include_directories("${THIRD_PARTY_DIR}/glew/linux_x64/include")
+        include_directories("${THIRD_PARTY_DIR}/glut/linux_x64/include")
+    endif(UNIX)
 
+    add_executable(mesh2cdb
+        mesh2cdb/quickobj.cpp
+        mesh2cdb/mesh2cdb.cpp
+        mesh2cdb/mesh2cdb.h
+        mesh2cdb/meshconvert.cpp
+        mesh2cdb/MeshRender.h
+        mesh2cdb/meshrender.cpp
+        src/scenegraph_gl/scenegraph_gl.cpp
+        )
+    if(WIN32)
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/gdal-cdb/$(Configuration)/lib/gdal_i.lib")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/gdal-cdb/$(Configuration)/lib/libcurl.lib")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/gdal-cdb/$(Configuration)/lib/zlib128.lib")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/lpng154/lib/libpng15_static.lib")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippvm.lib")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/fbxsdk/lib/vs2015/x64/$(Configuration)/libfbxsdk.lib")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/glew/release/lib/glew32.lib")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/glut/lib/freeglut.lib")
+    endif(WIN32)
+    if(UNIX)
+        target_link_libraries(mesh2cdb ${CMAKE_DL_LIBS})
+        target_link_libraries(mesh2cdb "pthread")
+        target_link_libraries(mesh2cdb "/usr/lib/x86_64-linux-gnu/libEGL.so")
+        target_link_libraries(mesh2cdb "/usr/lib/x86_64-linux-gnu/libGLX.so")
+        target_link_libraries(mesh2cdb "OpenGL.so")
+        target_link_libraries(mesh2cdb "GLU")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/fbxsdk/lib/gcc4/x64/release/libfbxsdk.a")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/linux_x64/lib/libcurl.so")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.so")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippvm.so")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.so")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.so")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/glew/linux_x64/lib/libGLEW.a")
+        target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/glut/linux_x64/lib/libglut.so")
+        #install(TARGETS mesh2cdb DESTINATION bin)
+    endif(UNIX)
 
+    add_executable(mesh2cdb-rest
+        mesh2cdb/quickobj.cpp
+        mesh2cdb/mesh2cdb-rest.cpp
+        mesh2cdb/mesh2cdb.h
+        mesh2cdb/meshconvert.cpp
+        mesh2cdb/MeshRender.h
+        mesh2cdb/meshrender.cpp
+        src/scenegraph_gl/scenegraph_gl.cpp
+        )
+    if(WIN32)
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/gdal-cdb/$(Configuration)/lib/gdal_i.lib")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/gdal-cdb/$(Configuration)/lib/libcurl.lib")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/gdal-cdb/$(Configuration)/lib/zlib128.lib")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/lpng154/lib/libpng15_static.lib")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippvm.lib")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/fbxsdk/lib/vs2015/x64/$(Configuration)/libfbxsdk.lib")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/glew/release/lib/glew32.lib")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/glut/lib/freeglut.lib")
+    endif(WIN32)
+    if(UNIX)
+        target_link_libraries(mesh2cdb-rest ${CMAKE_DL_LIBS})
+        target_link_libraries(mesh2cdb-rest "pthread")
+        target_link_libraries(mesh2cdb-rest "/usr/lib/x86_64-linux-gnu/libEGL.so")
+        target_link_libraries(mesh2cdb-rest "/usr/lib/x86_64-linux-gnu/libGLX.so")
+        target_link_libraries(mesh2cdb-rest "OpenGL.so")
+        target_link_libraries(mesh2cdb-rest "GLU")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/fbxsdk/lib/gcc4/x64/release/libfbxsdk.a")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/linux_x64/lib/libcurl.so")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.so")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippvm.so")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.so")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.so")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/glew/linux_x64/lib/libGLEW.a")
+        target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/glut/linux_x64/lib/libglut.so")
+        #install(TARGETS mesh2cdb-rest DESTINATION bin)
+    endif(UNIX)
 
+endif(COG_BUILD_GL_TOOLS)
 
-
-include_directories("${THIRD_PARTY_DIR}/glew/linux_x64/include")
-include_directories("${THIRD_PARTY_DIR}/glut/linux_x64/include")
-include_directories("${THIRD_PARTY_DIR}/ipp2019_linux_x64/include")
-
-
-
-
-
-
-IF(COG_BUILD_GL_TOOLS)
-    add_executable(mesh2cdb ./mesh2cdb/quickobj.cpp ./mesh2cdb/mesh2cdb.cpp ./mesh2cdb/mesh2cdb.h ./mesh2cdb/meshconvert.cpp ./mesh2cdb/MeshRender.h ./mesh2cdb/meshrender.cpp ./src/scenegraph_gl/scenegraph_gl.cpp)
-    target_link_libraries(mesh2cdb ${CMAKE_DL_LIBS})
-    target_link_libraries(mesh2cdb "/usr/lib/x86_64-linux-gnu/libEGL.so")
-    target_link_libraries(mesh2cdb "/usr/lib/x86_64-linux-gnu/libGLX.so")
-    target_link_libraries(mesh2cdb cogcore)
-    target_link_libraries(mesh2cdb "OpenGL.so")
-    target_link_libraries(mesh2cdb "GLU")
-    target_link_libraries(mesh2cdb "pthread")
-    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/fbxsdk/lib/gcc4/x64/release/libfbxsdk.a")
-    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/linux_x64/lib/libcurl.so")
-    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
-    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
-    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
-    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.so")
-    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippvm.so")
-    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.so")
-    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.so")
-    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/glew/linux_x64/lib/libGLEW.a")
-    target_link_libraries(mesh2cdb "${THIRD_PARTY_DIR}/glut/linux_x64/lib/libglut.so")
-    install(TARGETS mesh2cdb DESTINATION bin)
-
-    add_executable(mesh2cdb-rest ./mesh2cdb/quickobj.cpp ./mesh2cdb/mesh2cdb-rest.cpp ./mesh2cdb/mesh2cdb.h ./mesh2cdb/meshconvert.cpp ./mesh2cdb/MeshRender.h ./mesh2cdb/meshrender.cpp ./src/scenegraph_gl/scenegraph_gl.cpp)
-    target_link_libraries(mesh2cdb-rest ${CMAKE_DL_LIBS})
-    target_link_libraries(mesh2cdb-rest "/usr/lib/x86_64-linux-gnu/libEGL.so")
-    target_link_libraries(mesh2cdb-rest "/usr/lib/x86_64-linux-gnu/libGLX.so")
-    target_link_libraries(mesh2cdb-rest cogcore)
-    target_link_libraries(mesh2cdb-rest "OpenGL.so")
-    target_link_libraries(mesh2cdb-rest "GLU")
-    target_link_libraries(mesh2cdb-rest "pthread")
-    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/fbxsdk/lib/gcc4/x64/release/libfbxsdk.a")
-    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/linux_x64/lib/libcurl.so")
-    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
-    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
-    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
-    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.so")
-    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippvm.so")
-    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.so")
-    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.so")
-    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/glew/linux_x64/lib/libGLEW.a")
-    target_link_libraries(mesh2cdb-rest "${THIRD_PARTY_DIR}/glut/linux_x64/lib/libglut.so")
-    install(TARGETS mesh2cdb-rest DESTINATION bin)
-ENDIF(COG_BUILD_GL_TOOLS)
-
-install(TARGETS meshgen DESTINATION bin)
-install(DIRECTORY ${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64_lin/ DESTINATION lib USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
-install(DIRECTORY ${THIRD_PARTY_DIR}/linux_x64/ DESTINATION . USE_SOURCE_PERMISSIONS)
-install(DIRECTORY ${THIRD_PARTY_DIR}/glew/linux_x64/lib/ DESTINATION lib USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
-
-endif(SKIP_THE_REST)
+if(UNIX)
+    #install(TARGETS meshgen DESTINATION bin)
+    #install(DIRECTORY ${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64_lin/ DESTINATION lib USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
+    #install(DIRECTORY ${THIRD_PARTY_DIR}/linux_x64/ DESTINATION . USE_SOURCE_PERMISSIONS)
+    #install(DIRECTORY ${THIRD_PARTY_DIR}/glew/linux_x64/lib/ DESTINATION lib USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
+endif(UNIX)
