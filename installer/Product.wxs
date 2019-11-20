@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+	<Product Id="*" Name="CDB Productivity Suite" Language="1033" Version="1.0.0.0" Manufacturer="Cognitics" UpgradeCode="494343df-b478-47db-a73d-38768ac4f14e">
+		<Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" InstallPrivileges="elevated" />
+		<MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    	<MediaTemplate EmbedCab="yes" />
+
+		<Directory Id="TARGETDIR" Name="SourceDir">
+			<Directory Id="ProgramFiles64Folder">
+				<Directory Id="INSTALLDIR" Name="CDB Productivity Suite">
+					<Directory Id="TargetDir" />
+				</Directory>
+			</Directory>
+			<Directory Id="ProgramMenuFolder">
+				<Directory Id="ApplicationProgramsFolder" Name="CDB Productivity Suite" />
+			</Directory>
+		</Directory>
+
+		<DirectoryRef Id="ApplicationProgramsFolder">
+			<Component Id="ApplicationShortcut" Guid="b04e33c2-2718-408b-a0b8-575c6fd4556c">
+				<Shortcut Id="InceptionShorcut" Name="Inception" Description="Inception" Target="[TargetDir]Inception\Inception.exe" />
+				<Shortcut Id="AttributeTranslatorShortcut" Name="Attribute Translator" Description="Attribute Translator" Target="[TargetDir]bin\ATGUI.exe" />
+				<Shortcut Id="AttributeTranslatorManual" Name="Attribute Translator Manual" Description="Attribute Translator Manual" Target="[TargetDir]CDB Attribute Translator Users Manual.pdf" />
+				<Shortcut Id="READMEShortcut" Name="README" Description="README" Target="[TargetDir]README.txt" />
+				<Shortcut Id="CommandPromptShortcut" Name="Command Prompt" Description="Command Prompt" Target="[SystemFolder]cmd.exe" Arguments="/k binpath.cmd" WorkingDirectory="TargetDir" />
+				<Shortcut Id="UninstallShortcut" Name="Uninstall CDB Productity Suite" Description="Uninstalls the CDB Productivity Suite" Target="[System64Folder]msiexec.exe" Arguments="/x [ProductCode]" />
+				<RemoveFolder Id="RemoveDIR_Shortcuts" On="uninstall" />
+			</Component>
+		</DirectoryRef>
+
+		<Feature Id="CDBProductivitySuite" Title="CDB Productivity Suite" AllowAdvertise="no" ConfigurableDirectory="INSTALLDIR">
+			<ComponentRef Id="ApplicationShortcut" />
+			<ComponentGroupRef Id="CDBFiles" />
+		</Feature>
+
+		<UI Id="UserInterface">
+  			<Property Id="WIXUI_INSTALLDIR" Value="TARGETDIR" />
+  			<Property Id="WixUI_Mode" Value="Custom" />
+
+  			<TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
+  			<TextStyle Id="WixUI_Font_Bigger" FaceName="Tahoma" Size="9" Bold="yes" />
+  			<TextStyle Id="WixUI_Font_Title"  FaceName="Tahoma" Size="9" Bold="yes" />
+
+  			<Property Id="DefaultUIFont" Value="WixUI_Font_Normal" />
+
+ 			<DialogRef Id="ProgressDlg" />
+ 			<DialogRef Id="ErrorDlg" />
+			<DialogRef Id="FilesInUse" />
+ 			<DialogRef Id="FatalError" />
+			<DialogRef Id="UserExit" />
+
+  			<Publish Dialog="ExitDialog" Control="Finish" Event="EndDialog" Value="Return" Order="999">1</Publish>
+  			<Publish Dialog="WelcomeDlg" Control="Next" Event="EndDialog" Value="Return" Order="2"></Publish>
+
+			</UI>
+		<UIRef Id="WixUI_Common" />
+	</Product>
+</Wix>
