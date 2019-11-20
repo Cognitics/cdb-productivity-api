@@ -941,7 +941,7 @@ endif(UNIX)
 ################################################################################
 
 
-#if(COG_BUILD_GL_TOOLS)
+if(COG_BUILD_GL_TOOLS)
     if(WIN32)
         include_directories("${THIRD_PARTY_DIR}/glew/$(Configuration)/include")
         include_directories("${THIRD_PARTY_DIR}/glut/include")
