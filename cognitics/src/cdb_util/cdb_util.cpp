@@ -17,6 +17,16 @@
 #include <locale>
 #include <iomanip>
 
+#if _WIN32
+#include <filesystem>
+namespace std { namespace filesystem = std::experimental::filesystem; }
+#elif __GNUC__ && (__GNUC__ < 8)
+#include <experimental/filesystem>
+namespace std { namespace filesystem = std::experimental::filesystem; }
+#else
+#include <filesystem>
+#endif
+
 namespace cognitics {
 namespace cdb {
 
@@ -421,16 +431,13 @@ bool TextureExists(const std::string& filename)
     return ccl::FileInfo::fileExists(filename);
 }
 
-std::vector<unsigned char> BuildImageryTileBytesFromSampler(GDALRasterSampler& sampler, const TileInfo& tileinfo)
+bool BuildImageryTileBytesFromSampler(GDALRasterSampler& sampler, const TileInfo& tileinfo, std::vector<unsigned char>& bytes)
 {
     auto extents = gdalsampler::GeoExtents();
     std::tie(extents.north, extents.south, extents.east, extents.west) = NSEWBoundsForTileInfo(tileinfo);
     extents.width = TileDimensionForLod(tileinfo.lod);
     extents.height = extents.width;
-    auto bytes = std::vector<unsigned char>(extents.width * extents.height * 3);
-    if(sampler.Sample(extents, &bytes[0]))
-        return bytes;
-    return std::vector<unsigned char>();
+    return sampler.Sample(extents, &bytes[0]);
 }
 
 RasterInfo ReadRasterInfo(const std::string& filename)
@@ -479,6 +486,36 @@ RasterInfo ReadRasterInfo(const std::string& filename)
 
     return info;
 }
+
+std::vector<unsigned char> BytesFromJP2(const std::string& filename)
+{
+    auto result = std::vector<unsigned char>();
+
+    auto dataset = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
+    if(!dataset)
+        return result;
+
+    auto width = dataset->GetRasterXSize();
+    auto height = dataset->GetRasterYSize();
+    auto depth = dataset->GetRasterCount();
+
+    double geotransform[6];
+    if(dataset->GetGeoTransform(geotransform) != CE_None)
+    {
+        GDALClose(dataset);
+        return result;
+    }
+
+    result.resize(width * height * depth);
+    auto discard1 = dataset->GetRasterBand(1)->RasterIO(GF_Read, 0, 0, width, height, (unsigned char*)&result[0], width, height, GDT_Byte, 3, width * 3);
+    auto discard2 = dataset->GetRasterBand(2)->RasterIO(GF_Read, 0, 0, width, height, (unsigned char*)&result[1], width, height, GDT_Byte, 3, width * 3);
+    auto discard3 = dataset->GetRasterBand(3)->RasterIO(GF_Read, 0, 0, width, height, (unsigned char*)&result[2], width, height, GDT_Byte, 3, width * 3);
+
+    GDALClose(dataset);
+
+    return result;
+}
+
 
 bool WriteBytesToJP2(const std::string& filename, const RasterInfo& rasterinfo, const std::vector<unsigned char>& bytes)
 {
@@ -546,7 +583,16 @@ bool BuildImageryTileFromSampler(const std::string& cdb, GDALRasterSampler& samp
     auto jp2_filename = cognitics::cdb::FileNameForTileInfo(tileinfo);
     auto outfilename = cdb + "/Tiles/" + jp2_filepath + "/" + jp2_filename + ".jp2";
 
-    auto bytes = cognitics::cdb::BuildImageryTileBytesFromSampler(sampler, tileinfo);
+    auto bytes = std::vector<unsigned char>();
+    if(std::filesystem::exists(outfilename))
+        bytes = BytesFromJP2(outfilename);
+    if(bytes.empty())
+    {
+        auto dimension = TileDimensionForLod(tileinfo.lod);
+        bytes.resize(dimension * dimension * 3);
+    }
+
+    cognitics::cdb::BuildImageryTileBytesFromSampler(sampler, tileinfo, bytes);
     auto dim = cognitics::cdb::TileDimensionForLod(tileinfo.lod);
     bytes = cognitics::cdb::FlippedVertically(bytes, dim, dim, 3);
     auto info = RasterInfoFromTileInfo(tileinfo);

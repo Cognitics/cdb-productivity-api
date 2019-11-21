@@ -78,7 +78,7 @@ bool WriteBytesToJP2(const std::string& filename, const RasterInfo& rasterinfo, 
 RasterInfo RasterInfoFromTileInfo(const cognitics::cdb::TileInfo& tileinfo);
 std::vector<unsigned char> FlippedVertically(const std::vector<unsigned char>& bytes, size_t width, size_t height, size_t depth);
 
-std::vector<unsigned char> BuildImageryTileBytesFromSampler(GDALRasterSampler& sampler, const TileInfo& tileinfo);
+bool BuildImageryTileBytesFromSampler(GDALRasterSampler& sampler, const TileInfo& tileinfo, std::vector<unsigned char>& bytes);
 bool BuildImageryTileFromSampler(const std::string& cdb, GDALRasterSampler& sampler, const TileInfo& tileinfo);
 
 bool BuildImageryOverviews(const std::string& cdb);

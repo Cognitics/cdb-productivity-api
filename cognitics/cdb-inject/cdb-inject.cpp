@@ -23,6 +23,7 @@ int main(int argc, char** argv)
 
     auto args = cognitics::ArgumentParser();
     args.AddOption("logfile", 1, "<filename>", "filename for log output");
+    args.AddOption("lod", 1, "<lod>", "specify target LOD");
     args.AddOption("dry-run", 0, "", "perform dry run");
     args.AddOption("skip-overviews", 0, "", "skip LOD downsampling");
     args.AddArgument("Image/Path");
@@ -61,11 +62,15 @@ int main(int argc, char** argv)
 
     log << "Gathering information on " << raster_filenames.size() << " source file(s)..." << log.endl;
     auto tiles = std::vector<cognitics::cdb::Tile>();
+    auto raster_info_by_filename = std::map<std::string, cognitics::cdb::RasterInfo>();
     for(auto raster_filename : raster_filenames)
     {
         auto raster_info = cognitics::cdb::ReadRasterInfo(raster_filename);
+        raster_info_by_filename[raster_filename] = raster_info;
         auto pixel_size = std::min<double>(std::abs(raster_info.PixelSizeX), std::abs(raster_info.PixelSizeY));
         auto target_lod = cognitics::cdb::LodForPixelSize(pixel_size);      // or specify manually
+        if(args.Option("lod"))
+            target_lod = std::stoi(args.Parameters("lod").at(0));
         auto coords = cognitics::cdb::CoordinatesRange(raster_info.West, raster_info.East, raster_info.South, raster_info.North);
         auto raster_tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)0), target_lod);
         /*
@@ -91,17 +96,45 @@ int main(int argc, char** argv)
     else
         sampler.AddFile(raster_param);
 
-    // TODO: if we want to build partially covered tiles, we need to pull in the existing CDB imagery
-
     auto tileinfos = std::vector<cognitics::cdb::TileInfo>();
     std::transform(tiles.begin(), tiles.end(), std::back_inserter(tileinfos), [](const cognitics::cdb::Tile& tile) { return cognitics::cdb::TileInfoForTile(tile); });
     std::for_each(tileinfos.begin(), tileinfos.end(), [](cognitics::cdb::TileInfo& ti) { ti.dataset = 4; });
 
+    // TODO: work down in LOD until a coverage exists, then load it into the sampler
+
 
     if(args.Option("dry-run"))
     {
-        // TODO: generate json job descriptions
+        std::stringstream ss;
+        ss << "{\n";
+        for(size_t i = 0, c = tileinfos.size(); i < c; ++i)
+        {
+            auto& ti = tileinfos.at(i);
+            double tile_north, tile_south, tile_east, tile_west;
+            std::tie(tile_north, tile_south, tile_east, tile_west) = cognitics::cdb::NSEWBoundsForTileInfo(ti);
+            if(i > 0)
+                ss << ",\n";
+            ss << "\"" << cognitics::cdb::FileNameForTileInfo(ti) << "\": { source_filenames = [";
+            bool first = true;
+            for(auto raster_filename : raster_filenames)
+            {
+                auto& raster_info = raster_info_by_filename[raster_filename];
+                bool match = !((tile_north <= raster_info.North) && (tile_south >= raster_info.South) && (tile_east <= raster_info.East) && (tile_west >= raster_info.West));
+                if(!match)
+                    continue;
+                if(!first)
+                    ss << ",";
+                ss << "\"" << raster_filename << "\"";
+                first = false;
+            }
+            ss << "]}";
+               
+        }
+        ss << "\n}\n";
 
+        std::cout << ss.str();
+
+        return EXIT_SUCCESS;
     }
 
     if(!cognitics::cdb::IsCDB(cdb))
