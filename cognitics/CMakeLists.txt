@@ -1,6 +1,18 @@
 
 cmake_minimum_required(VERSION 2.8)
+
 project(cognitics)
+
+if(${CMAKE_VERSION} VERSION_GREATER "3.9.0")
+    include(CheckLanguage)
+    check_language(CUDA)
+endif()
+
+if(CMAKE_CUDA_COMPILER)
+    enable_language(CUDA)
+endif(CMAKE_CUDA_COMPILER)
+
+
 
 #cmake -G "Unix Makefiles" -DCOG_BUILD_GL_TOOLS=1 -DTHIRD_PARTY_DIR=/home/ubuntu/cognitics/ThirdParty -DCMAKE_INSTALL_PREFIX=/usr/local ..
 #make DESTDIR=/home/ubuntu/cdbtools install
@@ -862,6 +874,18 @@ set(COGCORE_SOURCES
 
 ################################################################################
 
+set(COGCUDA_HEADERS
+    ./include/cogcuda/ElevationSampler.h
+    ./include/cogcuda/Sampler.cuh
+)
+
+set(COGCUDA_SOURCES
+    ./src/cogcuda/ElevationSampler.cpp
+    ./src/cogcuda/Sampler.cu
+)
+
+################################################################################
+
 include_directories("${CMAKE_SOURCE_DIR}/include")
 include_directories("${THIRD_PARTY_DIR}/boost_1_69_0")
 include_directories("${THIRD_PARTY_DIR}/fbxsdk/include")
@@ -877,7 +901,6 @@ if(UNIX)
 endif(UNIX)
 
 add_library(cogcore ${COGCORE_SOURCES} ${COGCORE_HEADERS})
-
 link_libraries(cogcore)
 
 add_executable(cdbinfo cdbinfo/cdbinfo.cpp)
@@ -1041,9 +1064,33 @@ if(COG_BUILD_GL_TOOLS)
 
 endif(COG_BUILD_GL_TOOLS)
 
+if(CMAKE_CUDA_COMPILER)
+    add_library(cogcuda ${COGCUDA_SOURCES} ${COGCUDA_HEADERS})
+    set_target_properties(cogcuda PROPERTIES CUDA_SEPERABLE_COMPILATION ON)
+    add_executable(cdb-elev cdb-elev/cdb-elev.cpp)
+    target_link_libraries(cdb-elev cogcuda)
+    if(WIN32)
+        target_link_libraries(cdb-elev "${THIRD_PARTY_DIR}/gdal-cdb/$(Configuration)/lib/gdal_i.lib")
+        target_link_libraries(cdb-elev "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+        target_link_libraries(cdb-elev "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+        target_link_libraries(cdb-elev "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+    endif(WIN32)
+    if(UNIX)
+        target_link_libraries(cdb-elev ${CMAKE_DL_LIBS})
+        target_link_libraries(cdb-elev "pthread")
+        target_link_libraries(cdb-elev "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+        target_link_libraries(cdb-elev "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
+        target_link_libraries(cdb-elev "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
+        target_link_libraries(cdb-elev "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+    endif(UNIX)
+endif(CMAKE_CUDA_COMPILER)
+
+
 if(UNIX)
     #install(TARGETS meshgen DESTINATION bin)
     #install(DIRECTORY ${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64_lin/ DESTINATION lib USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
     #install(DIRECTORY ${THIRD_PARTY_DIR}/linux_x64/ DESTINATION . USE_SOURCE_PERMISSIONS)
     #install(DIRECTORY ${THIRD_PARTY_DIR}/glew/linux_x64/lib/ DESTINATION lib USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
 endif(UNIX)
+
+
