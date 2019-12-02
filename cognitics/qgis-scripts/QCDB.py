@@ -40,6 +40,9 @@ class QCDBGenerator(QgsProcessingAlgorithm):
 
     OUTPUTDIR = "OUTPUTDIR"
     TOOL_PATHFILE = "TOOL_PATHFILE"
+    IMGLOD = "IMGLOD"
+    ELEVLOD = "ELEVLOD"
+    ATTRDM = "ATTRDM"
 
     def tr(self, string):
         """
@@ -99,20 +102,53 @@ class QCDBGenerator(QgsProcessingAlgorithm):
         """
         # List of names in order.
         
-
-        self.addParameter(
-            QgsProcessingParameterString (
-                name = self.TOOL_PATHFILE,
-                description = self.tr('CDB Tool application directory'),
-                defaultValue=r'C:\dev\cognitics\cognitics\cognitics\x64\Debug',
-                optional=False))
-
         self.addParameter(
             QgsProcessingParameterString (
                 name = self.OUTPUTDIR,
                 description = self.tr('CDB Output Directory'),
                 defaultValue=r'E:\output\qgis_cdb',
                 optional=False))
+
+        self.availableTranslators = ["GGDM", "OpenStreetMaps", "SE Core"]
+        self.attributeTranslatorParameters = QgsProcessingParameterEnum(
+            name = self.ATTRDM,
+            description = self.tr("Attribute Translation Ruleset"),
+            options = self.availableTranslators,
+            defaultValue = 0,
+            allowMultiple = False,
+            optional=False)
+
+        self.addParameter(self.attributeTranslatorParameters)
+
+        self.imgLODList = [];
+        for i in range(-10,20):
+            self.imgLODList.append(str(i))
+
+        self.imageryLODParameters = QgsProcessingParameterEnum(
+            name = self.IMGLOD,
+            description = self.tr("Imagery LOD"),
+            options = self.imgLODList,
+            defaultValue = 16,
+            allowMultiple = False,
+            optional=False)
+        self.addParameter(self.imageryLODParameters)
+
+        self.elevationLODParameters = QgsProcessingParameterEnum(
+            name = self.ELEVLOD,
+            description = self.tr("Elevation LOD"),
+            options = self.imgLODList,# Share the LOD list with imagery
+            defaultValue = 16,
+            allowMultiple = False,
+            optional=False)
+        self.addParameter(self.elevationLODParameters)
+
+        self.addParameter(
+            QgsProcessingParameterString (
+                name = self.TOOL_PATHFILE,
+                description = self.tr('CDB Tool application directory'),
+                defaultValue=r'C:\Program Files\CDB Productivity Suite\bin',
+                optional=False))
+
 
     def processAlgorithm(self, parameters, context, feedback):
         toolsPath = self.parameterAsString(
