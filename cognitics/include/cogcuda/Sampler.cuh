@@ -8,6 +8,8 @@ namespace cognitics
 {
     namespace cuda
     {
+        bool Available();
+
         struct SamplerRaster
         {
             double North { 0 };

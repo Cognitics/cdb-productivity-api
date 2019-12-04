@@ -14,8 +14,12 @@ namespace cognitics
 
     ElevationSampler::ElevationSampler(const std::vector<std::string>& filenames) : Impl(new _Impl())
     {
+        if(!cuda::Available())
+            throw std::runtime_error("CUDA not available");
+
         // TODO: for each file, read the file data into a SamplerRaster in Rasters
 
+        /*
         for(size_t i = 0; i < 4; ++i)
         {
             auto raster = cuda::SamplerRaster();
@@ -42,7 +46,7 @@ namespace cognitics
             std::fill(raster.Data, raster.Data + (raster.Width * raster.Height), 100.0f + (10.0f * i));
             Impl->Rasters.emplace_back(raster);
         }
-
+        */
 
         Impl->Sampler = std::make_unique<cuda::Sampler>(cuda::Sampler(Impl->Rasters));
     }

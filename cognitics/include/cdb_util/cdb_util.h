@@ -4,6 +4,8 @@
 #include <cdb_tile/Tile.h>
 #include <sfa/Feature.h>
 #include <ip/GDALRasterSampler.h>
+#include <elev/DataSourceManager.h>
+#include <elev/Elevation_DSM.h>
 
 #include <vector>
 
@@ -81,7 +83,12 @@ std::vector<unsigned char> FlippedVertically(const std::vector<unsigned char>& b
 bool BuildImageryTileBytesFromSampler(GDALRasterSampler& sampler, const TileInfo& tileinfo, std::vector<unsigned char>& bytes);
 bool BuildImageryTileFromSampler(const std::string& cdb, GDALRasterSampler& sampler, const TileInfo& tileinfo);
 
+bool BuildElevationTileBytesFromSampler(elev::Elevation_DSM& sampler, const TileInfo& tileinfo, std::vector<unsigned char>& bytes);
+bool BuildElevationTileFromSampler(const std::string& cdb, elev::Elevation_DSM& sampler, const TileInfo& tileinfo);
+
+bool BuildOverviews(const std::string& cdb, const std::string& component);
 bool BuildImageryOverviews(const std::string& cdb);
+bool BuildElevationOverviews(const std::string& cdb);
 
 bool IsCDB(const std::string& cdb);
 bool MakeCDB(const std::string& cdb);

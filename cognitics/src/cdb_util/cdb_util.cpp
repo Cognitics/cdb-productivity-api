@@ -440,6 +440,27 @@ bool BuildImageryTileBytesFromSampler(GDALRasterSampler& sampler, const TileInfo
     return sampler.Sample(extents, &bytes[0]);
 }
 
+bool BuildElevationTileBytesFromSampler(elev::Elevation_DSM& sampler, const TileInfo& tileinfo, std::vector<unsigned char>& bytes)
+{
+    auto extents = gdalsampler::GeoExtents();
+    std::tie(extents.north, extents.south, extents.east, extents.west) = NSEWBoundsForTileInfo(tileinfo);
+    extents.width = TileDimensionForLod(tileinfo.lod);
+    extents.height = extents.width;
+    double spacing_x = (extents.east - extents.west) / extents.width;
+    double spacing_y = (extents.west - extents.south) / extents.height;
+    auto point = sfa::Point();
+    for(int y = 0; y < extents.height; ++y)
+    {
+        point.setY(extents.south + (y * spacing_y));
+        for(int x = 0; x < extents.width; ++x)
+        {
+            point.setX(extents.west + (x * spacing_x));
+            bytes[(y * extents.width) + x] = sampler.Get(&point);
+        }
+    }
+    return true;
+}
+
 RasterInfo ReadRasterInfo(const std::string& filename)
 {
     auto info = RasterInfo();
@@ -601,6 +622,37 @@ bool BuildImageryTileFromSampler(const std::string& cdb, GDALRasterSampler& samp
     return cognitics::cdb::WriteBytesToJP2(outfilename, info, bytes);
 }
 
+bool BuildElevationTileFromSampler(const std::string& cdb, elev::Elevation_DSM& sampler, const TileInfo& tileinfo)
+{
+    auto tif_filepath = cognitics::cdb::FilePathForTileInfo(tileinfo);
+    auto tif_filename = cognitics::cdb::FileNameForTileInfo(tileinfo);
+    auto outfilename = cdb + "/Tiles/" + tif_filepath + "/" + tif_filename + ".tif";
+
+    auto bytes = std::vector<unsigned char>();
+    /* TODO: 
+    if(std::filesystem::exists(outfilename))
+        bytes = BytesFromTIF(outfilename);
+    */
+    if(bytes.empty())
+    {
+        auto dimension = TileDimensionForLod(tileinfo.lod);
+        bytes.resize(dimension * dimension * 3);
+    }
+
+    cognitics::cdb::BuildElevationTileBytesFromSampler(sampler, tileinfo, bytes);
+    //auto dim = cognitics::cdb::TileDimensionForLod(tileinfo.lod);
+    //bytes = cognitics::cdb::FlippedVertically(bytes, dim, dim, 3);
+    auto info = RasterInfoFromTileInfo(tileinfo);
+    ccl::makeDirectory(ccl::FileInfo(outfilename).getDirName());
+    std::remove(outfilename.c_str());
+    // TODO
+    //return cognitics::cdb::WriteBytesToTIF(outfilename, info, bytes);
+    return false;
+}
+
+
+
+
 namespace
 {
     ccl::ObjLog log;
@@ -611,15 +663,12 @@ namespace
     }
 }
 
-bool BuildImageryOverviews(const std::string& cdb)
+bool BuildOverviews(const std::string& cdb, const std::string& component)
 {
     CPLSetConfigOption("LODMIN", "-10");
     //CPLSetConfigOption("LODMAX", argv[3]);
-
-    //std::string cdbElevationOpenString = "CDB:" + rootCDBOutput + ":Elevation_PrimaryTerrainElevation";
     //const char *gdalErrMsg = CPLGetLastErrorMsg();
-
-    auto open = "CDB:" + cdb + ":Imagery_Yearly";
+    auto open = "CDB:" + cdb + ":" + component;
     auto dataset = (GDALDataset *)GDALOpen(open.c_str(), GA_Update);
     if (dataset == NULL)
         return false;
@@ -627,6 +676,16 @@ bool BuildImageryOverviews(const std::string& cdb)
         return false;
     GDALClose(dataset);
     return true;
+}
+
+bool BuildImageryOverviews(const std::string& cdb)
+{
+    return BuildOverviews(cdb, "Imagery_Yearly");
+}
+
+bool BuildElevationOverviews(const std::string& cdb)
+{
+    return BuildOverviews(cdb, "Elevation_PrimaryTerrainElevation");
 }
 
 bool IsCDB(const std::string& cdb)

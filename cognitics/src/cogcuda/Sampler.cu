@@ -8,6 +8,13 @@ namespace cognitics
 {
     namespace cuda
     {
+        bool Available()
+        {
+            int device_count;
+            auto err = cudaGetDeviceCount(&device_count);
+            return (err == cudaSuccess) && (device_count > 0);
+        }
+
         namespace
         {
             __global__ void kernel_sample(SamplerRaster* input_array, size_t input_count, SamplerRaster* out)
@@ -93,15 +100,6 @@ namespace cognitics
             dim3 block_count(kernel_output->Width / block_size.x, kernel_output->Height / block_size.y);
             kernel_sample<<<block_count, block_size>>>(InputArray, InputCount, kernel_output);
             cudaDeviceSynchronize();
-
-            auto err = cudaGetLastError();
-            if(err != cudaSuccess)
-            {
-                // "an illegal memory access was encountered"
-                auto blah = cudaGetErrorString(err);
-                return;
-            }
-
             for(size_t i = 0, c = output->Width * output->Height; i < c; ++i)
                 output->Data[i] = kernel_output->Data[i];
             cudaFree(kernel_output->Data);
