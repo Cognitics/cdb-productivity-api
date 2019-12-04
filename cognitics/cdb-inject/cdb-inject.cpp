@@ -23,8 +23,6 @@ namespace std { namespace filesystem = std::experimental::filesystem; }
 #endif
 
 
-
-
 int main(int argc, char** argv)
 {
     std::ios_base::sync_with_stdio(false);
@@ -35,6 +33,7 @@ int main(int argc, char** argv)
 
     auto args = cognitics::ArgumentParser();
     args.AddOption("logfile", 1, "<filename>", "filename for log output");
+    args.AddOption("bounds", 4, "<south> <west> <north> <east>", "bounds for area of interest");
     args.AddOption("lod", 1, "<lod>", "specify target LOD");
     args.AddOption("imagery", 1, "<filename/path>", "source imagery filename or path");
     args.AddOption("elevation", 1, "<filename/path>", "source elevation filename or path");
@@ -110,6 +109,13 @@ int main(int argc, char** argv)
             auto target_lod = cognitics::cdb::LodForPixelSize(pixel_size);
             if(args.Option("lod"))
                 target_lod = std::stoi(args.Parameters("lod").at(0));
+            if(args.Option("bounds"))
+            {
+                raster_info.South = std::max<double>(raster_info.South, std::stod(args.Parameters("bounds").at(0)));
+                raster_info.West = std::max<double>(raster_info.West, std::stod(args.Parameters("bounds").at(1)));
+                raster_info.North = std::min<double>(raster_info.North, std::stod(args.Parameters("bounds").at(2)));
+                raster_info.East = std::min<double>(raster_info.East, std::stod(args.Parameters("bounds").at(3)));
+            }
             auto coords = cognitics::cdb::CoordinatesRange(raster_info.West, raster_info.East, raster_info.South, raster_info.North);
             auto raster_tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)0), target_lod);
             imagery_tiles.insert(imagery_tiles.end(), raster_tiles.begin(), raster_tiles.end());
@@ -134,9 +140,16 @@ int main(int argc, char** argv)
             auto target_lod = cognitics::cdb::LodForPixelSize(pixel_size);
             if(args.Option("lod"))
                 target_lod = std::stoi(args.Parameters("lod").at(0));
+            if(args.Option("bounds"))
+            {
+                raster_info.South = std::max<double>(raster_info.South, std::stod(args.Parameters("bounds").at(0)));
+                raster_info.West = std::max<double>(raster_info.West, std::stod(args.Parameters("bounds").at(1)));
+                raster_info.North = std::min<double>(raster_info.North, std::stod(args.Parameters("bounds").at(2)));
+                raster_info.East = std::min<double>(raster_info.East, std::stod(args.Parameters("bounds").at(3)));
+            }
             auto coords = cognitics::cdb::CoordinatesRange(raster_info.West, raster_info.East, raster_info.South, raster_info.North);
             auto raster_tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)0), target_lod);
-            elevation_tiles.insert(imagery_tiles.end(), raster_tiles.begin(), raster_tiles.end());
+            elevation_tiles.insert(elevation_tiles.end(), raster_tiles.begin(), raster_tiles.end());
         }
         std::sort(elevation_tiles.begin(), elevation_tiles.end());
         elevation_tiles.erase(std::unique(elevation_tiles.begin(), elevation_tiles.end()), elevation_tiles.end());
@@ -208,6 +221,14 @@ int main(int argc, char** argv)
         std::for_each(elevation_filenames.begin(), elevation_filenames.end(), [&](std::string& fn) { dsm.AddFile_Raster_GDAL(fn); }); 
         dsm.generateBSP();
         elev::Elevation_DSM sampler(&dsm, elev::ELEVATION_BILINEAR);
+        for(size_t i = 0, c = elevation_tileinfos.size(); i < c; ++i)
+        {
+            auto& ti = elevation_tileinfos.at(i);
+            cognitics::cdb::BuildElevationTileFromSampler(cdb, sampler, ti);
+            log << "[" << (i + 1) << "/" << c << "] " << cognitics::cdb::FileNameForTileInfo(ti) << log.endl;
+        }
+
+        /* elevation sampler needs to be thread local
         std::vector<std::future<bool>> tasks;
         std::for_each(elevation_tileinfos.begin(), elevation_tileinfos.end(), [&](cognitics::cdb::TileInfo& ti) { 
             tasks.emplace_back(std::async(std::launch::async, cognitics::cdb::BuildElevationTileFromSampler, cdb, std::ref(sampler), ti)); } );
@@ -216,6 +237,7 @@ int main(int argc, char** argv)
             tasks[i].get();
             log << "[" << (i + 1) << "/" << c << "] " << cognitics::cdb::FileNameForTileInfo(elevation_tileinfos[i]) << log.endl;
         }
+        */
     }
 
     if(!args.Option("skip-overviews"))
