@@ -77,13 +77,15 @@ bool TextureExists(const std::string& filename);
 
 RasterInfo ReadRasterInfo(const std::string& filename);
 bool WriteBytesToJP2(const std::string& filename, const RasterInfo& rasterinfo, const std::vector<unsigned char>& bytes);
+bool WriteFloatsToTIF(const std::string& filename, const RasterInfo& rasterinfo, const std::vector<float>& floats);
 RasterInfo RasterInfoFromTileInfo(const cognitics::cdb::TileInfo& tileinfo);
 std::vector<unsigned char> FlippedVertically(const std::vector<unsigned char>& bytes, size_t width, size_t height, size_t depth);
+std::vector<float> FlippedVertically(const std::vector<float>& bytes, size_t width, size_t height, size_t depth);
 
 bool BuildImageryTileBytesFromSampler(GDALRasterSampler& sampler, const TileInfo& tileinfo, std::vector<unsigned char>& bytes);
 bool BuildImageryTileFromSampler(const std::string& cdb, GDALRasterSampler& sampler, const TileInfo& tileinfo);
 
-bool BuildElevationTileBytesFromSampler(elev::Elevation_DSM& sampler, const TileInfo& tileinfo, std::vector<unsigned char>& bytes);
+bool BuildElevationTileFloatsFromSampler(elev::Elevation_DSM& sampler, const TileInfo& tileinfo, std::vector<float>& bytes);
 bool BuildElevationTileFromSampler(const std::string& cdb, elev::Elevation_DSM& sampler, const TileInfo& tileinfo);
 
 bool BuildOverviews(const std::string& cdb, const std::string& component);

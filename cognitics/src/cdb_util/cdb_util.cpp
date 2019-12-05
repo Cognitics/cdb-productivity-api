@@ -440,14 +440,14 @@ bool BuildImageryTileBytesFromSampler(GDALRasterSampler& sampler, const TileInfo
     return sampler.Sample(extents, &bytes[0]);
 }
 
-bool BuildElevationTileBytesFromSampler(elev::Elevation_DSM& sampler, const TileInfo& tileinfo, std::vector<unsigned char>& bytes)
+bool BuildElevationTileFloatsFromSampler(elev::Elevation_DSM& sampler, const TileInfo& tileinfo, std::vector<float>& floats)
 {
     auto extents = gdalsampler::GeoExtents();
     std::tie(extents.north, extents.south, extents.east, extents.west) = NSEWBoundsForTileInfo(tileinfo);
     extents.width = TileDimensionForLod(tileinfo.lod);
     extents.height = extents.width;
     double spacing_x = (extents.east - extents.west) / extents.width;
-    double spacing_y = (extents.west - extents.south) / extents.height;
+    double spacing_y = (extents.north - extents.south) / extents.height;
     auto point = sfa::Point();
     for(int y = 0; y < extents.height; ++y)
     {
@@ -455,7 +455,8 @@ bool BuildElevationTileBytesFromSampler(elev::Elevation_DSM& sampler, const Tile
         for(int x = 0; x < extents.width; ++x)
         {
             point.setX(extents.west + (x * spacing_x));
-            bytes[(y * extents.width) + x] = sampler.Get(&point);
+            if(sampler.Get(&point))
+                floats[(y * extents.width) + x] = point.Z();
         }
     }
     return true;
@@ -571,6 +572,33 @@ bool WriteBytesToJP2(const std::string& filename, const RasterInfo& rasterinfo, 
     return true;
 }
 
+bool WriteFloatsToTIF(const std::string& filename, const RasterInfo& rasterinfo, const std::vector<float>& floats)
+{
+    auto tif_driver = GetGDALDriverManager()->GetDriverByName("GTiff");
+    if(tif_driver == NULL)
+        return false;
+
+    double geotransform[6] = { rasterinfo.OriginX, rasterinfo.PixelSizeX, 0.0, rasterinfo.OriginY, 0.0, rasterinfo.PixelSizeY };
+
+    auto tif_ds = tif_driver->Create(filename.c_str(), rasterinfo.Width, rasterinfo.Height, 1, GDT_Float32, nullptr);
+    tif_ds->SetGeoTransform(geotransform);
+
+    OGRSpatialReference oSRS;
+    oSRS.SetWellKnownGeogCS("WGS84");
+    char *wkt = NULL;
+    oSRS.exportToWkt(&wkt);
+    tif_ds->SetProjection(wkt);
+    CPLFree(wkt);
+
+    auto tif_band = tif_ds->GetRasterBand(1);
+    tif_band->SetNoDataValue(-32767.0f);
+    auto discard = tif_band->RasterIO(GF_Write, 0, 0, rasterinfo.Width, rasterinfo.Height, (float*)&floats[0], rasterinfo.Width, rasterinfo.Height, GDT_Float32, 0, 0);
+
+    GDALClose(tif_ds);
+
+    return true;
+}
+
 RasterInfo RasterInfoFromTileInfo(const cognitics::cdb::TileInfo& tileinfo)
 {
     auto result = RasterInfo();
@@ -587,6 +615,20 @@ RasterInfo RasterInfoFromTileInfo(const cognitics::cdb::TileInfo& tileinfo)
 std::vector<unsigned char> FlippedVertically(const std::vector<unsigned char>& bytes, size_t width, size_t height, size_t depth)
 {
     auto result = std::vector<unsigned char>(bytes.size());
+    size_t row_size = width * depth;
+    for(size_t y = 0; y < height; ++y)
+    {
+        size_t source_begin = (height - y - 1) * row_size;
+        size_t source_end = source_begin + row_size - 1;
+        size_t result_begin = y * row_size;
+        std::copy(bytes.begin() + source_begin, bytes.begin() + source_end, result.begin() + result_begin);
+    }
+    return result;
+}
+
+std::vector<float> FlippedVertically(const std::vector<float>& bytes, size_t width, size_t height, size_t depth)
+{
+    auto result = std::vector<float>(bytes.size());
     size_t row_size = width * depth;
     for(size_t y = 0; y < height; ++y)
     {
@@ -628,26 +670,25 @@ bool BuildElevationTileFromSampler(const std::string& cdb, elev::Elevation_DSM& 
     auto tif_filename = cognitics::cdb::FileNameForTileInfo(tileinfo);
     auto outfilename = cdb + "/Tiles/" + tif_filepath + "/" + tif_filename + ".tif";
 
-    auto bytes = std::vector<unsigned char>();
+    auto floats = std::vector<float>();
     /* TODO: 
     if(std::filesystem::exists(outfilename))
         bytes = BytesFromTIF(outfilename);
     */
-    if(bytes.empty())
+    if(floats.empty())
     {
         auto dimension = TileDimensionForLod(tileinfo.lod);
-        bytes.resize(dimension * dimension * 3);
+        floats.resize(dimension * dimension);
+        std::fill(floats.begin(), floats.end(), -32767.0f);
     }
 
-    cognitics::cdb::BuildElevationTileBytesFromSampler(sampler, tileinfo, bytes);
-    //auto dim = cognitics::cdb::TileDimensionForLod(tileinfo.lod);
-    //bytes = cognitics::cdb::FlippedVertically(bytes, dim, dim, 3);
+    cognitics::cdb::BuildElevationTileFloatsFromSampler(sampler, tileinfo, floats);
+    auto dim = cognitics::cdb::TileDimensionForLod(tileinfo.lod);
+    floats = cognitics::cdb::FlippedVertically(floats, dim, dim, 1);
     auto info = RasterInfoFromTileInfo(tileinfo);
     ccl::makeDirectory(ccl::FileInfo(outfilename).getDirName());
     std::remove(outfilename.c_str());
-    // TODO
-    //return cognitics::cdb::WriteBytesToTIF(outfilename, info, bytes);
-    return false;
+    return cognitics::cdb::WriteFloatsToTIF(outfilename, info, floats);
 }
 
 
