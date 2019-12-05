@@ -572,6 +572,19 @@ bool WriteBytesToJP2(const std::string& filename, const RasterInfo& rasterinfo, 
     return true;
 }
 
+void WriteFloatsToText(const std::string& filename, const RasterInfo& rasterinfo, const std::vector<float>& floats)
+{
+    std::ofstream f;
+    f.open(filename);
+    for(int y = 0; y < rasterinfo.Height; ++y)
+    {
+        for(int x = 0; x < rasterinfo.Width; ++x)
+            f << std::fixed << std::setw(8) << std::setprecision(2) << floats[(y * rasterinfo.Width) + x];
+        f << "\n";
+    }
+    f.close();
+}
+
 bool WriteFloatsToTIF(const std::string& filename, const RasterInfo& rasterinfo, const std::vector<float>& floats)
 {
     auto tif_driver = GetGDALDriverManager()->GetDriverByName("GTiff");
@@ -619,23 +632,23 @@ std::vector<unsigned char> FlippedVertically(const std::vector<unsigned char>& b
     for(size_t y = 0; y < height; ++y)
     {
         size_t source_begin = (height - y - 1) * row_size;
-        size_t source_end = source_begin + row_size - 1;
+        size_t source_end = source_begin + row_size;
         size_t result_begin = y * row_size;
         std::copy(bytes.begin() + source_begin, bytes.begin() + source_end, result.begin() + result_begin);
     }
     return result;
 }
 
-std::vector<float> FlippedVertically(const std::vector<float>& bytes, size_t width, size_t height, size_t depth)
+std::vector<float> FlippedVertically(const std::vector<float>& floats, size_t width, size_t height, size_t depth)
 {
-    auto result = std::vector<float>(bytes.size());
+    auto result = std::vector<float>(floats.size());
     size_t row_size = width * depth;
     for(size_t y = 0; y < height; ++y)
     {
         size_t source_begin = (height - y - 1) * row_size;
-        size_t source_end = source_begin + row_size - 1;
+        size_t source_end = source_begin + row_size;
         size_t result_begin = y * row_size;
-        std::copy(bytes.begin() + source_begin, bytes.begin() + source_end, result.begin() + result_begin);
+        std::copy(floats.begin() + source_begin, floats.begin() + source_end, result.begin() + result_begin);
     }
     return result;
 }
@@ -688,6 +701,7 @@ bool BuildElevationTileFromSampler(const std::string& cdb, elev::Elevation_DSM& 
     auto info = RasterInfoFromTileInfo(tileinfo);
     ccl::makeDirectory(ccl::FileInfo(outfilename).getDirName());
     std::remove(outfilename.c_str());
+    //cognitics::cdb::WriteFloatsToText(outfilename + ".txt", info, floats);
     return cognitics::cdb::WriteFloatsToTIF(outfilename, info, floats);
 }
 
