@@ -49,8 +49,6 @@ message("THIRD_PARTY_DIR: ${THIRD_PARTY_DIR}")
 ################################################################################
 
 set(COGCORE_HEADERS
-    ./include/cad/AttributeDictionary.h
-    ./include/scenegraphobj/scenegraphobj.h
     ./include/ccl/ccl.h
     ./include/ccl/FileInfo.h
     ./include/ccl/Value.h
@@ -100,6 +98,8 @@ set(COGCORE_HEADERS
     ./include/ccl/config.h
     ./include/ccl/miniz.h
     ./include/ccl/ArgumentParser.h
+    ./include/cad/AttributeDictionary.h
+    ./include/scenegraphobj/scenegraphobj.h
     ./include/sfa_file_factory/sfa_file_factory.h
     ./include/gltf/GltfData.h
     ./include/gltf/Tileset.h
@@ -901,6 +901,38 @@ if(UNIX)
 endif(UNIX)
 
 add_library(cogcore ${COGCORE_SOURCES} ${COGCORE_HEADERS})
+source_group("Header Files\\ccl" REGULAR_EXPRESSION "include/ccl/.*$")
+source_group("Header Files\\cdb_tile" REGULAR_EXPRESSION "include/cdb_tile/.*$")
+source_group("Header Files\\ctl" REGULAR_EXPRESSION "include/ctl/.*$")
+source_group("Header Files\\cts" REGULAR_EXPRESSION "include/cts/.*$")
+source_group("Header Files\\dbflib" REGULAR_EXPRESSION "include/dbflib/.*$")
+source_group("Header Files\\dom" REGULAR_EXPRESSION "include/dom/.*$")
+source_group("Header Files\\elev" REGULAR_EXPRESSION "include/elev/.*$")
+source_group("Header Files\\flt" REGULAR_EXPRESSION "include/flt/.*$")
+source_group("Header Files\\gltf" REGULAR_EXPRESSION "include/gltf/.*$")
+source_group("Header Files\\ip" REGULAR_EXPRESSION "include/ip/.*$")
+source_group("Header Files\\lmfit" REGULAR_EXPRESSION "include/lmfit/.*$")
+source_group("Header Files\\rapidjson" REGULAR_EXPRESSION "include/rapidjson/.*$")
+source_group("Header Files\\scenegraph" REGULAR_EXPRESSION "include/scenegraph/.*$")
+source_group("Header Files\\sfa" REGULAR_EXPRESSION "include/sfa/.*$")
+source_group("Header Files\\tg" REGULAR_EXPRESSION "include/tg/.*$")
+source_group("Header Files\\ogr" REGULAR_EXPRESSION "include/ogr/.*$")
+source_group("Source Files\\ccl" REGULAR_EXPRESSION "src/ccl/.*$")
+source_group("Source Files\\cdb_tile" REGULAR_EXPRESSION "src/cdb_tile/.*$")
+source_group("Source Files\\ctl" REGULAR_EXPRESSION "src/ctl/.*$")
+source_group("Source Files\\cts" REGULAR_EXPRESSION "src/cts/.*$")
+source_group("Source Files\\dbflib" REGULAR_EXPRESSION "src/dbflib/.*$")
+source_group("Source Files\\dom" REGULAR_EXPRESSION "src/dom/.*$")
+source_group("Source Files\\elev" REGULAR_EXPRESSION "src/elev/.*$")
+source_group("Source Files\\flt" REGULAR_EXPRESSION "src/flt/.*$")
+source_group("Source Files\\gltf" REGULAR_EXPRESSION "src/gltf/.*$")
+source_group("Source Files\\ip" REGULAR_EXPRESSION "src/ip/.*$")
+source_group("Source Files\\lmfit" REGULAR_EXPRESSION "src/lmfit/.*$")
+source_group("Source Files\\rapidjson" REGULAR_EXPRESSION "src/rapidjson/.*$")
+source_group("Source Files\\scenegraph" REGULAR_EXPRESSION "src/scenegraph/.*$")
+source_group("Source Files\\sfa" REGULAR_EXPRESSION "src/sfa/.*$")
+source_group("Source Files\\tg" REGULAR_EXPRESSION "src/tg/.*$")
+source_group("Source Files\\ogr" REGULAR_EXPRESSION "src/ogr/.*$")
 link_libraries(cogcore)
 
 add_executable(cdbinfo cdbinfo/cdbinfo.cpp)
