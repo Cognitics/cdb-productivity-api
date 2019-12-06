@@ -44,25 +44,13 @@ namespace scenegraph
             int numVerts = face.getNumVertices();
             for(int i=0;i<numVerts;i++)
             {
-                {
-                    sfa::Point &pt = face.verts.at(i);
-                    cts::PT_CoordinatePoint p;
-                    p.push_back(pt.X());
-                    p.push_back(pt.Y());
-                    cts::PT_CoordinatePoint result = ct->transform(p);
-                    pt.setX(result[0]);
-                    pt.setY(result[1]);
-                }
-
-                {
-                    sfa::Point &n = face.vertexNormals.at(i);
-                    cts::PT_CoordinatePoint p;
-                    p.push_back(n.X());
-                    p.push_back(n.Y());
-                    cts::PT_CoordinatePoint result = ct->transform(p);
-                    n.setX(result[0]);
-                    n.setY(result[1]);
-                }
+                sfa::Point &pt = face.verts.at(i);
+                cts::PT_CoordinatePoint p;
+                p.push_back(pt.X());
+                p.push_back(pt.Y());
+                cts::PT_CoordinatePoint result = ct->transform(p);
+                pt.setX(result[0]);
+                pt.setY(result[1]);
             }            
         }
 
