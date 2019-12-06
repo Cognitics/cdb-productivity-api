@@ -217,27 +217,44 @@ int main(int argc, char** argv)
 
     if(!elevation_tileinfos.empty())
     {
-        elev::DataSourceManager dsm(50 * 1024 * 1024);
-        std::for_each(elevation_filenames.begin(), elevation_filenames.end(), [&](std::string& fn) { dsm.AddFile_Raster_GDAL(fn); }); 
-        dsm.generateBSP();
-        elev::Elevation_DSM sampler(&dsm, elev::ELEVATION_BILINEAR);
-        for(size_t i = 0, c = elevation_tileinfos.size(); i < c; ++i)
-        {
-            auto& ti = elevation_tileinfos.at(i);
-            cognitics::cdb::BuildElevationTileFromSampler(cdb, sampler, ti);
-            log << "[" << (i + 1) << "/" << c << "] " << cognitics::cdb::FileNameForTileInfo(ti) << log.endl;
-        }
+        bool use_dsm = true;
 
-        /* elevation sampler needs to be thread local
-        std::vector<std::future<bool>> tasks;
-        std::for_each(elevation_tileinfos.begin(), elevation_tileinfos.end(), [&](cognitics::cdb::TileInfo& ti) { 
-            tasks.emplace_back(std::async(std::launch::async, cognitics::cdb::BuildElevationTileFromSampler, cdb, std::ref(sampler), ti)); } );
-        for(size_t i = 0, c = tasks.size(); i < c; ++i)
+        if(use_dsm)
         {
-            tasks[i].get();
-            log << "[" << (i + 1) << "/" << c << "] " << cognitics::cdb::FileNameForTileInfo(elevation_tileinfos[i]) << log.endl;
+            elev::DataSourceManager dsm(50 * 1024 * 1024);
+            std::for_each(elevation_filenames.begin(), elevation_filenames.end(), [&](std::string& fn) { dsm.AddFile_Raster_GDAL(fn); }); 
+            dsm.generateBSP();
+            elev::Elevation_DSM sampler(&dsm, elev::ELEVATION_BILINEAR);
+            for(size_t i = 0, c = elevation_tileinfos.size(); i < c; ++i)
+            {
+                auto& ti = elevation_tileinfos.at(i);
+                cognitics::cdb::BuildElevationTileFromSampler2(cdb, sampler, ti);
+                log << "[" << (i + 1) << "/" << c << "] " << cognitics::cdb::FileNameForTileInfo(ti) << log.endl;
+            }
         }
-        */
+        else
+        {
+            GDALRasterSampler sampler;
+            std::for_each(elevation_filenames.begin(), elevation_filenames.end(), [&](std::string& fn) { sampler.AddFile(fn); }); 
+
+            /* testing
+            for(size_t i = 0, c = elevation_tileinfos.size(); i < c; ++i)
+            {
+                auto& ti = elevation_tileinfos.at(i);
+                cognitics::cdb::BuildElevationTileFromSampler(cdb, sampler, ti);
+                log << "[" << (i + 1) << "/" << c << "] " << cognitics::cdb::FileNameForTileInfo(ti) << log.endl;
+            }
+            */
+
+            std::vector<std::future<bool>> tasks;
+            std::for_each(elevation_tileinfos.begin(), elevation_tileinfos.end(), [&](cognitics::cdb::TileInfo& ti) { 
+                tasks.emplace_back(std::async(std::launch::async, cognitics::cdb::BuildElevationTileFromSampler, cdb, std::ref(sampler), ti)); } );
+            for(size_t i = 0, c = tasks.size(); i < c; ++i)
+            {
+                tasks[i].get();
+                log << "[" << (i + 1) << "/" << c << "] " << cognitics::cdb::FileNameForTileInfo(elevation_tileinfos[i]) << log.endl;
+            }
+        }
     }
 
     if(!args.Option("skip-overviews"))

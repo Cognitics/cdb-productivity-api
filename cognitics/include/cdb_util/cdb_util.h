@@ -85,8 +85,11 @@ std::vector<float> FlippedVertically(const std::vector<float>& bytes, size_t wid
 bool BuildImageryTileBytesFromSampler(GDALRasterSampler& sampler, const TileInfo& tileinfo, std::vector<unsigned char>& bytes);
 bool BuildImageryTileFromSampler(const std::string& cdb, GDALRasterSampler& sampler, const TileInfo& tileinfo);
 
-bool BuildElevationTileFloatsFromSampler(elev::Elevation_DSM& sampler, const TileInfo& tileinfo, std::vector<float>& bytes);
-bool BuildElevationTileFromSampler(const std::string& cdb, elev::Elevation_DSM& sampler, const TileInfo& tileinfo);
+bool BuildElevationTileFloatsFromSampler(GDALRasterSampler& sampler, const TileInfo& tileinfo, std::vector<float>& floats);
+bool BuildElevationTileFromSampler(const std::string& cdb, GDALRasterSampler& sampler, const TileInfo& tileinfo);
+
+bool BuildElevationTileFloatsFromSampler2(elev::Elevation_DSM& sampler, const TileInfo& tileinfo, std::vector<float>& floats);
+bool BuildElevationTileFromSampler2(const std::string& cdb, elev::Elevation_DSM& sampler, const TileInfo& tileinfo);
 
 bool BuildOverviews(const std::string& cdb, const std::string& component);
 bool BuildImageryOverviews(const std::string& cdb);

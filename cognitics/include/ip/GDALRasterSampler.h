@@ -187,6 +187,7 @@ class GDALRasterSampler
 
     bool SampleSoftware(const gdalsampler::GeoExtents &window, u_char *buf);
     bool SampleIPP(const gdalsampler::GeoExtents &window, u_char *buf);
+    bool SampleIPP(const gdalsampler::GeoExtents &window, float *buf);
 
 public:
     GDALRasterSampler() ;
@@ -205,6 +206,7 @@ public:
     // Sample all the available files that intersect the specified geographic window
     // into the output buffer with the specified width and height
     bool Sample(const gdalsampler::GeoExtents &window, u_char *buf);
+    bool Sample(const gdalsampler::GeoExtents &window, float *buf);
 
     // Returns a GeoExtents that covers the max extents of all files added to the sampler.
     gdalsampler::GeoExtents GetMinMaxExtents();

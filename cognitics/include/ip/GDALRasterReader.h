@@ -438,6 +438,7 @@ namespace gdalsampler
         u_char *r; //!< An array of red pixels for this block.
         u_char *g; //!< An array of green pixels for this block. 
         u_char *b; //!< An array of blue pixels for this block. 
+        float *elev { nullptr };
         int age; //!<  Each time this isn't the block we're looking for, we increment this. Then we can delete the oldest to make room in the cache.        
         GDALRasterFile *m_file;
         std::string m_filename;

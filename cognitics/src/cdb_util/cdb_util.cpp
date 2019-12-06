@@ -440,7 +440,16 @@ bool BuildImageryTileBytesFromSampler(GDALRasterSampler& sampler, const TileInfo
     return sampler.Sample(extents, &bytes[0]);
 }
 
-bool BuildElevationTileFloatsFromSampler(elev::Elevation_DSM& sampler, const TileInfo& tileinfo, std::vector<float>& floats)
+bool BuildElevationTileFloatsFromSampler(GDALRasterSampler& sampler, const TileInfo& tileinfo, std::vector<float>& floats)
+{
+    auto extents = gdalsampler::GeoExtents();
+    std::tie(extents.north, extents.south, extents.east, extents.west) = NSEWBoundsForTileInfo(tileinfo);
+    extents.width = TileDimensionForLod(tileinfo.lod);
+    extents.height = extents.width;
+    return sampler.Sample(extents, &floats[0]);
+}
+
+bool BuildElevationTileFloatsFromSampler2(elev::Elevation_DSM& sampler, const TileInfo& tileinfo, std::vector<float>& floats)
 {
     auto extents = gdalsampler::GeoExtents();
     std::tie(extents.north, extents.south, extents.east, extents.west) = NSEWBoundsForTileInfo(tileinfo);
@@ -677,7 +686,7 @@ bool BuildImageryTileFromSampler(const std::string& cdb, GDALRasterSampler& samp
     return cognitics::cdb::WriteBytesToJP2(outfilename, info, bytes);
 }
 
-bool BuildElevationTileFromSampler(const std::string& cdb, elev::Elevation_DSM& sampler, const TileInfo& tileinfo)
+bool BuildElevationTileFromSampler(const std::string& cdb, GDALRasterSampler& sampler, const TileInfo& tileinfo)
 {
     auto tif_filepath = cognitics::cdb::FilePathForTileInfo(tileinfo);
     auto tif_filename = cognitics::cdb::FileNameForTileInfo(tileinfo);
@@ -696,6 +705,34 @@ bool BuildElevationTileFromSampler(const std::string& cdb, elev::Elevation_DSM& 
     }
 
     cognitics::cdb::BuildElevationTileFloatsFromSampler(sampler, tileinfo, floats);
+    auto dim = cognitics::cdb::TileDimensionForLod(tileinfo.lod);
+    floats = cognitics::cdb::FlippedVertically(floats, dim, dim, 1);
+    auto info = RasterInfoFromTileInfo(tileinfo);
+    ccl::makeDirectory(ccl::FileInfo(outfilename).getDirName());
+    std::remove(outfilename.c_str());
+    //cognitics::cdb::WriteFloatsToText(outfilename + ".txt", info, floats);
+    return cognitics::cdb::WriteFloatsToTIF(outfilename, info, floats);
+}
+
+bool BuildElevationTileFromSampler2(const std::string& cdb, elev::Elevation_DSM& sampler, const TileInfo& tileinfo)
+{
+    auto tif_filepath = cognitics::cdb::FilePathForTileInfo(tileinfo);
+    auto tif_filename = cognitics::cdb::FileNameForTileInfo(tileinfo);
+    auto outfilename = cdb + "/Tiles/" + tif_filepath + "/" + tif_filename + ".tif";
+
+    auto floats = std::vector<float>();
+    /* TODO: 
+    if(std::filesystem::exists(outfilename))
+        bytes = BytesFromTIF(outfilename);
+    */
+    if(floats.empty())
+    {
+        auto dimension = TileDimensionForLod(tileinfo.lod);
+        floats.resize(dimension * dimension);
+        std::fill(floats.begin(), floats.end(), -32767.0f);
+    }
+
+    cognitics::cdb::BuildElevationTileFloatsFromSampler2(sampler, tileinfo, floats);
     auto dim = cognitics::cdb::TileDimensionForLod(tileinfo.lod);
     floats = cognitics::cdb::FlippedVertically(floats, dim, dim, 1);
     auto info = RasterInfoFromTileInfo(tileinfo);

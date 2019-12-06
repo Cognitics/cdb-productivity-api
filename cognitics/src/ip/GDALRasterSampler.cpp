@@ -49,7 +49,6 @@ GDALRasterSampler::GDALRasterSampler() : bsp(NULL)
 }
 
 
-
 IppStatus WarpPerspective_8u_C3R(Ipp8u *pSrc, IppiSize srcSize, Ipp32s srcStep,
     Ipp8u *pDst, IppiSize dstSize,
     Ipp32s dstStep, const double coeffs[3][3], IppiInterpolationType interpolation)
@@ -137,6 +136,91 @@ IppStatus WarpPerspective_8u_C3R(Ipp8u *pSrc, IppiSize srcSize, Ipp32s srcStep,
     case ippCubic:
         status = ippiWarpPerspectiveCubic_8u_C3R(pSrc, srcStep, pDst, dstStep, dstOffset,
             dstSize, pSpec, pBuffer);
+        break;
+    }
+    ippsFree(pSpec);
+    ippsFree(pBuffer);
+    return status;
+}
+
+
+IppStatus WarpPerspective_32f_C1R(Ipp32f *pSrc, IppiSize srcSize, Ipp32s srcStep, Ipp32f *pDst, IppiSize dstSize, Ipp32s dstStep, const double coeffs[3][3], IppiInterpolationType interpolation)
+{
+    IppiWarpSpec *pSpec = 0;
+    Ipp8u *pInitBuf = 0;
+    int specSize = 0, initSize = 0, bufSize = 0;
+    Ipp8u *pBuffer = 0;
+    const Ipp32u numChannels = 1;
+    IppiPoint dstOffset = { 0, 0 };
+    IppStatus status = ippStsNoErr;
+    IppiBorderType borderType = ippBorderTransp;
+    IppiWarpDirection direction = ippWarpForward;
+    Ipp64f pBorderValue[numChannels];
+    Ipp64f valB = 0.0, valC = 0.5;	 /* Catmull-Rom filter coefficients for cubic interpolation */
+    IppiRect srcRoi = ippRectInfinite; /* Region of interest is not specified */
+    for (int i = 0; i < numChannels; ++i)
+        pBorderValue[i] = 255.0;
+    /* Spec and init buffer sizes */
+    status = ippiWarpPerspectiveGetSize(srcSize, srcRoi, dstSize, ipp32f, coeffs, interpolation, direction, borderType, &specSize, &initSize);
+    if (status != ippStsNoErr)
+        return status;
+    /* Memory allocation */
+    pSpec = (IppiWarpSpec *)ippsMalloc_8u(specSize);
+    if (pSpec == NULL)
+    {
+        return ippStsNoMemErr;
+    }
+    /* Filter initialization */
+    switch (interpolation)
+    {
+    case ippNearest:
+        status = ippiWarpPerspectiveNearestInit(srcSize, srcRoi, dstSize, ipp32f, coeffs, direction, numChannels, borderType, pBorderValue, 0, pSpec);
+        break;
+    case ippLinear:
+        status = ippiWarpPerspectiveLinearInit(srcSize, srcRoi, dstSize, ipp32f, coeffs, direction, numChannels, borderType, pBorderValue, 0, pSpec);
+        break;
+    case ippCubic:
+        pInitBuf = ippsMalloc_8u(initSize);
+        if (pInitBuf == NULL)
+        {
+            ippsFree(pSpec);
+            return ippStsNoMemErr;
+        }
+        status = ippiWarpPerspectiveCubicInit(srcSize, srcRoi, dstSize, ipp32f, coeffs, direction, numChannels, valB, valC, borderType, pBorderValue, 0, pSpec, pInitBuf);
+        ippsFree(pInitBuf);
+        break;
+    default:
+        return ippStsInterpolationErr;
+    }
+    if (status < ippStsNoErr)
+    {
+        ippsFree(pSpec);
+        return status;
+    }
+    /* work buffer size */
+    status = ippiWarpGetBufferSize(pSpec, dstSize, &bufSize);
+    if (status < ippStsNoErr)
+    {
+        ippsFree(pSpec);
+        return status;
+    }
+    pBuffer = ippsMalloc_8u(bufSize);
+    if (pBuffer == NULL)
+    {
+        ippsFree(pSpec);
+        return ippStsNoMemErr;
+    }
+    /* Warp processing */
+    switch (interpolation)
+    {
+    case ippNearest:
+        status = ippiWarpPerspectiveNearest_32f_C1R(pSrc, srcStep, pDst, dstStep, dstOffset, dstSize, pSpec, pBuffer);
+        break;
+    case ippLinear:
+        status = ippiWarpPerspectiveLinear_32f_C1R(pSrc, srcStep, pDst, dstStep, dstOffset, dstSize, pSpec, pBuffer);
+        break;
+    case ippCubic:
+        status = ippiWarpPerspectiveCubic_32f_C1R(pSrc, srcStep, pDst, dstStep, dstOffset, dstSize, pSpec, pBuffer);
         break;
     }
     ippsFree(pSpec);
@@ -299,8 +383,17 @@ bool GDALRasterSampler::Sample(const gdalsampler::GeoExtents &window, u_char *bu
 #else
     return SampleSoftware(window,buf);
 #endif
-
 }
+
+bool GDALRasterSampler::Sample(const gdalsampler::GeoExtents &window, float *buf)
+{
+#ifdef USE_IPP_LIBRARY
+    return SampleIPP(window,buf);
+#else
+    return SampleSoftware(window,buf);
+#endif
+}
+
 
 int dbg_no = 0;
 std::vector<gdalsampler::GeoExtents> GDALRasterSampler::GetFileExtents()
@@ -648,6 +741,134 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, u_char 
     return ret;
 }
 
+bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, float *buf)
+{
+    bool ret = false;
+#ifdef USE_IPP_LIBRARY
+
+    if (!bsp)
+    {
+        BuildBSP(false);
+    }
+
+    int scratchlen = window.width * window.height;
+    float *scratch = new float[scratchlen];
+    
+    gdalsampler::CachedRasterBlockList blocks;
+    gdalsampler::Quad aoi;
+    aoi.ll.setX(window.west);
+    aoi.ul.setX(window.west);
+    aoi.lr.setX(window.east);
+    aoi.ur.setX(window.east);
+    aoi.lr.setY(window.south);
+    aoi.ll.setY(window.south);    
+    aoi.ur.setY(window.north);    
+    aoi.ul.setY(window.north);
+    
+
+    gdalsampler::GDALRasterFileList files = GetFilesInAOI(aoi);//m_reader.GetFiles();
+    //printf("Found %d files in aoi\n", files.size());
+    gdalsampler::GDALRasterFileList::iterator file_iter = files.begin();
+    while(file_iter!=files.end())
+    {
+        std::fill(scratch, scratch + scratchlen, 0.0f);
+        gdalsampler::GDALRasterFilePtr file = *file_iter++;
+        sfa::Polygon geoarea = file->GetValidArea();
+        sfa::Polygon pixelArea;
+
+        blocks.clear();
+        file->GetOverlappingBlocks(aoi,blocks);
+        if(blocks.size()>0)
+        {
+            if(!geoarea.isEmpty())
+            {
+                pixelArea = ProjectToPixelSpace(geoarea,window);
+            }
+            //printf("Destination block intersects with %d tiles from %s.\n",blocks.size(),file->GetFilename().c_str());
+        }
+        gdalsampler::CachedRasterBlockList::iterator iter = blocks.begin();
+        
+        while(iter!=blocks.end())
+        {
+            gdalsampler::CachedRasterBlockPtr block = *iter++;
+            gdalsampler::CacheManager::getInstance()->PageBlock(block);
+
+            IppiRect srcroi = { 0,0,block->xsize,block->ysize };
+            IppiRect dstroi = { 0,0,window.width,window.height };
+            gdalsampler::Quad srcGeoQuad  = block->GetDestCoverage();
+
+            gdalsampler::Quad pixQuad;
+            // Get the source quad in dest pixel coordinates
+            window.GeoToPixel(srcGeoQuad.ul,pixQuad.ul);
+            window.GeoToPixel(srcGeoQuad.ur,pixQuad.ur);
+            window.GeoToPixel(srcGeoQuad.lr,pixQuad.lr);
+            window.GeoToPixel(srcGeoQuad.ll,pixQuad.ll);
+
+            // Round pixels to keep IPP from skipping 
+            pixQuad.ul.setX(floatround(pixQuad.ul.X()));
+            pixQuad.ll.setX(floatround(pixQuad.ll.X()));
+            pixQuad.ur.setX(floatround(pixQuad.ur.X()));
+            pixQuad.lr.setX(floatround(pixQuad.lr.X()));
+            pixQuad.ul.setY(floatround(pixQuad.ul.Y()));
+            pixQuad.ur.setY(floatround(pixQuad.ur.Y()));
+            pixQuad.lr.setY(floatround(pixQuad.lr.Y()));
+            pixQuad.ll.setY(floatround(pixQuad.ll.Y()));
+
+            double srcquad[4][2];// source tile quadrangle in destination pixel space.
+            srcquad[0][0] = pixQuad.ul.X();
+            srcquad[0][1] = pixQuad.ul.Y();
+
+            srcquad[1][0] = pixQuad.ur.X();
+            srcquad[1][1] = pixQuad.ur.Y();
+
+            srcquad[2][0] = pixQuad.lr.X();
+            srcquad[2][1] = pixQuad.lr.Y();
+
+            srcquad[3][0] = pixQuad.ll.X();
+            srcquad[3][1] = pixQuad.ll.Y();
+
+            int srcStep = block->xsize * sizeof(ipp32f);
+            IppiSize srcNumPix = {block->xsize,block->ysize};
+            int destStep = window.width * sizeof(ipp32f);
+            IppiSize destNumPix = { window.width, window.height };
+            // Get the transform from the quad
+            double coeff[3][3];
+            IppStatus istatus = ippiGetPerspectiveTransform(srcroi,srcquad,coeff);
+            if(istatus==ippStsNoErr)
+            {
+                IppiSize srcNumPix = {block->xsize,block->ysize};
+                
+                // Now use the coeff to warp the source on to the dest.
+                istatus=WarpPerspective_32f_C1R(block->elev, srcNumPix, srcStep, scratch, destNumPix, destStep, coeff, ippCubic);
+                if(istatus!=ippStsNoErr)
+                {
+                    printf("WarpPerspective_32f_C1R returned %d\n", istatus);
+                }
+            }            
+        }
+        if(blocks.size()>0)
+        {
+            ret = true;
+            //
+            if(!pixelArea.isEmpty())
+            {
+                //CopyPixelsInsidePoly(scratch,buf,window.width,window.height,3,pixelArea);
+            }
+            else
+            {
+                std::copy(scratch, scratch + scratchlen, buf);
+                //CopyNonBlackPixels(scratch,buf,scratchlen);
+            }
+        }
+    }
+    
+    delete[] scratch;
+    
+#else
+    throw std::runtime_error("Attempt to call SampleIPP when IPP support was not compiled in!.");
+#endif
+    return ret;
+}
 
 
 bool GDALRasterSampler::SampleSoftware(const gdalsampler::GeoExtents &window, u_char *buf)

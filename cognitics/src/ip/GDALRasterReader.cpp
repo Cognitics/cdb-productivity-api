@@ -612,6 +612,7 @@ namespace gdalsampler
         delete[] r;
         delete[] g;
         delete[] b;
+        delete[] elev;
 
     }
 
@@ -703,10 +704,33 @@ namespace gdalsampler
     {
         GDALDataset *poDataset = m_file->Reference();
         if (!poDataset)
-        {
+            return false;
 
-            return NULL;
+        if(poDataset->GetRasterCount() == 1)
+        {
+            auto band = poDataset->GetRasterBand(1);
+            if(band->GetRasterDataType() == GDT_Float32)
+            {
+                if(r)
+                {
+                    delete r;
+                    r = nullptr;
+                    delete g;
+                    g = nullptr;
+                    delete b;
+                    b = nullptr;
+                }
+                elev = new float[xsize * ysize];
+                g_GDALProtMutex.lock();
+
+                m_ready = (CE_None == band->RasterIO(GF_Read, xoffset, yoffset, xsize, ysize, elev, xsize, ysize, GDT_Float32, 0, 0));
+                if(!m_ready)
+                    printf("Error: Failed float read x/y: %d/%d w/h: %d/%d\n", xoffset, yoffset, xsize, ysize);
+                g_GDALProtMutex.unlock();
+                return true;
+            }
         }
+
         if(!r)
         {
             r = new u_char[xsize*ysize];
