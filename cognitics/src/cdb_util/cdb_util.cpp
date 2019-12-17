@@ -667,18 +667,21 @@ bool BuildImageryTileFromSampler(const std::string& cdb, GDALRasterSampler& samp
     auto jp2_filepath = cognitics::cdb::FilePathForTileInfo(tileinfo);
     auto jp2_filename = cognitics::cdb::FileNameForTileInfo(tileinfo);
     auto outfilename = cdb + "/Tiles/" + jp2_filepath + "/" + jp2_filename + ".jp2";
-
+    auto dim = cognitics::cdb::TileDimensionForLod(tileinfo.lod);
     auto bytes = std::vector<unsigned char>();
-    if(std::filesystem::exists(outfilename))
+    if (std::filesystem::exists(outfilename))
+    {
         bytes = BytesFromJP2(outfilename);
+        bytes = cognitics::cdb::FlippedVertically(bytes, dim, dim, 3);
+    }
+
     if(bytes.empty())
     {
         auto dimension = TileDimensionForLod(tileinfo.lod);
         bytes.resize(dimension * dimension * 3);
     }
 
-    cognitics::cdb::BuildImageryTileBytesFromSampler(sampler, tileinfo, bytes);
-    auto dim = cognitics::cdb::TileDimensionForLod(tileinfo.lod);
+    cognitics::cdb::BuildImageryTileBytesFromSampler(sampler, tileinfo, bytes);    
     bytes = cognitics::cdb::FlippedVertically(bytes, dim, dim, 3);
     auto info = RasterInfoFromTileInfo(tileinfo);
     ccl::makeDirectory(ccl::FileInfo(outfilename).getDirName());
