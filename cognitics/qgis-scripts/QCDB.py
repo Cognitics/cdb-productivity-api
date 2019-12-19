@@ -106,7 +106,7 @@ class QCDBGenerator(QgsProcessingAlgorithm):
             QgsProcessingParameterString (
                 name = self.OUTPUTDIR,
                 description = self.tr('CDB Output Directory'),
-                defaultValue=r'E:\output\qgis_cdb',
+                defaultValue=r'j:\output\qgis_cdb',
                 optional=False))
 
         self.availableTranslators = ["GGDM", "OpenStreetMaps", "SE Core"]
@@ -150,6 +150,13 @@ class QCDBGenerator(QgsProcessingAlgorithm):
                 optional=False))
 
 
+    def chomp(self, x):
+        if x.endswith("\r\n"): 
+            return x[:-2]
+        if x.endswith("\n") or x.endswith("\r"): 
+            return x[:-1]
+        return x
+
     def processAlgorithm(self, parameters, context, feedback):
         toolsPath = self.parameterAsString(
             parameters,
@@ -187,16 +194,31 @@ class QCDBGenerator(QgsProcessingAlgorithm):
                     #imagery
                     feedback.setProgressText("Processing imagery file " + layerFilename)
                     
-                    args = [cdbInsertExePath,"-skip-overviews", layerFilename, cdbPath ]
-                    p = subprocess.Popen(args,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
-                    for line in p.stdout:
-                        line = str(line)
-                        if(len(line)==0):
-                            continue
-                        else:
-                            feedback.setProgressText(line)
-                    
+                    args = [cdbInsertExePath,"-skip-overviews", "-imagery", layerFilename, cdbPath ]
+                    #p = subprocess.Popen(args,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+                    try:
+                        #p = subprocess.check_output(args,stderr=subprocess.PIPE)
+                        p = subprocess.Popen(args,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+                        for line in p.stdout:
+                            line = self.chomp(str(line, "windows-1252"))
+                            if(len(line)==0):
+                                continue
+                            else:
+                                feedback.setProgressText(line)
+                    except subprocess.CalledProcessError as error:
+                        feedback.setProgressText(str(error.output))
+                        feedback.setProgressText(str(error.returncode))
+                        feedback.setProgressText(str(error.cmd))
+
+
         #build overviews
-        #todo: LODMIN/LODMAX
-        args = [gdaladdoPath,"", cdbImageryLayerURI]
+        feedback.setProgressText("Building LODs...")
+        args = [gdaladdoPath,"--config", "LODMIN", "0", "--config", "LODMAX", "8", cdbImageryLayerURI]
+        p = subprocess.Popen(args,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+        for line in p.stdout:
+            line = self.chomp(str(line, "windows-1252"))
+            if(len(line)==0):
+                continue
+            else:
+                feedback.setProgressText(line)
         return {}
