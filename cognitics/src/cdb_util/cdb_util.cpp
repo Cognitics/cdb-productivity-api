@@ -446,6 +446,13 @@ bool BuildElevationTileFloatsFromSampler(GDALRasterSampler& sampler, const TileI
     std::tie(extents.north, extents.south, extents.east, extents.west) = NSEWBoundsForTileInfo(tileinfo);
     extents.width = TileDimensionForLod(tileinfo.lod);
     extents.height = extents.width;
+    double spacing_x = (extents.east - extents.west) / extents.width;
+    double spacing_y = (extents.north - extents.south) / extents.height;
+    extents.north += (spacing_y * 0.5);
+    extents.south += (spacing_y * 0.5);
+    extents.east -= (spacing_x * 0.5);
+    extents.west -= (spacing_x * 0.5);
+
     return sampler.Sample(extents, &floats[0]);
 }
 
@@ -600,10 +607,11 @@ bool WriteFloatsToTIF(const std::string& filename, const RasterInfo& rasterinfo,
     if(tif_driver == NULL)
         return false;
 
-    double geotransform[6] = { rasterinfo.OriginX, rasterinfo.PixelSizeX, 0.0, rasterinfo.OriginY, 0.0, rasterinfo.PixelSizeY };
+    double geotransform[6] = { rasterinfo.OriginX - (0.5 * rasterinfo.PixelSizeX), rasterinfo.PixelSizeX, 0.0, rasterinfo.OriginY + (0.5 * rasterinfo.PixelSizeY), 0.0, rasterinfo.PixelSizeY };
 
     auto tif_ds = tif_driver->Create(filename.c_str(), rasterinfo.Width, rasterinfo.Height, 1, GDT_Float32, nullptr);
     tif_ds->SetGeoTransform(geotransform);
+    tif_ds->SetMetadataItem("AREA_OR_POINT", "POINT");
 
     OGRSpatialReference oSRS;
     oSRS.SetWellKnownGeogCS("WGS84");
@@ -695,7 +703,7 @@ bool BuildElevationTileFromSampler(const std::string& cdb, GDALRasterSampler& sa
     auto floats = std::vector<float>();
     /* TODO: 
     if(std::filesystem::exists(outfilename))
-        bytes = BytesFromTIF(outfilename);
+        floats = FloatsFromTIF(outfilename);
     */
     if(floats.empty())
     {
@@ -723,7 +731,7 @@ bool BuildElevationTileFromSampler2(const std::string& cdb, elev::Elevation_DSM&
     auto floats = std::vector<float>();
     /* TODO: 
     if(std::filesystem::exists(outfilename))
-        bytes = BytesFromTIF(outfilename);
+        floats = FloatsFromTIF(outfilename);
     */
     if(floats.empty())
     {

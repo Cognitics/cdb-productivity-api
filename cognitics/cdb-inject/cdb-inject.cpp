@@ -217,7 +217,7 @@ int main(int argc, char** argv)
 
     if(!elevation_tileinfos.empty())
     {
-        bool use_dsm = true;
+        bool use_dsm = false;
 
         if(use_dsm)
         {

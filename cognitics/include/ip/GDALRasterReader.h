@@ -694,6 +694,7 @@ namespace gdalsampler
 
 
     public:
+        bool pixel_is_point { false };
 
         CoordinateTransformer *GetFileToDestTransformer()
         {
@@ -827,6 +828,13 @@ namespace gdalsampler
             localPt.setX(_left + pixel_col * _origEWConst + pixel_row * adfTransform2);
             localPt.setY(_top + pixel_col * adfTransform4 + pixel_row * _origNSConst);
         }
+
+        inline void PixelToLocalPoint(double pixel_row, double pixel_col, sfa::Point &localPt)
+        {
+            localPt.setX(_left + pixel_col * _origEWConst + pixel_row * adfTransform2);
+            localPt.setY(_top + pixel_col * adfTransform4 + pixel_row * _origNSConst);
+        }
+
 
         inline void LocalToPixelPoint(int &pixel_row, int &pixel_col, double local_row, double local_col)
         {

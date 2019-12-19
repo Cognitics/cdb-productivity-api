@@ -28,6 +28,8 @@ DEALINGS IN THE SOFTWARE.
 #include <sfa_file_factory/sfa_file_factory.h>
 #include <cts/FlatEarthProjection.h>
 
+#include <algorithm>
+
 int g_debugMode = 0;
 bool g_UseProjDLL = false;
 
@@ -334,6 +336,9 @@ namespace gdalsampler
             CPLFree(pszSRS_WKT);
         }
 
+        auto area_or_point = std::string(poDataset->GetMetadataItem("AREA_OR_POINT"));
+        std::transform(area_or_point.begin(), area_or_point.end(), area_or_point.begin(), ::toupper);
+        pixel_is_point = (area_or_point == "POINT");
 
         // Get the resolution and normalize it (somehow)
         double adfGeoTransform[6];
@@ -566,15 +571,22 @@ namespace gdalsampler
         Quad ret;
         Quad localquad;
         int left_pix = xoffset;
-        int right_pix = (xoffset + xsize);
+        int right_pix = xoffset + xsize;
         int top_pix = yoffset;
-        int bottom_pix = (yoffset + ysize);
+        int bottom_pix = yoffset + ysize;
+
+        if(m_file->pixel_is_point)
+        {
+            // not sure why imagery is overlapping the blocks
+            right_pix -= 1;
+            bottom_pix -= 1;
+        }
         
         m_file->PixelToLocalPoint(top_pix,left_pix,localquad.ul);
         m_file->PixelToLocalPoint(top_pix,right_pix,localquad.ur);
         m_file->PixelToLocalPoint(bottom_pix,right_pix,localquad.lr);
         m_file->PixelToLocalPoint(bottom_pix,left_pix,localquad.ll);
-        
+
         CoordinateTransformer * toDestTransform = m_file->GetFileToDestTransformer();
         ret = localquad.Transform(toDestTransform);
 
@@ -727,7 +739,7 @@ namespace gdalsampler
                 if(!m_ready)
                     printf("Error: Failed float read x/y: %d/%d w/h: %d/%d\n", xoffset, yoffset, xsize, ysize);
                 g_GDALProtMutex.unlock();
-                return true;
+                return m_ready;
             }
         }
 
