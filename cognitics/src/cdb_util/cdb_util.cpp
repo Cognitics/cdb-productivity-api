@@ -531,6 +531,33 @@ RasterInfo ReadRasterInfo(const std::string& filename)
     return info;
 }
 
+std::vector<float> FloatsFromTIF(const std::string& filename)
+{
+    auto result = std::vector<float>();
+
+    auto dataset = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
+    if(!dataset)
+        return result;
+
+    auto width = dataset->GetRasterXSize();
+    auto height = dataset->GetRasterYSize();
+    auto depth = dataset->GetRasterCount();
+
+    double geotransform[6];
+    if(dataset->GetGeoTransform(geotransform) != CE_None)
+    {
+        GDALClose(dataset);
+        return result;
+    }
+
+    result.resize(width * height);
+    auto discard = dataset->GetRasterBand(1)->RasterIO(GF_Read, 0, 0, width, height, (unsigned char*)&result[0], width, height, GDT_Float32, 0, 0);
+
+    GDALClose(dataset);
+
+    return result;
+}
+
 std::vector<unsigned char> BytesFromJP2(const std::string& filename)
 {
     auto result = std::vector<unsigned char>();
@@ -710,10 +737,8 @@ bool BuildElevationTileFromSampler(const std::string& cdb, GDALRasterSampler& sa
     auto outfilename = cdb + "/Tiles/" + tif_filepath + "/" + tif_filename + ".tif";
 
     auto floats = std::vector<float>();
-    /* TODO: 
     if(std::filesystem::exists(outfilename))
         floats = FloatsFromTIF(outfilename);
-    */
     if(floats.empty())
     {
         auto dimension = TileDimensionForLod(tileinfo.lod);
@@ -738,10 +763,8 @@ bool BuildElevationTileFromSampler2(const std::string& cdb, elev::Elevation_DSM&
     auto outfilename = cdb + "/Tiles/" + tif_filepath + "/" + tif_filename + ".tif";
 
     auto floats = std::vector<float>();
-    /* TODO: 
     if(std::filesystem::exists(outfilename))
         floats = FloatsFromTIF(outfilename);
-    */
     if(floats.empty())
     {
         auto dimension = TileDimensionForLod(tileinfo.lod);
