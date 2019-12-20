@@ -483,7 +483,11 @@ RasterInfo ReadRasterInfo(const std::string& filename)
     auto geotransform = std::array<double, 6>();
     auto has_geotransform = (ds->GetGeoTransform(&geotransform[0]) == CE_None);
     auto projref = ds->GetProjectionRef();
-    GDALClose(ds);
+    if(projref==nullptr)
+    {
+        projref = "WGS84";
+    }
+    
 
     if(!has_geotransform)
         return info;
@@ -492,6 +496,8 @@ RasterInfo ReadRasterInfo(const std::string& filename)
     auto app_srs = OGRSpatialReference();
     app_srs.SetWellKnownGeogCS("WGS84");
     auto transform = OGRCreateCoordinateTransformation(&file_srs, &app_srs);
+
+    GDALClose(ds);
 
     info.OriginX = geotransform[0];
     info.OriginY = geotransform[3];
