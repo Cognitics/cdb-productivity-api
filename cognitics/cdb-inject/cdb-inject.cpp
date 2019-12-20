@@ -37,6 +37,7 @@ int main(int argc, char** argv)
     args.AddOption("lod", 1, "<lod>", "specify target LOD");
     args.AddOption("imagery", 1, "<filename/path>", "source imagery filename or path");
     args.AddOption("elevation", 1, "<filename/path>", "source elevation filename or path");
+    args.AddOption("ipp-elevation", 0, "", "use ipp for elevation");
     args.AddOption("dry-run", 0, "", "perform dry run");
     args.AddOption("skip-overviews", 0, "", "skip LOD downsampling");
     args.AddArgument("CDB");
@@ -217,22 +218,7 @@ int main(int argc, char** argv)
 
     if(!elevation_tileinfos.empty())
     {
-        bool use_dsm = false;
-
-        if(use_dsm)
-        {
-            elev::DataSourceManager dsm(50 * 1024 * 1024);
-            std::for_each(elevation_filenames.begin(), elevation_filenames.end(), [&](std::string& fn) { dsm.AddFile_Raster_GDAL(fn); }); 
-            dsm.generateBSP();
-            elev::Elevation_DSM sampler(&dsm, elev::ELEVATION_BILINEAR);
-            for(size_t i = 0, c = elevation_tileinfos.size(); i < c; ++i)
-            {
-                auto& ti = elevation_tileinfos.at(i);
-                cognitics::cdb::BuildElevationTileFromSampler2(cdb, sampler, ti);
-                log << "[" << (i + 1) << "/" << c << "] " << cognitics::cdb::FileNameForTileInfo(ti) << log.endl;
-            }
-        }
-        else
+        if(args.Option("ipp-elevation"))
         {
             GDALRasterSampler sampler;
             std::for_each(elevation_filenames.begin(), elevation_filenames.end(), [&](std::string& fn) { sampler.AddFile(fn); }); 
@@ -253,6 +239,19 @@ int main(int argc, char** argv)
             {
                 tasks[i].get();
                 log << "[" << (i + 1) << "/" << c << "] " << cognitics::cdb::FileNameForTileInfo(elevation_tileinfos[i]) << log.endl;
+            }
+        }
+        else
+        {
+            elev::DataSourceManager dsm(50 * 1024 * 1024);
+            std::for_each(elevation_filenames.begin(), elevation_filenames.end(), [&](std::string& fn) { dsm.AddFile_Raster_GDAL(fn); }); 
+            dsm.generateBSP();
+            elev::Elevation_DSM sampler(&dsm, elev::ELEVATION_BILINEAR);
+            for(size_t i = 0, c = elevation_tileinfos.size(); i < c; ++i)
+            {
+                auto& ti = elevation_tileinfos.at(i);
+                cognitics::cdb::BuildElevationTileFromSampler2(cdb, sampler, ti);
+                log << "[" << (i + 1) << "/" << c << "] " << cognitics::cdb::FileNameForTileInfo(ti) << log.endl;
             }
         }
     }
