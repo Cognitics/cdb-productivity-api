@@ -473,8 +473,25 @@ bool BuildElevationTileFloatsFromSampler2(elev::Elevation_DSM& sampler, const Ti
 
 RasterInfo ReadRasterInfo(const std::string& filename)
 {
+    GDALDataset *ds = NULL;
     auto info = RasterInfo();
-    auto ds = (GDALDataset*)GDALOpen(filename.c_str(), GA_ReadOnly);
+    //Is this a pseudo filename ending with the table name?
+    std::string tableName;
+    std::string strippedFilename = filename;
+    ccl::GetFilenameAndTable(filename, strippedFilename, tableName);
+    if (!tableName.empty())
+    {
+        char** papszOptions = NULL;
+        std::string tableStr = "TABLE=" + tableName;
+        papszOptions = CSLAddString(papszOptions, tableStr.c_str());
+
+        ds = (GDALDataset*)GDALOpenEx(strippedFilename.c_str(),
+            GDAL_OF_READONLY, NULL, papszOptions, NULL);
+    }
+    else
+    {
+        ds = (GDALDataset *)GDALOpen(filename.c_str(), GA_ReadOnly);
+    }
     if(ds == nullptr)
         return info;
 
