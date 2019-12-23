@@ -40,6 +40,7 @@ DEALINGS IN THE SOFTWARE.
 #include <sfa/sfa.h>
 #include <ccl/mutex.h>
 #include <ccl/cstdint.h>
+#include <ccl/FileInfo.h>
 #include <boost/shared_ptr.hpp>
 
 typedef unsigned char u_char;
@@ -725,11 +726,21 @@ namespace gdalsampler
         {
             if (!poDataset)
             {
-                poDataset = (GDALDataset *)GDALOpen(_filename.c_str(), GA_ReadOnly);
-                if (poDataset == NULL)
+                std::string tableName;
+                std::string filename = _filename;
+                ccl::GetFilenameAndTable(_filename, filename, tableName);
+                if (!tableName.empty())
                 {
-                    log << ccl::LERR << "Unable to (re)open " << _filename << log.endl;
-                    return NULL;
+                    char** papszOptions = NULL;
+                    std::string tableStr = "TABLE=" + tableName;
+                    papszOptions = CSLAddString(papszOptions, tableStr.c_str());
+
+                    poDataset = (GDALDataset*)GDALOpenEx(filename.c_str(),
+                        GDAL_OF_READONLY, NULL, papszOptions, NULL);
+                }
+                else
+                {
+                    poDataset = (GDALDataset *)GDALOpen(_filename.c_str(), GA_ReadOnly);
                 }
             }
             return poDataset;

@@ -206,4 +206,6 @@ namespace ccl
 
     uint64_t getFileSize(const std::string &filePath);
     bool deleteFile(const std::string &filename);
+
+    bool GetFilenameAndTable(const std::string &path, std::string &file, std::string &table);
 }

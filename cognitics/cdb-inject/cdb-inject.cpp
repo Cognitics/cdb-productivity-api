@@ -214,10 +214,30 @@ int main(int argc, char** argv)
     bool imagery_enabled = args.Option("imagery");
     for(auto imagery_param : args.Parameters("imagery"))
     {
+        std::string newFilename = imagery_param;
+
         if(!std::filesystem::exists(imagery_param))
         {
-            log << ccl::LWARNING << imagery_param << " not found." << log.endl;
-            continue;
+            //Is this a pseudo filename ending with the table name?
+            std::string tableName;
+            std::string strippedFilename = imagery_param;
+            ccl::GetFilenameAndTable(imagery_param, strippedFilename, tableName);
+            if (!tableName.empty())
+            {
+                //This is a geopackage file with the tablename included
+                if (!std::filesystem::exists(strippedFilename))
+                {
+                    log << ccl::LWARNING << strippedFilename << " not found." << log.endl;
+                    continue;
+                }
+                // Does the table exist inside the geopackage?
+                //todo: test the tablename inside the gpkg
+            }
+            else
+            {
+                log << ccl::LWARNING << imagery_param << " not found." << log.endl;
+                continue;
+            }
         }
         if(std::filesystem::is_directory(imagery_param))
         {

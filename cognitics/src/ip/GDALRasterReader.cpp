@@ -309,8 +309,23 @@ namespace gdalsampler
     bool GDALRasterFile::OpenGDALFile(OGRSpatialReference &destsrs, std::string filename)
     {        
         GDALAllRegister();
+        //Is this a pseudo filename ending with the table name?
+        std::string tableName;
+        std::string strippedFilename = filename;
+        ccl::GetFilenameAndTable(filename, strippedFilename, tableName);
+        if (!tableName.empty())
+        {
+            char** papszOptions = NULL;
+            std::string tableStr = "TABLE=" + tableName;
+            papszOptions = CSLAddString(papszOptions, tableStr.c_str());
 
-        poDataset = (GDALDataset *) GDALOpen( filename.c_str(), GA_ReadOnly );
+            poDataset = (GDALDataset*)GDALOpenEx(strippedFilename.c_str(),
+                GDAL_OF_READONLY, NULL, papszOptions, NULL);
+        }
+        else
+        {
+            poDataset = (GDALDataset *)GDALOpen(filename.c_str(), GA_ReadOnly);
+        }
         if( poDataset == NULL )
         {
             log << ccl::LERR << "Unable to open " << filename << log.endl;        

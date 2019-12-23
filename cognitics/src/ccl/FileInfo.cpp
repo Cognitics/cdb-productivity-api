@@ -354,4 +354,21 @@ namespace ccl
         fclose(file);
         return flen;
     }
+
+  // Helper function to parse a table name after a GeoPackage filename
+  // Returns true if a table name was detected after the .gpkg: string
+  bool GetFilenameAndTable(const std::string &path, std::string &file, std::string &table)
+  {
+      const auto pos = path.find(".gpkg:");
+      if (std::string::npos != pos)
+      {
+          //This is a geopackage file with the tablename included
+          table = path.substr(pos + 6);
+          file = path.substr(0, pos + 5);
+          return true;
+      }
+      file = path;
+      table = std::string();
+      return false;
+  }
 }

@@ -59,7 +59,22 @@ namespace elev
 #ifdef DEBUG
         log << ccl::LDEBUG << "Open()" << log.endl;
 #endif
-        gdal_dataset = (GDALDataset *)GDALOpen(this->filename.c_str(), GA_ReadOnly);
+        std::string tableName;
+        std::string strippedFilename = filename;
+        ccl::GetFilenameAndTable(filename, strippedFilename, tableName);
+        if (!tableName.empty())
+        {
+            //This is a geopackage file with the tablename included
+            char** papszOptions = NULL;
+            std::string tableStr = "TABLE=" + tableName;
+            papszOptions = CSLAddString(papszOptions, tableStr.c_str());
+            gdal_dataset = (GDALDataset*)GDALOpenEx(strippedFilename.c_str(),
+                GDAL_OF_READONLY, NULL, papszOptions, NULL);
+        }
+        else
+        {
+            gdal_dataset = (GDALDataset *)GDALOpen(this->filename.c_str(), GA_ReadOnly);
+        }
         if(!gdal_dataset)
             return false;
 
@@ -325,8 +340,25 @@ namespace elev
 
     void DataSource_Raster_GDAL::ref(void)
     {
-        if(refcount == 0)
-            gdal_dataset = (GDALDataset *)GDALOpen(this->filename.c_str(), GA_ReadOnly);
+        if (refcount == 0)
+        {
+            std::string tableName;
+            std::string strippedFilename = filename;
+            ccl::GetFilenameAndTable(filename, strippedFilename, tableName);
+            if (!tableName.empty())
+            {
+                //This is a geopackage file with the tablename included
+                char** papszOptions = NULL;
+                std::string tableStr = "TABLE=" + tableName;
+                papszOptions = CSLAddString(papszOptions, tableStr.c_str());
+                gdal_dataset = (GDALDataset*)GDALOpenEx(strippedFilename.c_str(),
+                    GDAL_OF_READONLY, NULL, papszOptions, NULL);
+            }
+            else
+            {
+                gdal_dataset = (GDALDataset *)GDALOpen(this->filename.c_str(), GA_ReadOnly);
+            }
+        }
         DataSource::ref();
     }
 
