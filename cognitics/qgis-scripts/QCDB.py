@@ -156,7 +156,7 @@ class QCDBGenerator(QgsProcessingAlgorithm):
                 description = self.tr('CDB Tool application directory'),
                 defaultValue= r'C:\Program Files\CDB Productivity Suite\bin',
                 optional=False))
-##
+## r'C:\Program Files\CDB Productivity Suite\bin'
 
     def chomp(self, x):
         if x.endswith("\r\n"): 
@@ -209,6 +209,9 @@ class QCDBGenerator(QgsProcessingAlgorithm):
         cdbInsertExePath = os.path.join(toolsPath,"cdb-inject.exe")
         gdaladdoPath = os.path.join(toolsPath,"gdaladdo.exe")
         cdbImageryLayerURI = "CDB:" + cdbPath + ":Imagery_Yearly"
+        cdbElevationLayerURI = "CDB:" + cdbPath + ":Elevation_PrimaryTerrainElevation"
+        imageFilesInjected = 0
+        elevationFilesInjected = 0
         bounds = [extents.yMinimum(),extents.xMinimum(),extents.yMaximum(),extents.xMaximum()]
 
         #feedback.setProgressText("Extents: " + str(extents))
@@ -243,12 +246,19 @@ class QCDBGenerator(QgsProcessingAlgorithm):
                 feedback.setProgressText("Skipping layer " + layerName + " because file " + layerFilename + " does not exist.")
                 continue
             layersToProcess.append(layer)
-
+        my_env = os.environ.copy()
         processedCount = 0
-        for layer in layersToProcess:            
+        for layer in layersToProcess:
+            layerFilename = layer.source()
+            tableName = ""
+            # If it's a geopackage file, we need the tableName as well
+            if(layer.source().endswith("gpkg")):
+                tableName = layer.name()
+                layerFilename = layerFilename + ":" + tableName
+                
             processedPct = float(processedCount) / float(len(layersToProcess))
             #feedback.setProgressText("Processing " + layerFilename)
-            my_env = os.environ.copy()
+            
             my_env["PATH"] = toolsPath + ";" + my_env["PATH"]
             my_env["GDAL_DRIVER_PATH"] = toolsPath + "/gdalplugins"
             my_env["GDAL_DATA"] = toolsPath + "/gdal-data"
@@ -256,6 +266,7 @@ class QCDBGenerator(QgsProcessingAlgorithm):
             if(layer.type()==QgsMapLayer.RasterLayer):
                 if(layer.bandCount()==1):
                     feedback.setProgressText("Processing elevation file " + layerFilename)
+                    elevationFilesInjected = elevationFilesInjected + 1
                     #elevation
                     args = [cdbInsertExePath, 
                         "-bounds", 
@@ -271,7 +282,7 @@ class QCDBGenerator(QgsProcessingAlgorithm):
                 elif(layer.bandCount()==3 or layer.bandCount()==4):
                     #imagery
                     feedback.setProgressText("Processing imagery file " + layerFilename)
-                    
+                    imageFilesInjected = imageFilesInjected + 1
                     args = [cdbInsertExePath, 
                         "-bounds", 
                         str(extents.yMinimum()), 
@@ -317,15 +328,27 @@ class QCDBGenerator(QgsProcessingAlgorithm):
                     
 
         #build overviews
-        feedback.setProgressText("Building LODs...")
-        args = [gdaladdoPath,"--config", "LODMIN", "0", "--config", "LODMAX", imgLOD, cdbImageryLayerURI]
         
-        p = subprocess.Popen(args, env=my_env, stdout=subprocess.PIPE,stderr=subprocess.STDOUT,creationflags=subprocess.CREATE_NO_WINDOW)
-        for line in p.stdout:
-            line = self.chomp(str(line, "windows-1252"))
-            if(len(line)==0):
-                continue
-            else:
-                feedback.setProgressText(line)
+        args = [gdaladdoPath,"--config", "LODMIN", "0", "--config", "LODMAX", imgLOD, cdbImageryLayerURI]
+        if(imageFilesInjected > 0):
+            feedback.setProgressText("Building Image LODs...")
+            p = subprocess.Popen(args, env=my_env, stdout=subprocess.PIPE,stderr=subprocess.STDOUT,creationflags=subprocess.CREATE_NO_WINDOW)
+            for line in p.stdout:
+                line = self.chomp(str(line, "windows-1252"))
+                if(len(line)==0):
+                    continue
+                else:
+                    feedback.setProgressText(line)
+     
+        args = [gdaladdoPath,"--config", "LODMIN", "0", "--config", "LODMAX", elevLOD, cdbElevationLayerURI]
+        if(elevationFilesInjected > 0):
+            feedback.setProgressText("Building Elevation LODs...")
+            p = subprocess.Popen(args, env=my_env, stdout=subprocess.PIPE,stderr=subprocess.STDOUT,creationflags=subprocess.CREATE_NO_WINDOW)
+            for line in p.stdout:
+                line = self.chomp(str(line, "windows-1252"))
+                if(len(line)==0):
+                    continue
+                else:
+                    feedback.setProgressText(line)
         
         return {}
