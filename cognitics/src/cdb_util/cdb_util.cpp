@@ -752,19 +752,20 @@ bool BuildElevationTileFromSampler(const std::string& cdb, GDALRasterSampler& sa
     auto tif_filepath = cognitics::cdb::FilePathForTileInfo(tileinfo);
     auto tif_filename = cognitics::cdb::FileNameForTileInfo(tileinfo);
     auto outfilename = cdb + "/Tiles/" + tif_filepath + "/" + tif_filename + ".tif";
-
+    auto dim = cognitics::cdb::TileDimensionForLod(tileinfo.lod);
     auto floats = std::vector<float>();
     if(std::filesystem::exists(outfilename))
+    {
         floats = FloatsFromTIF(outfilename);
+        floats = cognitics::cdb::FlippedVertically(floats, dim, dim, 1);
+    }
     if(floats.empty())
     {
         auto dimension = TileDimensionForLod(tileinfo.lod);
         floats.resize(dimension * dimension);
         std::fill(floats.begin(), floats.end(), -32767.0f);
     }
-
     cognitics::cdb::BuildElevationTileFloatsFromSampler(sampler, tileinfo, floats);
-    auto dim = cognitics::cdb::TileDimensionForLod(tileinfo.lod);
     floats = cognitics::cdb::FlippedVertically(floats, dim, dim, 1);
     auto info = RasterInfoFromTileInfo(tileinfo);
     ccl::makeDirectory(ccl::FileInfo(outfilename).getDirName());

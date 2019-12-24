@@ -410,35 +410,15 @@ int main(int argc, char** argv)
         if(args.Option("ipp-elevation"))
         {
             GDALRasterSampler sampler;
-            std::for_each(elevation_filenames.begin(), elevation_filenames.end(), [&](std::string& fn) { sampler.AddFile(fn); }); 
-
-            /* testing
-            for(size_t i = 0, c = elevation_tileinfos.size(); i < c; ++i)
-            {
-                auto& ti = elevation_tileinfos.at(i);
-                cognitics::cdb::BuildElevationTileFromSampler(cdb, sampler, ti);
-                log << "[" << (i + 1) << "/" << c << "] " << cognitics::cdb::FileNameForTileInfo(ti) << log.endl;
-            }
-            */
-            
-
-            std::vector<std::future<bool>> tasks;
-            std::for_each(elevation_tileinfos.begin(), elevation_tileinfos.end(), [&](cognitics::cdb::TileInfo& ti) { 
-                tasks.emplace_back(std::async(std::launch::async, cognitics::cdb::BuildElevationTileFromSampler, cdb, std::ref(sampler), ti)); } );
-            for (auto&& ti : elevation_tileinfos)
+            for(auto fn : elevation_filenames)
+                sampler.AddFile(fn);
+            for (auto&& ti : imagery_tileinfos)
             {
                 auto cdbTileJob = new CDBTileJob(&jobManager, cdb, std::ref(sampler), ti, jobReporter, true);
                 jobManager.submitJob(cdbTileJob);
             }
-            jobReporter.setTotalJobCount(elevation_tileinfos.size());
+            jobReporter.setTotalJobCount(imagery_tileinfos.size());
             jobManager.waitForCompletion();
-            /*
-            for(size_t i = 0, c = tasks.size(); i < c; ++i)
-            {
-                tasks[i].get();
-                log << "[" << (i + 1) << "/" << c << "] " << cognitics::cdb::FileNameForTileInfo(elevation_tileinfos[i]) << log.endl;
-            }
-            */
         }
         else
         {
