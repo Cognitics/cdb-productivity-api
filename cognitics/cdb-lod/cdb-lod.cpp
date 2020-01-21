@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <chrono>
+#include <mutex>
 
 std::string FullFilenameForTileInfo(const cognitics::cdb::TileInfo& tile_info)
 {
@@ -28,21 +29,28 @@ public:
     std::string cdb;
     int max_lod { 0 };
     cognitics::cdb::TileInfo tile_info;
+    
     std::vector<TileJob*> children;
     std::vector<std::string> child_filenames;
+    std::mutex children_mutex;
 
     TileJob(ccl::JobManager* manager, ccl::Job *owner = NULL) : Job(manager, owner) { }
 
     virtual int onChildFinished(Job *job, int result)
     {
-        children.erase(std::find(children.begin(), children.end(), job));
+        children_mutex.lock();
+        auto child_it = std::find(children.begin(), children.end(), job);
+        if(child_it != children.end())
+            children.erase(child_it);
+        children_mutex.unlock();
         {
             auto child = dynamic_cast<TileJob*>(job);
             auto child_fn = cdb + "/Tiles/" + FullFilenameForTileInfo(child->tile_info);
             if(ccl::fileExists(child_fn))
             {
-                printf("    ADDED: %s\n", child_fn.c_str());
+                children_mutex.lock();
                 child_filenames.push_back(child_fn);
+                children_mutex.unlock();
             }
         }
         if(children.size() > 0)
@@ -76,8 +84,10 @@ public:
         auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset(tile_info.dataset), tile_info.lod + 1);
         for(auto tile : tiles)
         {
+            children_mutex.lock();
             children.push_back(new TileJob(manager, this));
             auto job = children.back();
+            children_mutex.unlock();
             job->cdb = cdb;
             job->max_lod = max_lod;
             job->tile_info = cognitics::cdb::TileInfoForTile(tile);
