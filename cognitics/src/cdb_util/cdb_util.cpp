@@ -862,5 +862,47 @@ bool MakeCDB(const std::string& cdb)
     return true;
 }
 
+std::vector<std::pair<std::string, std::string>> GeocellsForCdb(const std::string& cdb)
+{
+    auto result = std::vector<std::pair<std::string, std::string>>();
+    auto tiles_path = cdb + "/Tiles";
+    if (!ccl::directoryExists(tiles_path))
+        return result;
+    for (const auto& lat_entry : ccl::FileInfo::getSubDirectories(tiles_path))
+    {
+        for (const auto& lon_entry : ccl::FileInfo::getSubDirectories(lat_entry))
+        {
+            auto lat_fn = ccl::FileInfo(lat_entry).getBaseName();
+            auto lon_fn = ccl::FileInfo(lon_entry).getBaseName();
+            result.emplace_back(std::make_pair(lat_fn, lon_fn));
+        }
+    }
+    return result;
+}
+
+int MaxLodForDatasetPath(const std::string& path)
+{
+    int result = INT_MIN;
+    for (const auto& lod_entry : ccl::FileInfo::getSubDirectories(path))
+    {
+        auto lod_base = ccl::FileInfo(lod_entry).getBaseName();
+        if(lod_base == "LC")
+        {
+            result = std::max<int>(result, 0);
+            continue;
+        }
+        if(lod_base[0] != 'L')
+            continue;
+        auto lodstr = lod_base.substr(1);
+        int lod = std::stoi(lodstr);
+        if(lod > 23)
+            continue;
+        result = std::max<int>(result, lod);
+    }
+    return result;
+}
+
+
+
 }
 }

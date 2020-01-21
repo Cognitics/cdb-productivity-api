@@ -991,6 +991,21 @@ if(UNIX)
     target_link_libraries(meshgen "${THIRD_PARTY_DIR}/fbxsdk/lib/gcc4/x64/release/libfbxsdk.a")
 endif(UNIX)
 
+add_executable(cdb-lod cdb-lod/cdb-lod.cpp)
+if(WIN32)
+    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/gdal-cdb/$(Configuration)/lib/gdal_i.lib")
+    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+endif(WIN32)
+if(UNIX)
+    target_link_libraries(cdb-lod ${CMAKE_DL_LIBS})
+    target_link_libraries(cdb-lod "pthread")
+    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
+    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
+    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+endif(UNIX)
 
 
 ################################################################################

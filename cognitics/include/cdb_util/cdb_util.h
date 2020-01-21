@@ -98,6 +98,12 @@ bool BuildElevationOverviews(const std::string& cdb);
 bool IsCDB(const std::string& cdb);
 bool MakeCDB(const std::string& cdb);
 
+std::vector<std::pair<std::string, std::string>> GeocellsForCdb(const std::string& cdb);
+int MaxLodForDatasetPath(const std::string& path);
+
+
+
+
 
 }
 }
