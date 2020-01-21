@@ -11,25 +11,62 @@
 #include <fstream>
 #include <chrono>
 
+std::string FullFilenameForTileInfo(const cognitics::cdb::TileInfo& tile_info)
+{
+    auto child_path = cognitics::cdb::FilePathForTileInfo(tile_info);
+    auto child_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
+    auto child_extension = ".tif";
+    if(tile_info.dataset == 4)
+        child_extension = ".jp2";
+    auto child_fn = ccl::joinPaths(child_path, child_filename + child_extension);
+    return child_fn;
+}
+
 class TileJob : public ccl::Job
 {
 public:
-    std::string path;
+    std::string cdb;
     int max_lod { 0 };
     cognitics::cdb::TileInfo tile_info;
     std::vector<TileJob*> children;
+    std::vector<std::string> child_filenames;
 
     TileJob(ccl::JobManager* manager, ccl::Job *owner = NULL) : Job(manager, owner) { }
 
     virtual int onChildFinished(Job *job, int result)
     {
         children.erase(std::find(children.begin(), children.end(), job));
-        return (int)children.size();
+        {
+            auto child = dynamic_cast<TileJob*>(job);
+            auto child_fn = cdb + "/Tiles/" + FullFilenameForTileInfo(child->tile_info);
+            if(ccl::fileExists(child_fn))
+            {
+                printf("    ADDED: %s\n", child_fn.c_str());
+                child_filenames.push_back(child_fn);
+            }
+        }
+        if(children.size() > 0)
+            return (int)children.size();
+        if(child_filenames.empty())
+            return 0;
+
+        auto fn = cdb + "/Tiles/" + FullFilenameForTileInfo(tile_info);
+        if(ccl::fileExists(fn))
+        {
+            // TODO: get timestamp from fn
+            // TODO: filter out any child_filenames where the child file has an older timestamp
+        }
+        if(child_filenames.empty())
+            return 0;
+
+        // TODO: inject child files into this one (creating it if it doesn't exist)
+
+        return 0;
     }
 
     virtual int execute(void)
     {
-        if(tile_info.lod > max_lod)
+        if(tile_info.lod >= max_lod)
             return 0;
 
         printf("[TileJob] %s\n", cognitics::cdb::FileNameForTileInfo(tile_info).c_str());
@@ -39,12 +76,12 @@ public:
         auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset(tile_info.dataset), tile_info.lod + 1);
         for(auto tile : tiles)
         {
-            children.push_back(new TileJob(manager));
+            children.push_back(new TileJob(manager, this));
             auto job = children.back();
-            job->path = path;
+            job->cdb = cdb;
             job->max_lod = max_lod;
             job->tile_info = cognitics::cdb::TileInfoForTile(tile);
-            manager->submitJob(job, this);
+            manager->submitJob(job);
         }
         return (int)children.size();
     }
@@ -117,7 +154,7 @@ int main(int argc, char** argv)
         {
             jobs.push_back(new TileJob(&job_manager));
             auto job = jobs.back();
-            job->path = geocell_path;
+            job->cdb = cdb;
             job->max_lod = maxlod_elevation;
             memset(&job->tile_info, 0, sizeof(job->tile_info));
             job->tile_info.latitude = lat;
@@ -134,7 +171,7 @@ int main(int argc, char** argv)
         {
             jobs.push_back(new TileJob(&job_manager));
             auto job = jobs.back();
-            job->path = geocell_path;
+            job->cdb = cdb;
             job->max_lod = maxlod_imagery;
             memset(&job->tile_info, 0, sizeof(job->tile_info));
             job->tile_info.latitude = lat;
