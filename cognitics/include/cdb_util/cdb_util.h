@@ -60,6 +60,7 @@ TileInfo TileInfoForFileName(const std::string& filename);
 std::string FilePathForTileInfo(const TileInfo& tileinfo);
 std::string FileNameForTileInfo(const TileInfo& tileinfo);
 std::tuple<double, double, double, double> NSEWBoundsForTileInfo(const TileInfo& tileinfo);
+std::string BoundsStringForTileInfo(const TileInfo& tileinfo);
 
 std::vector<TileInfo> TileInfoForFileNames(const std::vector<std::string>& filenames);
 

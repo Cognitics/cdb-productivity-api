@@ -97,7 +97,11 @@ std::vector<TileInfo> FeatureTileInfoForTiledDataset(const std::string& cdb, int
 {
     auto filenames = cognitics::cdb::FileNamesForTiledDataset(cdb, dataset);
     auto tiles = cognitics::cdb::TileInfoForFileNames(filenames);
-    tiles.erase(std::remove_if(tiles.begin(), tiles.end(), [](const TileInfo& tile) { return !((tile.selector2 == 1) || (tile.selector2 == 3) || (tile.selector2 == 5) || (tile.selector2 == 7) || (tile.selector2 == 9)); }), tiles.end());
+    tiles.erase(std::remove_if(tiles.begin(), tiles.end(), [](const TileInfo& tile)
+        {
+            return !((tile.selector2 == 1) || (tile.selector2 == 3) || (tile.selector2 == 5) || (tile.selector2 == 7) || (tile.selector2 == 9));
+        }
+    ), tiles.end());
     if (std::get<0>(nsew) != DBL_MAX)
     {
         tiles.erase(std::remove_if(tiles.begin(), tiles.end(), [=](const TileInfo& tile)
@@ -205,14 +209,25 @@ std::tuple<double, double, double, double> NSEWBoundsForTileInfo(const TileInfo&
     return std::make_tuple(north, south, east, west);
 }
 
+std::string BoundsStringForTileInfo(const TileInfo& tileinfo)
+{
+    double north, south, east, west;
+    std::tie(north, south, east, west) = NSEWBoundsForTileInfo(tileinfo);
+    std::stringstream ss;
+    ss << "N: " << std::setprecision(9) << north << "  S:" << south << "  E:" << east << "  W:" << west;
+    return ss.str();
+}
+
 std::vector<TileInfo> TileInfoForFileNames(const std::vector<std::string>& filenames)
 {
     auto files = std::vector<std::string>();
-    std::transform(filenames.begin(), filenames.end(), std::back_inserter(files), [](const std::string& fn) { return ccl::FileInfo(fn).getBaseName(); });
+    for(auto fn : filenames)
+        files.push_back(ccl::FileInfo(fn).getBaseName());
     std::sort(files.begin(), files.end());
     files.erase(std::unique(files.begin(), files.end()), files.end());
     auto result = std::vector<TileInfo>();
-    std::transform(files.begin(), files.end(), std::back_inserter(result), [](const std::string& fn) { return TileInfoForFileName(fn); });
+    for(auto file : files)
+        result.push_back(TileInfoForFileName(file));
     return result;
 }
 

@@ -11,6 +11,17 @@
 #include <fstream>
 #include <chrono>
 #include <mutex>
+#include <functional>
+
+#if _WIN32
+#include <filesystem>
+namespace std { namespace filesystem = std::experimental::filesystem; }
+#elif __GNUC__ && (__GNUC__ < 8)
+#include <experimental/filesystem>
+namespace std { namespace filesystem = std::experimental::filesystem; }
+#else
+#include <filesystem>
+#endif
 
 std::string FullFilenameForTileInfo(const cognitics::cdb::TileInfo& tile_info)
 {
@@ -29,9 +40,11 @@ public:
     std::string cdb;
     int max_lod { 0 };
     cognitics::cdb::TileInfo tile_info;
+    GDALRasterSampler* sampler;
     
     std::vector<TileJob*> children;
     std::vector<std::string> child_filenames;
+    std::vector<std::filesystem::file_time_type> child_filetimes;
     std::mutex children_mutex;
 
     TileJob(ccl::JobManager* manager, ccl::Job *owner = NULL) : Job(manager, owner) { }
@@ -50,24 +63,38 @@ public:
             {
                 children_mutex.lock();
                 child_filenames.push_back(child_fn);
+                child_filetimes.push_back(std::filesystem::last_write_time(child_fn));
                 children_mutex.unlock();
             }
         }
         if(children.size() > 0)
             return (int)children.size();
+
         if(child_filenames.empty())
             return 0;
 
         auto fn = cdb + "/Tiles/" + FullFilenameForTileInfo(tile_info);
         if(ccl::fileExists(fn))
         {
-            // TODO: get timestamp from fn
-            // TODO: filter out any child_filenames where the child file has an older timestamp
+            auto file_ts = std::filesystem::last_write_time(fn);
+            auto child_filenames_tmp = std::vector<std::string>();
+            for(size_t i = 0, c = child_filenames.size(); i < c; ++i)
+            {
+                if(child_filetimes[i] > file_ts)
+                    child_filenames_tmp.push_back(child_filenames[i]);
+            }
+            child_filenames = child_filenames_tmp;
         }
+
         if(child_filenames.empty())
             return 0;
 
-        // TODO: inject child files into this one (creating it if it doesn't exist)
+        for(auto filename : child_filenames)
+            sampler->AddFile(filename);
+        if(tile_info.dataset == 1)
+            cognitics::cdb::BuildElevationTileFromSampler(cdb, *sampler, tile_info);
+        if(tile_info.dataset == 4)
+            cognitics::cdb::BuildImageryTileFromSampler(cdb, *sampler, tile_info);
 
         return 0;
     }
@@ -77,7 +104,7 @@ public:
         if(tile_info.lod >= max_lod)
             return 0;
 
-        printf("[TileJob] %s\n", cognitics::cdb::FileNameForTileInfo(tile_info).c_str());
+        //printf("[TileJob] %s\n", cognitics::cdb::FileNameForTileInfo(tile_info).c_str());
 
         auto raster_info = cognitics::cdb::RasterInfoFromTileInfo(tile_info);
         auto coords = cognitics::cdb::CoordinatesRange(raster_info.West, raster_info.East, raster_info.South, raster_info.North);
@@ -91,6 +118,7 @@ public:
             job->cdb = cdb;
             job->max_lod = max_lod;
             job->tile_info = cognitics::cdb::TileInfoForTile(tile);
+            job->sampler = sampler;
             manager->submitJob(job);
         }
         return (int)children.size();
@@ -149,6 +177,9 @@ int main(int argc, char** argv)
     ccl::JobManager job_manager(workers);
     auto jobs = std::vector<TileJob*>();
 
+
+    GDALRasterSampler sampler;
+
     auto geocells = cognitics::cdb::GeocellsForCdb(cdb);
     for(auto geocell : geocells)
     {
@@ -159,40 +190,46 @@ int main(int argc, char** argv)
         int lon = std::stoi(geocell.second.substr(1));
         if(geocell.second[0] == 'W')
             lon *= -1;
-        auto maxlod_elevation = cognitics::cdb::MaxLodForDatasetPath(geocell_path + "/001_Elevation");
-        if(maxlod_elevation >= 0)
+        if(0)
         {
-            jobs.push_back(new TileJob(&job_manager));
-            auto job = jobs.back();
-            job->cdb = cdb;
-            job->max_lod = maxlod_elevation;
-            memset(&job->tile_info, 0, sizeof(job->tile_info));
-            job->tile_info.latitude = lat;
-            job->tile_info.longitude = lon;
-            job->tile_info.lod = -10;
-            job->tile_info.dataset = 1;
-            job->tile_info.selector1 = 1;
-            job->tile_info.selector2 = 1;
-            job_manager.submitJob(job);
+            auto maxlod_elevation = cognitics::cdb::MaxLodForDatasetPath(geocell_path + "/001_Elevation");
+            if(maxlod_elevation >= 0)
+            {
+                jobs.push_back(new TileJob(&job_manager));
+                auto job = jobs.back();
+                job->cdb = cdb;
+                job->max_lod = maxlod_elevation;
+                memset(&job->tile_info, 0, sizeof(job->tile_info));
+                job->tile_info.latitude = lat;
+                job->tile_info.longitude = lon;
+                job->tile_info.lod = -10;
+                job->tile_info.dataset = 1;
+                job->tile_info.selector1 = 1;
+                job->tile_info.selector2 = 1;
+                job->sampler = &sampler;
+                job_manager.submitJob(job);
+            }
         }
-        /*
-        auto maxlod_imagery = cognitics::cdb::MaxLodForDatasetPath(geocell_path + "/004_Imagery");
-        if(maxlod_imagery >= 0)
+        if(1)
         {
-            jobs.push_back(new TileJob(&job_manager));
-            auto job = jobs.back();
-            job->cdb = cdb;
-            job->max_lod = maxlod_imagery;
-            memset(&job->tile_info, 0, sizeof(job->tile_info));
-            job->tile_info.latitude = lat;
-            job->tile_info.longitude = lon;
-            job->tile_info.lod = -10;
-            job->tile_info.dataset = 4;
-            job->tile_info.selector1 = 1;
-            job->tile_info.selector2 = 1;
-            job_manager.submitJob(job);
+            auto maxlod_imagery = cognitics::cdb::MaxLodForDatasetPath(geocell_path + "/004_Imagery");
+            if(maxlod_imagery >= 0)
+            {
+                jobs.push_back(new TileJob(&job_manager));
+                auto job = jobs.back();
+                job->cdb = cdb;
+                job->max_lod = maxlod_imagery;
+                memset(&job->tile_info, 0, sizeof(job->tile_info));
+                job->tile_info.latitude = lat;
+                job->tile_info.longitude = lon;
+                job->tile_info.lod = -10;
+                job->tile_info.dataset = 4;
+                job->tile_info.selector1 = 1;
+                job->tile_info.selector2 = 1;
+                job->sampler = &sampler;
+                job_manager.submitJob(job);
+            }
         }
-        */
     }
     job_manager.waitForCompletion();
     for(auto job : jobs)
@@ -205,3 +242,5 @@ int main(int argc, char** argv)
     
     return EXIT_SUCCESS;
 }
+
+

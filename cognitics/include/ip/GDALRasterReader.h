@@ -876,6 +876,7 @@ namespace gdalsampler
         OGRSpatialReference _destSRS;
         GDALRasterFileList _files;
         ccl::mutex sortLock;
+        ccl::mutex addmutex;
 
         // returns the first areal that contains the specified point.
         sfa::Polygon GetShapeForFileOrPoint(std::string filename,double x, double y);

@@ -351,9 +351,13 @@ namespace gdalsampler
             CPLFree(pszSRS_WKT);
         }
 
-        auto area_or_point = std::string(poDataset->GetMetadataItem("AREA_OR_POINT"));
-        std::transform(area_or_point.begin(), area_or_point.end(), area_or_point.begin(), ::toupper);
-        pixel_is_point = (area_or_point == "POINT");
+        auto area_or_point_ptr = poDataset->GetMetadataItem("AREA_OR_POINT");
+        if(area_or_point_ptr != nullptr)
+        {
+            auto area_or_point = std::string(poDataset->GetMetadataItem("AREA_OR_POINT"));
+            std::transform(area_or_point.begin(), area_or_point.end(), area_or_point.begin(), ::toupper);
+            pixel_is_point = (area_or_point == "POINT");
+        }
 
         // Get the resolution and normalize it (somehow)
         double adfGeoTransform[6];
@@ -868,6 +872,7 @@ namespace gdalsampler
 
     bool GDALReader::AddFile(std::string filename)
     {
+        ccl::scoped_mutex m(&addmutex);
         GDALRasterFilePtr gdalfile(new GDALRasterFile(_destSRS,filename));
         if(gdalfile->IsValid())
         {
