@@ -333,7 +333,10 @@ bool GDALRasterSampler::AddFile(std::string file)
     ccl::FileInfo fi(file);
     std::string fileext = fi.getSuffix();
     std::string ext = ToLower(fileext);
-    return m_reader.AddFile(file);
+    bool result = m_reader.AddFile(file);
+    if(result && bsp)
+        BuildBSP(true);
+    return result;
 }
 // Add all the files in the specified directory that match the specified filter
 bool GDALRasterSampler::AddDirectory(std::string dir, std::set<std::string> extensions)
@@ -366,6 +369,8 @@ bool GDALRasterSampler::AddDirectory(std::string dir, std::set<std::string> exte
             }
         }
     }
+    if(ret && bsp)
+        BuildBSP(true);
     return ret;
 }
 // Add a coverage file used to specify valid pixels in the source imagery
