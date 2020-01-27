@@ -100,12 +100,14 @@ namespace gdalsampler
 
         bool GeoToPixel(const sfa::Point geoPt, sfa::Point &pixPt) const
         {
-            double ewres = (east - west)/width;
-            double nsres = (north - south)/height;
-            double lonofs = geoPt.X() - west;
-            double latofs = geoPt.Y() - south;
-            pixPt.setX(lonofs / ewres);
-            pixPt.setY(latofs / nsres);
+            double spacing_ew = (east - west) / width;
+            double spacing_ns = (north - south) / height;
+            double w = west + (spacing_ew / 2);
+            double s = south + (spacing_ns / 2);
+            double w_offset = geoPt.X() - w;
+            double s_offset = geoPt.Y() - s;
+            pixPt.setX(w_offset / spacing_ew);
+            pixPt.setY(s_offset / spacing_ns);
             return true;
         }
 

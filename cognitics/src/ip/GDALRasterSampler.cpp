@@ -632,7 +632,6 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, u_char 
     aoi.ll.setY(window.south);    
     aoi.ur.setY(window.north);    
     aoi.ul.setY(window.north);
-    
 
     gdalsampler::GDALRasterFileList files = GetFilesInAOI(aoi);//m_reader.GetFiles();
     //printf("Found %d files in aoi\n", files.size());
@@ -672,16 +671,6 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, u_char 
             window.GeoToPixel(srcGeoQuad.ur,pixQuad.ur);
             window.GeoToPixel(srcGeoQuad.lr,pixQuad.lr);
             window.GeoToPixel(srcGeoQuad.ll,pixQuad.ll);
-
-            // Round pixels to keep IPP from skipping 
-            pixQuad.ul.setX(floatround(pixQuad.ul.X()));
-            pixQuad.ll.setX(floatround(pixQuad.ll.X()));
-            pixQuad.ur.setX(floatround(pixQuad.ur.X()));
-            pixQuad.lr.setX(floatround(pixQuad.lr.X()));
-            pixQuad.ul.setY(floatround(pixQuad.ul.Y()));
-            pixQuad.ur.setY(floatround(pixQuad.ur.Y()));
-            pixQuad.lr.setY(floatround(pixQuad.lr.Y()));
-            pixQuad.ll.setY(floatround(pixQuad.ll.Y()));
 
             double srcquad[4][2];// source tile quadrangle in destination pixel space.
             srcquad[0][0] = pixQuad.ul.X();
@@ -794,17 +783,6 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, float *
             //printf("Destination block intersects with %d tiles from %s.\n",blocks.size(),file->GetFilename().c_str());
         }
 
-        /*
-        double src_min_lon = DBL_MAX;
-        double src_max_lon = -DBL_MAX;
-        double src_min_lat = DBL_MAX;
-        double src_max_lat = -DBL_MAX;
-        double win_min_x = DBL_MAX;
-        double win_max_x = -DBL_MAX;
-        double win_min_y = DBL_MAX;
-        double win_max_y = -DBL_MAX;
-        */
-
         int index = 0;
         gdalsampler::CachedRasterBlockList::iterator iter = blocks.begin();
         while(iter!=blocks.end())
@@ -817,39 +795,12 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, float *
 
             gdalsampler::Quad srcGeoQuad  = block->GetDestCoverage();
 
-            /*
-            src_min_lon = std::min<double>(src_min_lon, srcGeoQuad.ul.X());
-            src_max_lon = std::max<double>(src_max_lon, srcGeoQuad.ur.X());
-            src_min_lat = std::min<double>(src_min_lat, srcGeoQuad.ll.Y());
-            src_max_lat = std::max<double>(src_max_lat, srcGeoQuad.ul.Y());
-            */
-
             gdalsampler::Quad pixQuad;
             // Get the source quad in dest pixel coordinates
             window.GeoToPixel(srcGeoQuad.ul,pixQuad.ul);
             window.GeoToPixel(srcGeoQuad.ur,pixQuad.ur);
             window.GeoToPixel(srcGeoQuad.lr,pixQuad.lr);
             window.GeoToPixel(srcGeoQuad.ll,pixQuad.ll);
-
-            /*
-            win_min_x = std::min<double>(win_min_x, pixQuad.ul.X());
-            win_max_x = std::max<double>(win_max_x, pixQuad.ur.X());
-            win_min_y = std::min<double>(win_min_y, pixQuad.ll.Y());
-            win_max_y = std::max<double>(win_max_y, pixQuad.ul.Y());
-            */
-
-
-            // Round pixels to keep IPP from skipping 
-            pixQuad.ul.setX(floatround(pixQuad.ul.X()));
-            pixQuad.ll.setX(floatround(pixQuad.ll.X()));
-            pixQuad.ur.setX(floatround(pixQuad.ur.X()));
-            pixQuad.lr.setX(floatround(pixQuad.lr.X()));
-            pixQuad.ul.setY(floatround(pixQuad.ul.Y()));
-            pixQuad.ur.setY(floatround(pixQuad.ur.Y()));
-            pixQuad.lr.setY(floatround(pixQuad.lr.Y()));
-            pixQuad.ll.setY(floatround(pixQuad.ll.Y()));
-
-
 
             double srcquad[4][2];// source tile quadrangle in destination pixel space.
             srcquad[0][0] = pixQuad.ul.X();
@@ -882,83 +833,12 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, float *
                     printf("WarpPerspective_32f_C1R returned %d\n", istatus);
                 }
             }            
-
-            /*
-            if(false)
-            {
-                auto ri = cognitics::cdb::RasterInfo();
-                ri.Height = block->ysize;
-                ri.Width = block->xsize;
-                ri.North = srcGeoQuad.ul.Y();
-                ri.South = srcGeoQuad.ll.Y();
-                ri.East = srcGeoQuad.ur.X();
-                ri.West = srcGeoQuad.ul.X();
-                ri.PixelSizeX = (ri.East - ri.West) / ri.Width;
-                ri.PixelSizeY = (ri.South - ri.North) / ri.Height;
-                ri.OriginX = ri.West + (0.5 * ri.PixelSizeX);
-                ri.OriginY = ri.North - (0.5 * ri.PixelSizeY);
-
-                std::stringstream ss;
-                ss << "E:/GDALRasterSampler." << ri.North << "_" << ri.West << ".tif";
-
-                auto count = ri.Height * ri.Width;
-                auto floats = std::vector<float>(count);
-                std::copy(block->elev, block->elev + count, &floats[0]);
-                cognitics::cdb::WriteFloatsToTIF(ss.str(), ri, floats);
-            }
-
-            if(false)
-            {
-                auto ri = cognitics::cdb::RasterInfo();
-                ri.Height = window.height;
-                ri.Width = window.width;
-                ri.North = window.north;
-                ri.South = window.south;
-                ri.East = window.east;
-                ri.West = window.west;
-                ri.PixelSizeX = (ri.East - ri.West) / ri.Width;
-                ri.PixelSizeY = (ri.South - ri.North) / ri.Height;
-                ri.OriginX = ri.West + (0.5 * ri.PixelSizeX);
-                ri.OriginY = ri.North - (0.5 * ri.PixelSizeY);
-
-                std::stringstream ss;
-                ss << "E:/TILE." << ri.North << "_" << ri.West << "_" << index << ".tif";
-                ++index;
-
-                auto count = ri.Height * ri.Width;
-                auto floats = std::vector<float>(count);
-                std::copy(scratch, scratch + count, &floats[0]);
-                floats = cognitics::cdb::FlippedVertically(floats, ri.Width, ri.Height, 1);
-                cognitics::cdb::WriteFloatsToTIF(ss.str(), ri, floats);
-            }
-            */
         }
-
-        /*
-        double src_spacing_x = (src_max_lon - src_min_lon) / (win_max_x - win_min_x);
-        double src_spacing_y = (src_max_lat - src_min_lat) / (win_max_y - win_min_y);
-        double window_lat_min = src_min_lat + ((0 - win_min_y) * src_spacing_y);
-        double window_lat_max = src_max_lat + ((1024 - win_max_y) * src_spacing_y);
-        double window_lon_min = src_min_lon + ((0 - win_min_x) * src_spacing_x);
-        double window_lon_max = src_max_lon + ((1024 - win_max_x) * src_spacing_x);
-        */
-
-
-
 
         if(blocks.size()>0)
         {
             ret = true;
-            //
-            if(!pixelArea.isEmpty())
-            {
-                //CopyPixelsInsidePoly(scratch,buf,window.width,window.height,3,pixelArea);
-            }
-            else
-            {
-                std::copy(scratch, scratch + scratchlen, buf);
-                //CopyNonBlackPixels(scratch,buf,scratchlen);
-            }
+            std::copy(scratch, scratch + scratchlen, buf);
         }
     }
     

@@ -23,6 +23,7 @@ namespace std { namespace filesystem = std::experimental::filesystem; }
 #include <filesystem>
 #endif
 
+
 std::string FullFilenameForTileInfo(const cognitics::cdb::TileInfo& tile_info)
 {
     auto child_path = cognitics::cdb::FilePathForTileInfo(tile_info);
@@ -133,14 +134,10 @@ int main(int argc, char** argv)
 
     auto args = cognitics::ArgumentParser();
     args.AddOption("logfile", 1, "<filename>", "filename for log output");
-    //args.AddOption("bounds", 4, "<south> <west> <north> <east>", "bounds for area of interest");
     //args.AddOption("force", 0, "", "force overwrite");
     args.AddOption("workers", 1, "<N>", "number of worker threads (default 8)");
     args.AddArgument("CDB");
 
-    //if(args.Parse({ "cdbinfo.exe", "-logfile", "d:/cdbinfo.log", "-bounds", "12.8", "45.0", "13.0", "45.2", "D:/CDB/CDB_Yemen_4.0.0" }) == EXIT_FAILURE)
-    //if(args.Parse({ "cdbinfo.exe", "-logfile", "d:/cdbinfo_yemen.log", "D:/CDB/CDB_Yemen_4.0.0" }) == EXIT_FAILURE)
-    //if(args.Parse({ "cdbinfo.exe", "-gsfeatures", "-gtfeatures", "-logfile", "d:/cdbinfo_la.log", "-bounds", "34.0", "-118.0", "34.2", "-117.8", "D:/CDB/LosAngeles_CDB" }) == EXIT_FAILURE)
     if(args.Parse(argc, argv) == EXIT_FAILURE)
         return EXIT_FAILURE;
 

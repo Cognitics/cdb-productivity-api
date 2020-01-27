@@ -594,13 +594,6 @@ namespace gdalsampler
         int top_pix = yoffset;
         int bottom_pix = yoffset + ysize;
 
-        if(m_file->pixel_is_point)
-        {
-            // not sure why imagery is overlapping the blocks
-            right_pix -= 1;
-            bottom_pix -= 1;
-        }
-        
         m_file->PixelToLocalPoint(top_pix,left_pix,localquad.ul);
         m_file->PixelToLocalPoint(top_pix,right_pix,localquad.ur);
         m_file->PixelToLocalPoint(bottom_pix,right_pix,localquad.lr);
