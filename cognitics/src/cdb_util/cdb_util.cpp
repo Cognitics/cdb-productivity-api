@@ -461,13 +461,12 @@ bool BuildElevationTileFloatsFromSampler(GDALRasterSampler& sampler, const TileI
     std::tie(extents.north, extents.south, extents.east, extents.west) = NSEWBoundsForTileInfo(tileinfo);
     extents.width = TileDimensionForLod(tileinfo.lod);
     extents.height = extents.width;
-    double spacing_x = (extents.east - extents.west) / extents.width;
-    double spacing_y = (extents.north - extents.south) / extents.height;
-    extents.north += (spacing_y * 0.5);
-    extents.south += (spacing_y * 0.5);
+    double spacing_x = (extents.east - extents.west) / (extents.width + 1);
+    double spacing_y = (extents.north - extents.south) / (extents.height + 1);
+    extents.north -= (spacing_y * 0.5);
+    extents.south -= (spacing_y * 0.5);
     extents.east -= (spacing_x * 0.5);
     extents.west -= (spacing_x * 0.5);
-
     return sampler.Sample(extents, &floats[0]);
 }
 
@@ -780,6 +779,9 @@ bool BuildElevationTileFromSampler(const std::string& cdb, GDALRasterSampler& sa
         floats.resize(dimension * dimension);
         std::fill(floats.begin(), floats.end(), -32767.0f);
     }
+
+    std::fill(floats.begin(), floats.end(), -1.0f);
+
     cognitics::cdb::BuildElevationTileFloatsFromSampler(sampler, tileinfo, floats);
     floats = cognitics::cdb::FlippedVertically(floats, dim, dim, 1);
     auto info = RasterInfoFromTileInfo(tileinfo);

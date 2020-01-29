@@ -90,13 +90,20 @@ public:
         if(child_filenames.empty())
             return 0;
 
+        GDALRasterSampler sampler;
         for(auto filename : child_filenames)
-            sampler->AddFile(filename);
+            sampler.AddFile(filename);
         if(tile_info.dataset == 1)
-            cognitics::cdb::BuildElevationTileFromSampler(cdb, *sampler, tile_info);
+        {
+            printf("%s\n", cognitics::cdb::FileNameForTileInfo(tile_info).c_str());
+            cognitics::cdb::BuildElevationTileFromSampler(cdb, sampler, tile_info);
+        }
         if(tile_info.dataset == 4)
-            cognitics::cdb::BuildImageryTileFromSampler(cdb, *sampler, tile_info);
-
+        {
+            printf("%s\n", cognitics::cdb::FileNameForTileInfo(tile_info).c_str());
+            cognitics::cdb::BuildImageryTileFromSampler(cdb, sampler, tile_info);
+        }
+        gdalsampler::CacheManager::getInstance()->Unload();
         return 0;
     }
 
@@ -175,8 +182,6 @@ int main(int argc, char** argv)
     auto jobs = std::vector<TileJob*>();
 
 
-    GDALRasterSampler sampler;
-
     auto geocells = cognitics::cdb::GeocellsForCdb(cdb);
     for(auto geocell : geocells)
     {
@@ -187,7 +192,7 @@ int main(int argc, char** argv)
         int lon = std::stoi(geocell.second.substr(1));
         if(geocell.second[0] == 'W')
             lon *= -1;
-        if(0)
+        if(1)
         {
             auto maxlod_elevation = cognitics::cdb::MaxLodForDatasetPath(geocell_path + "/001_Elevation");
             if(maxlod_elevation >= 0)
@@ -203,7 +208,6 @@ int main(int argc, char** argv)
                 job->tile_info.dataset = 1;
                 job->tile_info.selector1 = 1;
                 job->tile_info.selector2 = 1;
-                job->sampler = &sampler;
                 job_manager.submitJob(job);
             }
         }
@@ -223,7 +227,6 @@ int main(int argc, char** argv)
                 job->tile_info.dataset = 4;
                 job->tile_info.selector1 = 1;
                 job->tile_info.selector2 = 1;
-                job->sampler = &sampler;
                 job_manager.submitJob(job);
             }
         }
