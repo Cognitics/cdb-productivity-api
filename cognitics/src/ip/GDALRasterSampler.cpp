@@ -338,6 +338,19 @@ bool GDALRasterSampler::AddFile(std::string file)
         BuildBSP(true);
     return result;
 }
+
+bool GDALRasterSampler::RemoveFile(std::string file)
+{
+    ccl::FileInfo fi(file);
+    std::string fileext = fi.getSuffix();
+    std::string ext = ToLower(fileext);
+    bool result = m_reader.RemoveFile(file);
+    if(result && bsp)
+        BuildBSP(true);
+    return result;
+}
+
+
 // Add all the files in the specified directory that match the specified filter
 bool GDALRasterSampler::AddDirectory(std::string dir, std::set<std::string> extensions)
 {
@@ -748,7 +761,7 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, float *
     }
 
     int scratchlen = window.width * window.height;
-    float *scratch = new float[scratchlen];
+    //float *scratch = new float[scratchlen];
     
     gdalsampler::CachedRasterBlockList blocks;
     gdalsampler::Quad aoi;
@@ -767,7 +780,6 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, float *
     gdalsampler::GDALRasterFileList::iterator file_iter = files.begin();
     while(file_iter!=files.end())
     {
-        std::fill(scratch, scratch + scratchlen, -32767.0f);
         gdalsampler::GDALRasterFilePtr file = *file_iter++;
         sfa::Polygon geoarea = file->GetValidArea();
         sfa::Polygon pixelArea;
@@ -827,7 +839,7 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, float *
                 IppiSize srcNumPix = {block->xsize,block->ysize};
                 
                 // Now use the coeff to warp the source on to the dest.
-                istatus=WarpPerspective_32f_C1R(block->elev, srcNumPix, srcStep, scratch, destNumPix, destStep, coeff, ippCubic);
+                istatus=WarpPerspective_32f_C1R(block->elev, srcNumPix, srcStep, buf, destNumPix, destStep, coeff, ippCubic);
                 if(istatus!=ippStsNoErr)
                 {
                     printf("WarpPerspective_32f_C1R returned %d\n", istatus);
@@ -838,11 +850,8 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, float *
         if(blocks.size()>0)
         {
             ret = true;
-            std::copy(scratch, scratch + scratchlen, buf);
         }
     }
-    
-    delete[] scratch;
     
 #else
     throw std::runtime_error("Attempt to call SampleIPP when IPP support was not compiled in!.");

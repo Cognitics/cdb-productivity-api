@@ -879,6 +879,7 @@ namespace gdalsampler
         GDALRasterFileList _files;
         ccl::mutex sortLock;
         ccl::mutex addmutex;
+        std::map<std::string, gdalsampler::GDALRasterFilePtr> _file_by_name;
 
         // returns the first areal that contains the specified point.
         sfa::Polygon GetShapeForFileOrPoint(std::string filename,double x, double y);
@@ -902,6 +903,7 @@ namespace gdalsampler
         // make sure to call this before adding files.
         void SetDestSRS(OGRSpatialReference srs) { _destSRS = srs; }
         bool AddFile(std::string filename);
+        bool RemoveFile(std::string filename);
         // return a list of all the pixels that overlap with the specified aoi
         bool GetOverlappingPixels(Quad aoi, OverlappingPixels &pixels);
 

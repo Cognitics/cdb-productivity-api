@@ -193,6 +193,7 @@ public:
 
     // Add the specified file to the list of sources.
     bool AddFile(std::string file);
+    bool RemoveFile(std::string file);
     // Add all the files in the specified directory that match the specified filter
     bool AddDirectory(std::string dir, std::set<std::string> extensions);
     // Add a coverage file used to specify valid pixels in the source imagery

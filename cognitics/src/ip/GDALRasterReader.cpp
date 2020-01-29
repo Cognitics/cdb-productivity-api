@@ -887,10 +887,23 @@ namespace gdalsampler
             }
             // set the file to use that shape
             _files.push_back(gdalfile);
+            _file_by_name[filename] = gdalfile;
             okToSort = true;
             return true;
         }
         return false;
+    }
+
+    bool GDALReader::RemoveFile(std::string filename)
+    {
+        ccl::scoped_mutex m(&addmutex);
+        if(_file_by_name.find(filename) == _file_by_name.end())
+            return false;
+        auto fptr = _file_by_name[filename];
+        _file_by_name.erase(filename);
+        _files.erase(std::find(_files.begin(), _files.end(), fptr));
+        okToSort = true;
+        return true;
     }
 
     sfa::Polygon GDALReader::GetShapeForFileOrPoint(std::string filename, double x, double y)
