@@ -490,7 +490,7 @@ set(COGCORE_HEADERS
 	./include/cdb_util/cdb_util.h
 	./include/cdb_util/FeatureDataDictionary.h
 	./include/cdb_util/cdb_lod.h
-	#./include/cdb_util/cdb_inject.h
+	./include/cdb_util/cdb_inject.h
 )
 
 ################################################################################
@@ -873,7 +873,7 @@ set(COGCORE_SOURCES
 	./src/cdb_util/cdb_util.cpp
 	./src/cdb_util/FeatureDataDictionary.cpp
 	./src/cdb_util/cdb_lod.cpp
-	#./src/cdb_util/cdb_inject.cpp
+	./src/cdb_util/cdb_inject.cpp
 )
 
 ################################################################################
