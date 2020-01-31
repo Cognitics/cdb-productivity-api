@@ -665,7 +665,7 @@ namespace gdalsampler
                 CachedRasterBlockPtr ptr = *block_iter++;
                 if(ptr->IsReady()&&(ptr->age>=max_age))
                 {
-                    //printf("Kicking out cached block for %s %d/%d\n", ptr->m_filename.c_str(),ptr->xoffset,ptr->yoffset);
+                    //printf("UnloadBlock(): %s %d,%d %d,%d\n", ptr->m_filename.c_str(), ptr->xoffset, ptr->yoffset, ptr->xsize, ptr->ysize);
                     ptr->UnloadBlock();
                     break;
                 }
@@ -687,16 +687,16 @@ namespace gdalsampler
             CachedRasterBlockPtr ptr = *block_iter++;
             if(ptr->IsSameBlock(block.get()))
             {
-                ptr->age = 0;
-                if(ptr->IsReady())
+                block = ptr;
+                block->age = 0;
+                if(block->IsReady())
                 {
-                    block = ptr;
                     return true;
                 }
                 else
                 {                        
-                    // make room for this block
                     MakeCacheRoom(blocksize);
+                    //printf("ReadBlock(in): %s %d,%d %d,%d\n", block->m_filename.c_str(), block->xoffset, block->yoffset, block->xsize, block->ysize);
                     block->ReadBlock();
                     return true;
                 }
@@ -708,6 +708,7 @@ namespace gdalsampler
         }
         MakeCacheRoom(blocksize);
         _altBlockCache.push_back(block);
+        //printf("ReadBlock(out): %s %d,%d %d,%d\n", block->m_filename.c_str(), block->xoffset, block->yoffset, block->xsize, block->ysize);
         block->ReadBlock();
         return true;
     }
