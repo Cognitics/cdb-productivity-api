@@ -13,6 +13,12 @@ if(CMAKE_CUDA_COMPILER)
 endif(CMAKE_CUDA_COMPILER)
 
 
+if(WIN32)
+    if(NOT DEFINED CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "$(Configuration)")
+    message("Defaulting to $(Configration) build type macro for Visual Studio")
+    endif(NOT DEFINED CMAKE_BUILD_TYPE)
+endif(WIN32)
 
 #cmake -G "Unix Makefiles" -DCOG_BUILD_GL_TOOLS=1 -DTHIRD_PARTY_DIR=/home/ubuntu/cognitics/ThirdParty -DCMAKE_INSTALL_PREFIX=/usr/local ..
 #make DESTDIR=/home/ubuntu/cdbtools install
