@@ -497,6 +497,7 @@ set(COGCORE_HEADERS
 	./include/cdb_util/FeatureDataDictionary.h
 	./include/cdb_util/cdb_lod.h
 	./include/cdb_util/cdb_inject.h
+	./include/cdb_util/cdb_sample.h
 )
 
 ################################################################################
@@ -880,6 +881,7 @@ set(COGCORE_SOURCES
 	./src/cdb_util/FeatureDataDictionary.cpp
 	./src/cdb_util/cdb_lod.cpp
 	./src/cdb_util/cdb_inject.cpp
+	./src/cdb_util/cdb_sample.cpp
 )
 
 ################################################################################
@@ -1018,6 +1020,22 @@ if(UNIX)
     target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
 endif(UNIX)
 
+add_executable(cdb-sample cdb-sample/cdb-sample.cpp)
+if(WIN32)
+    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
+    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+endif(WIN32)
+if(UNIX)
+    target_link_libraries(cdb-sample ${CMAKE_DL_LIBS})
+    target_link_libraries(cdb-sample "pthread")
+    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
+    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
+    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+endif(UNIX)
+
 
 ################################################################################
 
@@ -1148,6 +1166,7 @@ if(UNIX)
     install(TARGETS meshgen DESTINATION bin)
     install(TARGETS cdb-inject DESTINATION bin)
     install(TARGETS cdb-lod  DESTINATION bin)
+    install(TARGETS cdb-sample  DESTINATION bin)
     install(TARGETS cdbinfo  DESTINATION bin)
   
     install(DIRECTORY ${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64_lin/ DESTINATION lib USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
