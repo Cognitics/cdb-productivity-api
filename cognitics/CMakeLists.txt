@@ -498,6 +498,9 @@ set(COGCORE_HEADERS
 	./include/cdb_util/cdb_lod.h
 	./include/cdb_util/cdb_inject.h
 	./include/cdb_util/cdb_sample.h
+
+	./include/civetweb/civetweb.h
+	./include/civetweb/CivetServer.h
 )
 
 ################################################################################
@@ -882,6 +885,13 @@ set(COGCORE_SOURCES
 	./src/cdb_util/cdb_lod.cpp
 	./src/cdb_util/cdb_inject.cpp
 	./src/cdb_util/cdb_sample.cpp
+
+	./src/civetweb/civetweb.c
+	./src/civetweb/CivetServer.cpp
+	./src/civetweb/handle_form.inl
+	./src/civetweb/md5.inl
+	./src/civetweb/sha1.inl
+	./src/civetweb/timer.inl
 )
 
 ################################################################################
@@ -930,6 +940,7 @@ source_group("Header Files\\scenegraph" REGULAR_EXPRESSION "include/scenegraph/.
 source_group("Header Files\\sfa" REGULAR_EXPRESSION "include/sfa/.*$")
 source_group("Header Files\\tg" REGULAR_EXPRESSION "include/tg/.*$")
 source_group("Header Files\\ogr" REGULAR_EXPRESSION "include/ogr/.*$")
+source_group("Header Files\\civetweb" REGULAR_EXPRESSION "include/civetweb/.*$")
 source_group("Source Files\\ccl" REGULAR_EXPRESSION "src/ccl/.*$")
 source_group("Source Files\\cdb_tile" REGULAR_EXPRESSION "src/cdb_tile/.*$")
 source_group("Source Files\\ctl" REGULAR_EXPRESSION "src/ctl/.*$")
@@ -946,6 +957,7 @@ source_group("Source Files\\scenegraph" REGULAR_EXPRESSION "src/scenegraph/.*$")
 source_group("Source Files\\sfa" REGULAR_EXPRESSION "src/sfa/.*$")
 source_group("Source Files\\tg" REGULAR_EXPRESSION "src/tg/.*$")
 source_group("Source Files\\ogr" REGULAR_EXPRESSION "src/ogr/.*$")
+source_group("Source Files\\civetweb" REGULAR_EXPRESSION "src/civetweb/.*$")
 link_libraries(cogcore)
 
 add_executable(cdbinfo cdbinfo/cdbinfo.cpp)
