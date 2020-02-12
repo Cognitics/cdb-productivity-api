@@ -498,6 +498,7 @@ set(COGCORE_HEADERS
 	./include/cdb_util/cdb_lod.h
 	./include/cdb_util/cdb_inject.h
 	./include/cdb_util/cdb_sample.h
+	./include/cdb_util/cdb_service.h
 
 	./include/civetweb/civetweb.h
 	./include/civetweb/CivetServer.h
@@ -885,6 +886,7 @@ set(COGCORE_SOURCES
 	./src/cdb_util/cdb_lod.cpp
 	./src/cdb_util/cdb_inject.cpp
 	./src/cdb_util/cdb_sample.cpp
+	./src/cdb_util/cdb_service.cpp
 
 	./src/civetweb/civetweb.c
 	./src/civetweb/CivetServer.cpp
@@ -926,6 +928,8 @@ endif(UNIX)
 add_library(cogcore ${COGCORE_SOURCES} ${COGCORE_HEADERS})
 source_group("Header Files\\ccl" REGULAR_EXPRESSION "include/ccl/.*$")
 source_group("Header Files\\cdb_tile" REGULAR_EXPRESSION "include/cdb_tile/.*$")
+source_group("Header Files\\cdb_util" REGULAR_EXPRESSION "include/cdb_util/.*$")
+source_group("Header Files\\civetweb" REGULAR_EXPRESSION "include/civetweb/.*$")
 source_group("Header Files\\ctl" REGULAR_EXPRESSION "include/ctl/.*$")
 source_group("Header Files\\cts" REGULAR_EXPRESSION "include/cts/.*$")
 source_group("Header Files\\dbflib" REGULAR_EXPRESSION "include/dbflib/.*$")
@@ -940,9 +944,10 @@ source_group("Header Files\\scenegraph" REGULAR_EXPRESSION "include/scenegraph/.
 source_group("Header Files\\sfa" REGULAR_EXPRESSION "include/sfa/.*$")
 source_group("Header Files\\tg" REGULAR_EXPRESSION "include/tg/.*$")
 source_group("Header Files\\ogr" REGULAR_EXPRESSION "include/ogr/.*$")
-source_group("Header Files\\civetweb" REGULAR_EXPRESSION "include/civetweb/.*$")
 source_group("Source Files\\ccl" REGULAR_EXPRESSION "src/ccl/.*$")
 source_group("Source Files\\cdb_tile" REGULAR_EXPRESSION "src/cdb_tile/.*$")
+source_group("Source Files\\cdb_util" REGULAR_EXPRESSION "src/cdb_util/.*$")
+source_group("Source Files\\civetweb" REGULAR_EXPRESSION "src/civetweb/.*$")
 source_group("Source Files\\ctl" REGULAR_EXPRESSION "src/ctl/.*$")
 source_group("Source Files\\cts" REGULAR_EXPRESSION "src/cts/.*$")
 source_group("Source Files\\dbflib" REGULAR_EXPRESSION "src/dbflib/.*$")
@@ -957,7 +962,6 @@ source_group("Source Files\\scenegraph" REGULAR_EXPRESSION "src/scenegraph/.*$")
 source_group("Source Files\\sfa" REGULAR_EXPRESSION "src/sfa/.*$")
 source_group("Source Files\\tg" REGULAR_EXPRESSION "src/tg/.*$")
 source_group("Source Files\\ogr" REGULAR_EXPRESSION "src/ogr/.*$")
-source_group("Source Files\\civetweb" REGULAR_EXPRESSION "src/civetweb/.*$")
 link_libraries(cogcore)
 
 add_executable(cdbinfo cdbinfo/cdbinfo.cpp)
@@ -1046,6 +1050,22 @@ if(UNIX)
     target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
     target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
     target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+endif(UNIX)
+
+add_executable(cdb-service cdb-service/cdb-service.cpp)
+if(WIN32)
+    target_link_libraries(cdb-service "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
+    target_link_libraries(cdb-service "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+    target_link_libraries(cdb-service "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+    target_link_libraries(cdb-service "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+endif(WIN32)
+if(UNIX)
+    target_link_libraries(cdb-service ${CMAKE_DL_LIBS})
+    target_link_libraries(cdb-service "pthread")
+    target_link_libraries(cdb-service "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+    target_link_libraries(cdb-service "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
+    target_link_libraries(cdb-service "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
+    target_link_libraries(cdb-service "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
 endif(UNIX)
 
 
@@ -1179,6 +1199,7 @@ if(UNIX)
     install(TARGETS cdb-inject DESTINATION bin)
     install(TARGETS cdb-lod  DESTINATION bin)
     install(TARGETS cdb-sample  DESTINATION bin)
+    install(TARGETS cdb-service  DESTINATION bin)
     install(TARGETS cdbinfo  DESTINATION bin)
   
     install(DIRECTORY ${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64_lin/ DESTINATION lib USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN "*.so" PATTERN "*.a")

@@ -1609,3 +1609,4 @@ cognitics/build.wsl/mesh2cdb-rest
 /cognitics/ThirdParty.win32
 /cognitics/build.win
 /cognitics/build.wsl
+/cognitics/build.wincuda
