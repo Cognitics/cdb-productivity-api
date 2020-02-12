@@ -92,9 +92,9 @@ namespace elev
             if(app_ct)
                 OGRCoordinateTransformation::DestroyCT(app_ct);
             if(app_srs) 
-                OSRDestroySpatialReference ( OGRSpatialReferenceH(app_srs) );
-            //if(file_srs && file_srs!=app_srs) 
-//                delete file_srs;
+                OSRDestroySpatialReference(OGRSpatialReferenceH(app_srs));
+            if(file_srs && file_srs!=app_srs) 
+                OSRDestroySpatialReference(OGRSpatialReferenceH(file_srs));
         }
 
         //! Set the application geospacial reference type.

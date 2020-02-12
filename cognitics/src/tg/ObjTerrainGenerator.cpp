@@ -166,8 +166,9 @@ void ObjTerrainGenerator::generateFixedGridWithLOD(std::string geoServerURL, dou
 	{
 		generateFixedGrid(info.imageFileName, outputPath, info.quadKey, outputFormat, edsm, info.extents.north, info.extents.south, info.extents.east, info.extents.west);
 	}
-
+#ifdef CAE_MESH
 	createFeatures(edsm);
+#endif
 	WriteLODfile(infos, outputPath + "/lodFile.txt", lodDepth);
 	setBounds(north, south, east, west);
 	CreateMasterFile();

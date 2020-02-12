@@ -253,9 +253,10 @@ namespace cognitics
         terrainWest = west;
 
         std::string dataPath = ccl::joinPaths(outputTmpPath, "data");
+#ifdef CAE_MESH
         buildings.ProcessBuildingData(ccl::joinPaths(dataPath, "building_models.xml"));
 		ParseTreePoints(ccl::joinPaths(dataPath, "tree_points.xml"), trees);
-
+#endif
         ccl::FileInfo fi(elevFile);
         std::string tileName = fi.getBaseName(true);
         std::string filename = ccl::joinPaths(outputPath, tileName + format);
@@ -321,6 +322,7 @@ namespace cognitics
             }
         }
 
+#ifdef CAE_MESH
 		//modeled features
 		int featureCount = buildings.Count();
 		int featuresNotFound = 0;
@@ -399,6 +401,7 @@ namespace cognitics
             if(missingTrees > 0)
 			    std::cout << "Missing " << missingTrees << " tree models" << std::endl;
 		}
+#endif
 
 		CreateMasterFile();
 		      
