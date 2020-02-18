@@ -5,6 +5,18 @@
 namespace elev {
     SimpleDEMReader::~SimpleDEMReader()
     {
+        if (app_srs)
+            OSRDestroySpatialReference(OGRSpatialReferenceH(app_srs));
+        app_srs = NULL;
+        if (file_srs)
+            OSRDestroySpatialReference(OGRSpatialReferenceH(file_srs));
+        file_srs = NULL;
+        if (app_ct)
+            OGRCoordinateTransformation::DestroyCT(app_ct);
+        app_ct = NULL;
+        if (file_ct)
+            OGRCoordinateTransformation::DestroyCT(file_ct);
+
         if(gdal_dataset)
             GDALClose((GDALDatasetH)gdal_dataset);
     }
@@ -27,6 +39,8 @@ namespace elev {
         this->filename = filename;
         app_srs = NULL;
         file_srs = NULL;
+        app_ct = NULL;
+        file_ct = NULL;
     }
 
     SimpleDEMReader::SimpleDEMReader(const std::string &filename, OGRSpatialReference destinationSRS, float scale)
@@ -40,134 +54,10 @@ namespace elev {
         this->scaleFactor = scale;
         app_srs = NULL;
         file_srs = NULL;
+        app_ct = NULL;
+        file_ct = NULL;
 }
 
-
-#if 0
-    bool SimpleDEMReader::Open()
-    {
-#ifdef DEBUG
-        log << ccl::LDEBUG << "Open()" << log.endl;
-#endif
-        gdal_dataset = (GDALDataset *)GDALOpen(this->filename.c_str(), GA_ReadOnly);
-        if (!gdal_dataset)
-            return false;
-
-        if (gdal_dataset->GetProjectionRef() == NULL)
-        {
-            log << ccl::LERR << "Open(): GetProjectionRef() failed." << log.endl;
-            GDALClose((GDALDatasetH)gdal_dataset);
-            gdal_dataset = NULL;
-            return false;
-        }
-
-        width = gdal_dataset->GetRasterXSize();
-        height = gdal_dataset->GetRasterYSize();
-        depth = gdal_dataset->GetRasterCount();
-#ifdef DEBUG
-        log << ccl::LDEBUG << "Open(): width = " << width << log.endl;
-        log << ccl::LDEBUG << "Open(): height = " << height << log.endl;
-        log << ccl::LDEBUG << "Open(): depth = " << depth << log.endl;
-#endif
-
-        char *wkt = new char[8192];
-        strncpy(wkt, gdal_dataset->GetProjectionRef(), 8192);
-        wkt[8191] = 0;
-        if (!strlen(wkt))
-        {
-            std::string prj_filename = filename.substr(0, filename.size() - 3) + "prj";
-            FILE *PRJ = fopen(prj_filename.c_str(), "r");
-            if (PRJ)
-            {
-                fgets(wkt, 8192, PRJ);
-                fclose(PRJ);
-            }
-        }
-        wkt[8191] = 0;
-
-        if (!strlen(wkt))
-        {
-            OGRSpatialReference oSRS;
-            oSRS.SetWellKnownGeogCS("WGS84");
-            char *wktp = NULL;
-            oSRS.exportToWkt(&wktp);
-            strncpy(wkt, wktp, 8191);
-            CPLFree(wktp);
-            log << ccl::LERR << "Open(): missing projection in " << filename << " assuming geographic." << log.endl;
-
-        }
-        if (!strlen(wkt))
-        {
-            log << ccl::LERR << "Open(): missing projection wkt." << log.endl;
-            GDALClose((GDALDatasetH)gdal_dataset);
-            gdal_dataset = NULL;
-            delete[] wkt;
-            return false;
-        }
-
-        char *pwkt = wkt;
-        file_srs = new OGRSpatialReference;
-        OGRErr err = file_srs->importFromWkt((char **)&wkt);
-        delete[] pwkt;
-        if (err != OGRERR_NONE)
-        {
-            log << ccl::LERR << "Open(): unable to parse projection information." << log.endl;
-            GDALClose((GDALDatasetH)gdal_dataset);
-            gdal_dataset = NULL;
-            return false;
-        }
-
-        double geotransform[6];
-        if (gdal_dataset->GetGeoTransform(geotransform) != CE_None)
-        {
-            GDALClose((GDALDatasetH)gdal_dataset);
-            gdal_dataset = NULL;
-            return false;
-        }
-
-        this->BuildCoordinateTransformations();
-
-        spacing_x = geotransform[1];
-        bound_x_low = geotransform[0];
-        rotation_x = geotransform[2];
-
-        spacing_y = geotransform[5];
-        bound_y_low = geotransform[3];
-        rotation_y = geotransform[4];
-
-        // a post is in the middle of the space, regardless of area_or_point
-        bound_x_low = bound_x_low + (spacing_x / 2);
-        bound_y_low = bound_y_low + (spacing_y / 2);
-        bound_x_high = bound_x_low + (geotransform[1] * (width - 1));
-        bound_y_high = bound_y_low + (geotransform[5] * (height - 1));
-
-        // make geographic versions of the bounds
-        geo_bound_x_low = bound_x_low;
-        geo_bound_y_low = bound_y_low;
-        geo_bound_x_high = bound_x_high;
-        geo_bound_y_high = bound_y_high;
-        if (app_ct)
-        {
-            app_ct->Transform(1, &geo_bound_x_low, &geo_bound_y_low);
-            app_ct->Transform(1, &geo_bound_x_high, &geo_bound_y_high);
-        }
-
-#ifdef DEBUG
-        log << ccl::LDEBUG << "Open(): geotransform = [" << geotransform[0] << ", "
-            << geotransform[1] << ", " << geotransform[2] << ", "
-            << geotransform[3] << ", " << geotransform[4] << ", "
-            << geotransform[5] << ", " << "]" << log.endl;
-        log << ccl::LDEBUG << "Open(): spacing_x = " << spacing_x << log.endl;
-        log << ccl::LDEBUG << "Open(): spacing_y = " << spacing_y << log.endl;
-        log << ccl::LDEBUG << "Open(): bound_x_low = " << bound_x_low << log.endl;
-        log << ccl::LDEBUG << "Open(): bound_x_high = " << bound_x_high << log.endl;
-        log << ccl::LDEBUG << "Open(): bound_y_low = " << bound_y_low << log.endl;
-        log << ccl::LDEBUG << "Open(): bound_y_high = " << bound_y_high << log.endl;
-#endif
-
-        return true;
-    }
-#endif
 
 
     bool SimpleDEMReader::Open()
@@ -403,6 +293,11 @@ namespace elev {
 #ifdef DEBUG
         log << ccl::LDEBUG << "BuildCoordinateTransformations()" << log.endl;
 #endif
+        if (app_ct)
+            OGRCoordinateTransformation::DestroyCT(app_ct);
+        app_ct = NULL;
+        if (file_ct)
+            OGRCoordinateTransformation::DestroyCT(file_ct);
         file_ct = NULL;
         app_ct = NULL;
 
@@ -415,7 +310,7 @@ namespace elev {
             throw std::runtime_error("invalid reference type");
         if (!file_srs)
         {
-            file_srs = app_srs; //throw std::runtime_error("missing file spacial reference");
+            file_srs = app_srs->Clone(); //throw std::runtime_error("missing file spacial reference");
             return;
         }
 

@@ -353,9 +353,10 @@ int main(int argc, char **argv)
 	}
 	else
 	{
+#ifdef CAE_MESH
         CopyBuildingFeatureFiles(modelCachePath, featurePath);
         CopyFeatureFiles(outputTmpPath, featurePath);
-
+#endif
 		terrainGenerator->setOrigin(originLat, originLon);
 		terrainGenerator->setBounds(north, south, west, east);
 		terrainGenerator->setOutputPath(outputPath);
@@ -366,8 +367,9 @@ int main(int argc, char **argv)
         logger << "Adding elevation paths..." << logger.endl;
 		for (std::set<std::string>::iterator it = elevationFiles.begin(), end = elevationFiles.end(); it != end; ++it)
 			terrainGenerator->addElevationFile(*it);
+#ifdef CAE_MESH
         terrainGenerator->parseFeatures(outputTmpPath);
-
+#endif
 		terrainGenerator->setTextureSize(textureWidth, textureHeight);
 		terrainGenerator->setTexelSize(texelSize);
 	}

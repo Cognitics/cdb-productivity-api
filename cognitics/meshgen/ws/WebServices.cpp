@@ -343,9 +343,9 @@ namespace ws
         //        }
 
         //    }
-
+#ifdef CAE_MESH
         terrainGenerator->createFeatures(edsm);
-
+#endif
         WriteLODfile(infos, outputPath + "/lodFile.txt", lodDepth);
 
         terrainGenerator->setBounds(north, south, east, west);
@@ -1818,9 +1818,9 @@ namespace ws
 				info.extents.north, info.extents.south,
 				info.extents.east, info.extents.west);
 		}
-
+#ifdef CAE_MESH
 		terrainGenerator.createFeatures(edsm);
-
+#endif
 		//WriteLODfile(infos, outputPath + "/lodFile.txt", lodDepth);
 
 		terrainGenerator.setBounds(north, south, east, west);
