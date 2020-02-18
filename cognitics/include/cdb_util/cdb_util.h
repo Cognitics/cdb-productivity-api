@@ -101,6 +101,7 @@ bool MakeCDB(const std::string& cdb);
 
 std::vector<std::pair<std::string, std::string>> GeocellsForCdb(const std::string& cdb);
 int MaxLodForDatasetPath(const std::string& path);
+std::tuple<double, double, double, double> NSEWBoundsForCDB(const std::string& cdb);
 
 
 

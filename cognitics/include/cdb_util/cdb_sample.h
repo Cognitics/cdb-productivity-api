@@ -2,6 +2,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 #include <cfloat>
 
 namespace cognitics {
@@ -21,6 +22,7 @@ struct cdb_sample_parameters
 };
 
 bool cdb_sample(cdb_sample_parameters& params);
+std::vector<unsigned char> cdb_sample_imagery(cdb_sample_parameters& params);
 
 }
 }

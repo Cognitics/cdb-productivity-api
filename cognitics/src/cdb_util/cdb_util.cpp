@@ -919,6 +919,31 @@ int MaxLodForDatasetPath(const std::string& path)
     return result;
 }
 
+std::tuple<double, double, double, double> NSEWBoundsForCDB(const std::string& cdb)
+{
+    double north = -DBL_MAX;
+    double south = DBL_MAX;
+    double east = -DBL_MAX;
+    double west = DBL_MAX;
+    auto geocells = GeocellsForCdb(cdb);
+    for(auto geocell : geocells)
+    {
+        int lat = std::stoi(geocell.first.substr(1));
+        if(geocell.first[0] == 'S')
+            lat *= -1;
+        int lon = std::stoi(geocell.second.substr(1));
+        if(geocell.second[0] == 'W')
+            lon *= -1;
+        auto tile_width = get_tile_width(double(lat));
+        double n = lat + 1;
+        double e = lon + tile_width;
+        north = std::max<double>(north, n);
+        south = std::min<double>(south, lat);
+        east = std::max<double>(east, e);
+        west = std::min<double>(west, lon);
+    }
+    return std::make_tuple(north, south, east, west);
+}
 
 
 }

@@ -15,6 +15,7 @@ int main(int argc, char** argv)
 
     auto args = cognitics::ArgumentParser();
     args.AddOption("logfile", 1, "<filename>", "filename for log output");
+    args.AddOption("bind", 1, "<bind string>", "bind string (port or ip:port)");
     args.AddArgument("CDB");
     if(args.Parse(argc, argv) == EXIT_FAILURE)
         return EXIT_FAILURE;
@@ -27,13 +28,16 @@ int main(int argc, char** argv)
         ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG, logfile)));
     }
 
-    auto cdb = args.Arguments().at(0);
+    auto params = cognitics::cdb::cdb_service_parameters();
+    params.cdb = args.Arguments().at(0);
+    if(args.Option("bind"))
+        params.bind = args.Parameters("bind").at(0);
 
     ccl::ObjLog log;
     log << args.Report() << log.endl;
 
     auto ts_start = std::chrono::steady_clock::now();
-    bool result = cognitics::cdb::cdb_service(cdb);
+    bool result = cognitics::cdb::cdb_service(params);
     auto ts_stop = std::chrono::steady_clock::now();
 
     log << log.endl;

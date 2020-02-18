@@ -6,7 +6,13 @@
 namespace cognitics {
 namespace cdb {
 
-bool cdb_service(const std::string& cdb);
+struct cdb_service_parameters
+{
+    std::string cdb;
+    std::string bind { "8080" };
+};
+
+bool cdb_service(cdb_service_parameters& params);
 
 }
 }
