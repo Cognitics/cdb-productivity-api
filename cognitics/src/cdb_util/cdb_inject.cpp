@@ -373,7 +373,7 @@ bool cdb_inject(cdb_inject_parameters& params)
             GDALRasterSampler sampler;
             for (auto fn : elevation_filenames)
                 sampler.AddFile(fn);
-            for (auto&& ti : imagery_tileinfos)
+            for (auto&& ti : elevation_tileinfos)
             {
                 auto cdbTileJob = new CDBTileJob(&jobManager, params.cdb, std::ref(sampler), ti, jobReporter, true);
                 jobManager.submitJob(cdbTileJob);
