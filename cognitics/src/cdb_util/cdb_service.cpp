@@ -3,6 +3,7 @@
 
 #include <cdb_util/cdb_util.h>
 #include <cdb_util/cdb_sample.h>
+#include <ip/jpgwrapper.h>
 
 #include <civetweb/CivetServer.h>
 
@@ -86,7 +87,9 @@ public:
                 continue;
             auto key = LowerCase(entry.substr(0, pos));
             auto value = entry.substr(pos + 1);
-            result[key] = value;
+            std::string decoded;
+            server->urlDecode(value.c_str(), decoded, false);
+            result[key] = decoded;
         }
         return result;
     }
@@ -121,8 +124,9 @@ public:
 class WMSRequestHandler
 {
     CDBRequest cdb_request;
+    const unsigned char* blue_marble { nullptr };
 
-    WMSRequestHandler(const std::string& cdb, CivetServer* server, mg_connection* connection) : cdb_request(cdb, server, connection) { };
+    WMSRequestHandler(const std::string& cdb, CivetServer* server, mg_connection* connection, const unsigned char* blue_marble) : cdb_request(cdb, server, connection), blue_marble(blue_marble) { };
 
     void Write(const std::string& str)
     {
@@ -336,6 +340,7 @@ class WMSRequestHandler
         sample_params.height = std::stoi(cdb_request.query_map["height"]);
         sample_params.cdb = cdb_request.cdb;
         sample_params.dataset = 4;
+        sample_params.blue_marble = blue_marble;
 
         auto bytes = cdb_sample_imagery(sample_params);
         if(bytes.empty())
@@ -346,8 +351,6 @@ class WMSRequestHandler
         auto ss = std::stringstream();
         ss << "HTTP/1.1 200 OK\r\n";
         ss << "Content-Type: image/png\r\n";
-        //ss << "Content-Disposition: inline; filename=test.png\r\n";
-        //ss << "Content-Disposition: inline\r\n";
         ss << "\r\n";
         Write(ss.str());
         mg_write(cdb_request.connection, png.data(), png.size());
@@ -357,6 +360,8 @@ class WMSRequestHandler
     bool Execute()
     {
         cdb_request.Dump();
+        if(cdb_request.cdb.empty())
+            return RespondError("No CDB specified");
         if(cdb_request.query_map.find("service") == cdb_request.query_map.end())
             return RespondError("No service parameter specified");
         if(cdb_request.LowerCase(cdb_request.query_map["service"]) != "wms")
@@ -372,48 +377,69 @@ class WMSRequestHandler
 
 
 public:
-    static bool HandleRequest(const std::string& cdb, CivetServer* server, mg_connection* connection)
+
+    static bool HandleRequest(const std::string& cdb, CivetServer* server, mg_connection* connection, const unsigned char* blue_marble)
     {
-        auto handler = WMSRequestHandler { cdb, server, connection };
+        auto handler = WMSRequestHandler { cdb, server, connection, blue_marble };
         return handler.Execute();
     }
 
 };
 
-////////////////////////////////////////////////////////////////////////////////
+class WMSHandler : public CivetHandler
+{
+public:
+    std::string cdb;
+    const unsigned char* blue_marble { nullptr };
+    WMSHandler(const std::string& cdb, const unsigned char* blue_marble) : cdb(cdb), blue_marble(blue_marble) { }
+    bool handleGet(CivetServer* server, struct mg_connection* connection)
+    {
+        return WMSRequestHandler::HandleRequest(cdb, server, connection, blue_marble);
+    }
+};
 
 class WebHandler : public CivetHandler
 {
 public:
+    WMSHandler& wms_handler;
+    WebHandler(WMSHandler& wms_handler) : wms_handler(wms_handler) { }
     bool handleGet(CivetServer* server, struct mg_connection* connection)
     {
-        auto str = WebResponse404();
-        mg_write(connection, str.c_str(), str.size());
-        return true;
+        auto cdb_request = CDBRequest("", server, connection);
+        if(cdb_request.query_map.find("error") != cdb_request.query_map.end())
+            return false;
+        if(cdb_request.query_map.find("cdb") != cdb_request.query_map.end())
+        {
+            auto reqinfo = mg_get_request_info(connection);
+            auto cdb = cdb_request.query_map["cdb"];
+            if(std::filesystem::exists(cdb))
+            {
+                wms_handler.cdb = cdb;
+                mg_send_http_redirect(connection, "/view.html", 302);
+                return true;
+            }
+            auto redirect = std::string(reqinfo->request_uri) + "?" + std::string(reqinfo->query_string) + "&error=invalid_cdb";
+            mg_send_http_redirect(connection, redirect.c_str(), 302);
+            return true;
+        }
+        return false;   // let civet handle the request
     }
 };
-
-class WMSHandler : public CivetHandler
-{
-    std::string cdb;
-public:
-    WMSHandler(const std::string& cdb) : cdb(cdb) { }
-    bool handleGet(CivetServer* server, struct mg_connection* connection)
-    {
-        return WMSRequestHandler::HandleRequest(cdb, server, connection);
-    }
-};
-
-////////////////////////////////////////////////////////////////////////////////
 
 bool cdb_service(cdb_service_parameters& params)
 {
-    auto civet_options = std::vector<std::string> { "listening_ports", params.bind };
+    auto bm_info = ip::ImageInfo();
+    auto bm_bytes = ccl::binary();
+    const unsigned char* blue_marble = nullptr;
+    if(ip::GetJPGImagePixels("htdocs/world.topo.bathy.200408.3x21600x10800.jpg", bm_info, bm_bytes))
+        blue_marble = bm_bytes.data();
+
+    auto civet_options = std::vector<std::string> { "document_root", "./htdocs", "listening_ports", params.bind };
     auto web_server = CivetServer(civet_options);
-    auto web_handler = WebHandler();
-    auto wms_handler = WMSHandler(params.cdb);
-    web_server.addHandler("", web_handler);
+    auto wms_handler = WMSHandler(params.cdb, blue_marble);
+    auto web_handler = WebHandler(wms_handler);
     web_server.addHandler("/wms", wms_handler);
+    web_server.addHandler("", web_handler);
     while(true)
         ccl::sleep(100);
     return true;

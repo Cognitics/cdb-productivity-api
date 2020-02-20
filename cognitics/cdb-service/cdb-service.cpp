@@ -16,7 +16,7 @@ int main(int argc, char** argv)
     auto args = cognitics::ArgumentParser();
     args.AddOption("logfile", 1, "<filename>", "filename for log output");
     args.AddOption("bind", 1, "<bind string>", "bind string (port or ip:port)");
-    args.AddArgument("CDB");
+    args.AddOption("cdb", 1, "<cdbpath>", "path to CDB");
     if(args.Parse(argc, argv) == EXIT_FAILURE)
         return EXIT_FAILURE;
 
@@ -29,7 +29,8 @@ int main(int argc, char** argv)
     }
 
     auto params = cognitics::cdb::cdb_service_parameters();
-    params.cdb = args.Arguments().at(0);
+    if(args.Option("cdb"))
+        params.cdb = args.Parameters("cdb").at(0);
     if(args.Option("bind"))
         params.bind = args.Parameters("bind").at(0);
 

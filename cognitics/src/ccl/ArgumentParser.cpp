@@ -60,7 +60,7 @@ namespace cognitics
             if(OptionsConfig.find(name) == OptionsConfig.end())
                 return Usage("Unrecognized option: -" + name);
             auto& option = OptionsConfig[name];
-            if(i + option.ParameterCount + 1 >= c)
+            if(i + option.ParameterCount >= c)
                 return Usage("Invalid option parameters: -" + name);
             if(ParsedOptions.find(name) == ParsedOptions.end())
                 ParsedOptions[name] = std::vector<std::string>();

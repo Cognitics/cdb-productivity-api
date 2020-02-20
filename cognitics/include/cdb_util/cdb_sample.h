@@ -19,6 +19,8 @@ struct cdb_sample_parameters
     int width { 1024 };
     int height { 1024 };
     int dataset { 4 };
+    const unsigned char* blue_marble { nullptr };
+    std::vector<std::pair<std::string, std::string>> cdb_geocells;
 };
 
 bool cdb_sample(cdb_sample_parameters& params);

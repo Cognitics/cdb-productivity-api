@@ -110,6 +110,59 @@ std::vector<unsigned char> cdb_sample_imagery(cdb_sample_parameters& params)
     auto pixel_size = std::min<double>(pixel_size_x, pixel_size_y);
     auto target_lod = cognitics::cdb::LodForPixelSize(pixel_size);
 
+    auto extents = gdalsampler::GeoExtents();
+    extents.north = params.north;
+    extents.south = params.south;
+    extents.east = params.east;
+    extents.west = params.west;
+    extents.height = params.height;
+    extents.width = params.width;
+    auto raster_info = cognitics::cdb::RasterInfo();
+    raster_info.North = params.north;
+    raster_info.South = params.south;
+    raster_info.East = params.east;
+    raster_info.West = params.west;
+    raster_info.Height = params.height;
+    raster_info.Width = params.width;
+    raster_info.OriginX = raster_info.West;
+    raster_info.OriginY = raster_info.North;
+    raster_info.PixelSizeX = (raster_info.East - raster_info.West) / raster_info.Width;
+    raster_info.PixelSizeY = (raster_info.South - raster_info.North) / raster_info.Height;
+
+    auto bytes = std::vector<unsigned char>(extents.width * extents.height * 3);
+    if(params.blue_marble)
+    {
+        int bm_width = 21600;
+        int bm_height = 10800;
+        for(int row = 0, rows = params.height; row < rows; ++row)
+        {
+            double lat = raster_info.North + (row * raster_info.PixelSizeY);
+            int bm_row = bm_height - (((lat + 90.0) / 180.0) * bm_height) - 1;
+            if(bm_row < 0)
+                continue;
+            if(bm_row >= bm_height)
+                continue;
+            for(int col = 0, cols = params.width; col < cols; ++col)
+            {
+                double lon = raster_info.West + (col * raster_info.PixelSizeX);
+                int bm_col = ((lon + 180.0) / 360.0) * bm_width;
+                if(bm_col < 0)
+                    continue;
+                if(bm_col >= bm_width)
+                    continue;
+
+                int bytes_offset = (row * params.width * 3) + (col * 3);
+                int bm_offset = (bm_row * bm_width * 3) + (bm_col * 3);
+                bytes[bytes_offset + 0] = params.blue_marble[bm_offset + 0];
+                bytes[bytes_offset + 1] = params.blue_marble[bm_offset + 1];
+                bytes[bytes_offset + 2] = params.blue_marble[bm_offset + 2];
+            }
+        }
+    }
+
+    if(target_lod < -2)
+        return bytes;
+
     auto coords = cognitics::cdb::CoordinatesRange(params.west, params.east, params.south, params.north);
     auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)4), target_lod);
 
@@ -141,26 +194,7 @@ std::vector<unsigned char> cdb_sample_imagery(cdb_sample_parameters& params)
         tiles = parent_tiles;
     }
 
-    auto extents = gdalsampler::GeoExtents();
-    extents.north = params.north;
-    extents.south = params.south;
-    extents.east = params.east;
-    extents.west = params.west;
-    extents.height = params.height;
-    extents.width = params.width;
-    auto raster_info = cognitics::cdb::RasterInfo();
-    raster_info.North = params.north;
-    raster_info.South = params.south;
-    raster_info.East = params.east;
-    raster_info.West = params.west;
-    raster_info.Height = params.height;
-    raster_info.Width = params.width;
-    raster_info.OriginX = raster_info.West;
-    raster_info.OriginY = raster_info.North;
-    raster_info.PixelSizeX = (raster_info.East - raster_info.West) / raster_info.Width;
-    raster_info.PixelSizeY = (raster_info.South - raster_info.North) / raster_info.Height;
-
-    auto bytes = std::vector<unsigned char>(extents.width * extents.height * 3);
+    bytes = cognitics::cdb::FlippedVertically(bytes, raster_info.Width, raster_info.Height, 3);
     bool result = sampler.Sample(extents, &bytes[0]);
     bytes = cognitics::cdb::FlippedVertically(bytes, raster_info.Width, raster_info.Height, 3);
     return bytes;
