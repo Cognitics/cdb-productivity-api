@@ -132,6 +132,7 @@ std::vector<unsigned char> cdb_sample_imagery(cdb_sample_parameters& params)
     auto bytes = std::vector<unsigned char>(extents.width * extents.height * 3);
     if(params.blue_marble)
     {
+        int brightness = 96;
         int bm_width = 21600;
         int bm_height = 10800;
         for(int row = 0, rows = params.height; row < rows; ++row)
@@ -153,9 +154,23 @@ std::vector<unsigned char> cdb_sample_imagery(cdb_sample_parameters& params)
 
                 int bytes_offset = (row * params.width * 3) + (col * 3);
                 int bm_offset = (bm_row * bm_width * 3) + (bm_col * 3);
-                bytes[bytes_offset + 0] = params.blue_marble[bm_offset + 0];
-                bytes[bytes_offset + 1] = params.blue_marble[bm_offset + 1];
-                bytes[bytes_offset + 2] = params.blue_marble[bm_offset + 2];
+                unsigned char r = params.blue_marble[bm_offset + 0];
+                unsigned char g = params.blue_marble[bm_offset + 1];
+                unsigned char b = params.blue_marble[bm_offset + 2];
+                if(!params.population.empty())
+                {
+                    int ilat = 90 + std::floor(lat);
+                    int ilon = 180 + std::floor(lon);
+                    if(params.population.at((ilat * 360) + ilon) > 0)
+                    {
+                        r = std::min<int>(r + brightness, 255);
+                        //g = std::min<int>(g + brightness, 255);
+                        b = std::min<int>(b + brightness, 255);
+                    }
+                }
+                bytes[bytes_offset + 0] = r;
+                bytes[bytes_offset + 1] = g;
+                bytes[bytes_offset + 2] = b;
             }
         }
     }
@@ -187,9 +202,12 @@ std::vector<unsigned char> cdb_sample_imagery(cdb_sample_parameters& params)
                 continue;
             auto tile_bounds = cognitics::cdb::NSEWBoundsForTileInfo(tile_info);
             auto parent_coords = cognitics::cdb::CoordinatesRange(std::get<3>(tile_bounds), std::get<2>(tile_bounds), std::get<1>(tile_bounds), std::get<0>(tile_bounds));
-            auto parent_tile = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)params.dataset), tile_info.lod - 1).at(0);
-            if(std::find(parent_tiles.begin(), parent_tiles.end(), parent_tile) == parent_tiles.end())
-                parent_tiles.push_back(parent_tile);
+            auto parent_tiles_add = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)params.dataset), tile_info.lod - 1);
+            for(auto parent_tile : parent_tiles_add)
+            {
+                if(std::find(parent_tiles.begin(), parent_tiles.end(), parent_tile) == parent_tiles.end())
+                    parent_tiles.push_back(parent_tile);
+            }
         }
         tiles = parent_tiles;
     }

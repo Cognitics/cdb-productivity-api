@@ -20,7 +20,7 @@ struct cdb_sample_parameters
     int height { 1024 };
     int dataset { 4 };
     const unsigned char* blue_marble { nullptr };
-    std::vector<std::pair<std::string, std::string>> cdb_geocells;
+    std::vector<unsigned char> population;
 };
 
 bool cdb_sample(cdb_sample_parameters& params);

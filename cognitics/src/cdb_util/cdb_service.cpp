@@ -88,7 +88,7 @@ public:
             auto key = LowerCase(entry.substr(0, pos));
             auto value = entry.substr(pos + 1);
             std::string decoded;
-            server->urlDecode(value.c_str(), decoded, false);
+            server->urlDecode(value.c_str(), decoded, true);
             result[key] = decoded;
         }
         return result;
@@ -125,8 +125,10 @@ class WMSRequestHandler
 {
     CDBRequest cdb_request;
     const unsigned char* blue_marble { nullptr };
+    const std::vector<unsigned char>& population;
 
-    WMSRequestHandler(const std::string& cdb, CivetServer* server, mg_connection* connection, const unsigned char* blue_marble) : cdb_request(cdb, server, connection), blue_marble(blue_marble) { };
+    WMSRequestHandler(const std::string& cdb, CivetServer* server, mg_connection* connection, const unsigned char* blue_marble, const std::vector<unsigned char>& population)
+        : cdb_request(cdb, server, connection), blue_marble(blue_marble), population(population) { };
 
     void Write(const std::string& str)
     {
@@ -341,6 +343,7 @@ class WMSRequestHandler
         sample_params.cdb = cdb_request.cdb;
         sample_params.dataset = 4;
         sample_params.blue_marble = blue_marble;
+        sample_params.population = population;
 
         auto bytes = cdb_sample_imagery(sample_params);
         if(bytes.empty())
@@ -378,9 +381,9 @@ class WMSRequestHandler
 
 public:
 
-    static bool HandleRequest(const std::string& cdb, CivetServer* server, mg_connection* connection, const unsigned char* blue_marble)
+    static bool HandleRequest(const std::string& cdb, CivetServer* server, mg_connection* connection, const unsigned char* blue_marble, const std::vector<unsigned char>& population)
     {
-        auto handler = WMSRequestHandler { cdb, server, connection, blue_marble };
+        auto handler = WMSRequestHandler { cdb, server, connection, blue_marble, population };
         return handler.Execute();
     }
 
@@ -388,13 +391,36 @@ public:
 
 class WMSHandler : public CivetHandler
 {
-public:
-    std::string cdb;
     const unsigned char* blue_marble { nullptr };
-    WMSHandler(const std::string& cdb, const unsigned char* blue_marble) : cdb(cdb), blue_marble(blue_marble) { }
+    std::string cdb;
+    std::vector<unsigned char> population;
+public:
+    WMSHandler(const unsigned char* blue_marble) : blue_marble(blue_marble), population(180 * 360) { }
+
+    void SetCDB(const std::string& cdb)
+    {
+        this->cdb = cdb;
+        auto cdb_geocells = cognitics::cdb::GeocellsForCdb(cdb);
+        for(auto geocell : cdb_geocells)
+        {
+            auto ns = geocell.first[0];
+            int ilat = std::stoi(geocell.first.substr(1));
+            if (ns == 'S')
+                ilat *= -1;
+            auto ew = geocell.second[0];
+            int ilon = std::stoi(geocell.second.substr(1));
+            if (ew == 'W')
+                ilon *= -1;
+            ilat += 90;
+            ilon += 180;
+            for(int i = 0, c = cognitics::cdb::get_tile_width(double(ilat - 90)); i < c; ++i)
+                population[(ilat * 360) + ilon + i] = 1;
+        }
+    }
+
     bool handleGet(CivetServer* server, struct mg_connection* connection)
     {
-        return WMSRequestHandler::HandleRequest(cdb, server, connection, blue_marble);
+        return WMSRequestHandler::HandleRequest(cdb, server, connection, blue_marble, population);
     }
 };
 
@@ -414,7 +440,7 @@ public:
             auto cdb = cdb_request.query_map["cdb"];
             if(std::filesystem::exists(cdb))
             {
-                wms_handler.cdb = cdb;
+                wms_handler.SetCDB(cdb);
                 mg_send_http_redirect(connection, "/view.html", 302);
                 return true;
             }
@@ -436,7 +462,9 @@ bool cdb_service(cdb_service_parameters& params)
 
     auto civet_options = std::vector<std::string> { "document_root", "./htdocs", "listening_ports", params.bind };
     auto web_server = CivetServer(civet_options);
-    auto wms_handler = WMSHandler(params.cdb, blue_marble);
+    auto wms_handler = WMSHandler(blue_marble);
+    if(!params.cdb.empty())
+        wms_handler.SetCDB(params.cdb);
     auto web_handler = WebHandler(wms_handler);
     web_server.addHandler("/wms", wms_handler);
     web_server.addHandler("", web_handler);
