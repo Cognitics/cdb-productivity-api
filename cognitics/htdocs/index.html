@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>CDB WMS Service</title>
+	<style>
+		div.error { color: red; }
+	</style>
+  </head>
+  <body onload="checkForError()">  
+	<div class="logo">
+		<img src="Coglogo_extended.PNG" height="100" />
+	</div>
+	<h1>CDB WMS Service</h1>
+	<form method="get" action="/" >
+		<table>
+			<tr>			
+				<div>Please provide a valid path to the CDB files that are to be processed.</div>
+			</tr><br/>
+			<tr>
+				<td><div for="srcdir">Path: </div></td>
+				<td><input type='text' id="cdb" name="cdb" size="100" required /></td>
+				<td><input type='submit' value="Process" /></td>
+			</tr>
+		</table>
+		<br/>
+		<div id="errormsg" class="error" />
+	</form>
+	<script>
+		function checkForError() {
+			const queryString = window.location.search;
+			console.log("queryString: " + queryString);
+			const urlParams = new URLSearchParams(queryString);
+			if (urlParams.has('error')) {
+				document.getElementById("errormsg").innerHTML = "Warning: The path provided was not valid. Please enter a valid path.";				
+				const cdb = urlParams.get('cdb');
+				console.log("cdb: " + cdb);
+				document.getElementById("cdb").value = cdb;
+			}
+		}
+	</script>
+  </body>
+</html>

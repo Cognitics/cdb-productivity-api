@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="ol.css" type="text/css">
+    <style>
+      .map {
+        height: 800px;
+        width: 100%;
+      }
+    </style>
+    <script src="ol.js"></script>
+    <title>CDB WMS Service</title>
+  </head>
+  <body>
+    <h2>CDB WMS</h2>
+    <div id="map" class="map"></div>
+    <script type="text/javascript">
+      var map = new ol.Map({
+        target: 'map',
+        layers: [
+          new ol.layer.Image({
+            source: new ol.source.ImageWMS(
+                {
+                    url: 'http://localhost:8080/wms',
+                    params: { 'LAYERS': 'Imagery' }
+                }
+            )
+          })
+        ],
+        view: new ol.View({
+            projection: 'EPSG:4326',
+            center: [0, 0],
+            zoom: 2 
+        })
+      });
+    </script>
+  </body>
+</html>
