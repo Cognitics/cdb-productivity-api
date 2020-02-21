@@ -175,11 +175,10 @@ class WMSRequestHandler
 
     bool RespondGetCapabilities()
     {
-        double north = 89.0;
+        double north = 90.0;
         double south = -90.0;
         double east = 180.0;
         double west = -180.0;
-        //std::tie(north, south, east, west) = cognitics::cdb::NSEWBoundsForCDB(cdb_request.cdb);
 
         auto host = "http://localhost:8080";
 
@@ -400,6 +399,13 @@ public:
     void SetCDB(const std::string& cdb)
     {
         this->cdb = cdb;
+        auto versions = cognitics::cdb::VersionChainForCDB(cdb);
+        for(auto version : versions)
+            AddCDBToPopulation(version);
+    }
+
+    void AddCDBToPopulation(const std::string& cdb)
+    {
         auto cdb_geocells = cognitics::cdb::GeocellsForCdb(cdb);
         for(auto geocell : cdb_geocells)
         {

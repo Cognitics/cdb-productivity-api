@@ -945,6 +945,45 @@ std::tuple<double, double, double, double> NSEWBoundsForCDB(const std::string& c
     return std::make_tuple(north, south, east, west);
 }
 
+std::string PreviousIncrementalRootDirectory(const std::string& cdb)
+{
+    auto version_xml = cdb + "/Metadata/Version.xml";
+    if(!std::filesystem::exists(version_xml))
+        return "";
+    auto ifs = std::ifstream(version_xml);
+    auto xml = std::string(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
+    auto pos = xml.find("<PreviousIncrementalRootDirectory");
+    if(pos == std::string::npos)
+        return "";
+    pos = xml.find("name=", pos);
+    if(pos == std::string::npos)
+        return "";
+    pos = xml.find('"', pos);
+    if(pos == std::string::npos)
+        return "";
+    auto endpos = xml.find('"', pos + 1);
+    if(endpos == std::string::npos)
+        return "";
+    auto pird_name = xml.substr(pos + 1, endpos - pos - 1);
+    if(pird_name.empty())
+        return "";
+    return cdb + "/" + pird_name;
+}
+
+std::vector<std::string> VersionChainForCDB(const std::string& cdb)
+{
+    auto result = std::vector<std::string>();
+    auto entry = cdb;
+    while(!entry.empty())
+    {
+        result.push_back(entry);
+        entry = PreviousIncrementalRootDirectory(entry);
+        if(!std::filesystem::exists(entry))
+            entry.clear();
+    }
+    return result;
+}
+
 
 }
 }

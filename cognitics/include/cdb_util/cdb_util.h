@@ -103,6 +103,8 @@ std::vector<std::pair<std::string, std::string>> GeocellsForCdb(const std::strin
 int MaxLodForDatasetPath(const std::string& path);
 std::tuple<double, double, double, double> NSEWBoundsForCDB(const std::string& cdb);
 
+std::string PreviousIncrementalRootDirectory(const std::string& cdb);
+std::vector<std::string> VersionChainForCDB(const std::string& cdb);
 
 
 

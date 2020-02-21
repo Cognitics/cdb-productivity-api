@@ -132,7 +132,6 @@ std::vector<unsigned char> cdb_sample_imagery(cdb_sample_parameters& params)
     auto bytes = std::vector<unsigned char>(extents.width * extents.height * 3);
     if(params.blue_marble)
     {
-        int brightness = 96;
         int bm_width = 21600;
         int bm_height = 10800;
         for(int row = 0, rows = params.height; row < rows; ++row)
@@ -163,9 +162,8 @@ std::vector<unsigned char> cdb_sample_imagery(cdb_sample_parameters& params)
                     int ilon = 180 + std::floor(lon);
                     if(params.population.at((ilat * 360) + ilon) > 0)
                     {
-                        r = std::min<int>(r + brightness, 255);
-                        //g = std::min<int>(g + brightness, 255);
-                        b = std::min<int>(b + brightness, 255);
+                        r = std::min<int>(r + 96, 255);
+                        b = std::min<int>(b + 96, 255);
                     }
                 }
                 bytes[bytes_offset + 0] = r;
@@ -181,6 +179,8 @@ std::vector<unsigned char> cdb_sample_imagery(cdb_sample_parameters& params)
     auto coords = cognitics::cdb::CoordinatesRange(params.west, params.east, params.south, params.north);
     auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)4), target_lod);
 
+    auto cdblist = cognitics::cdb::VersionChainForCDB(params.cdb);
+
     GDALRasterSampler sampler;
 
     while(!tiles.empty())
@@ -191,13 +191,19 @@ std::vector<unsigned char> cdb_sample_imagery(cdb_sample_parameters& params)
             auto tile_info = cognitics::cdb::TileInfoForTile(tile);
             auto tile_filepath = cognitics::cdb::FilePathForTileInfo(tile_info);
             auto tile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
-            auto filename = params.cdb + "/Tiles/" + tile_filepath + "/" + tile_filename + ".jp2";
-            if(std::filesystem::exists(filename))
+            bool found = false;
+            for(auto cdb : cdblist)
             {
-                sampler.AddFile(filename);
-                std::cout << filename << "\n";
-                continue;
+                auto filename = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename + ".jp2";
+                if(std::filesystem::exists(filename))
+                {
+                    found = true;
+                    sampler.AddFile(filename);
+                    std::cout << filename << "\n";
+                }
             }
+            if(found)
+                continue;
             if(tile_info.lod - 1 < -10)
                 continue;
             auto tile_bounds = cognitics::cdb::NSEWBoundsForTileInfo(tile_info);
