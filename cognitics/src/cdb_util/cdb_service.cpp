@@ -102,19 +102,14 @@ public:
     void Dump()
     {
         auto reqinfo = mg_get_request_info(connection);
+        auto ss = std::stringstream();
         if(reqinfo->request_method)
-            std::cout << reqinfo->request_method << "\n";
+            ss << " " << reqinfo->request_method;
         if(reqinfo->request_uri)
-            std::cout << "  REQUEST_URI: " << reqinfo->request_uri << "\n";
-        if(reqinfo->local_uri)
-            std::cout << "  LOCAL_URI: " << reqinfo->local_uri << "\n";
+            ss << " " << reqinfo->request_uri;
         if(reqinfo->query_string)
-        {
-            std::cout << "  QUERY_STRING: " << reqinfo->query_string << "\n";
-            auto entry_map = QueryMapForQueryString(reqinfo->query_string);
-            for(auto kv : entry_map)
-                std::cout << "    " << kv.first << " = " << kv.second << "\n";
-        }
+            ss << "?" << reqinfo->query_string;
+        ccl::Log::instance()->write(ccl::LDEBUG, ss.str());
     }
 
 };

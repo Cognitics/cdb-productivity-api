@@ -51,7 +51,7 @@ bool cdb_sample(cdb_sample_parameters& params)
             if(std::filesystem::exists(filename))
             {
                 sampler.AddFile(filename);
-                std::cout << filename << "\n";
+                ccl::Log::instance()->write(ccl::LDEBUG, "  " + filename);
                 continue;
             }
             if(tile_info.lod - 1 < -10)
@@ -199,7 +199,7 @@ std::vector<unsigned char> cdb_sample_imagery(cdb_sample_parameters& params)
                 {
                     found = true;
                     sampler.AddFile(filename);
-                    std::cout << filename << "\n";
+                    ccl::Log::instance()->write(ccl::LDEBUG, "  " + filename);
                 }
             }
             if(found)
