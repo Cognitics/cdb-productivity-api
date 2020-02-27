@@ -345,7 +345,33 @@ bool cdb_inject(cdb_inject_parameters& params)
     if (!imagery_tileinfos.empty())
     {
         GDALRasterSampler sampler;
-        std::for_each(imagery_filenames.begin(), imagery_filenames.end(), [&](std::string& fn) { sampler.AddFile(fn); });
+        for(auto ti : imagery_tileinfos)
+        {
+            double tile_north, tile_south, tile_east, tile_west;
+            std::tie(tile_north, tile_south, tile_east, tile_west) = cognitics::cdb::NSEWBoundsForTileInfo(ti);
+            auto coords = cognitics::cdb::CoordinatesRange(tile_west, tile_east, tile_south, tile_north);
+            auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)ti.dataset), ti.lod - 1);
+            auto coverage_tiles = cognitics::cdb::CoverageTilesForTiles(params.cdb, tiles);
+            for(auto ctile : coverage_tiles)
+            {
+                auto cdb = ctile.first;
+                auto tile = ctile.second;
+                auto tile_info = cognitics::cdb::TileInfoForTile(tile);
+                auto tile_filepath = cognitics::cdb::FilePathForTileInfo(tile_info);
+                auto tile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
+                auto filename = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename;
+                if(tile_info.dataset == 1)
+                    filename += ".tif";
+                if(tile_info.dataset == 4)
+                    filename += ".jp2";
+                if(std::find(imagery_filenames.begin(), imagery_filenames.end(), filename) == imagery_filenames.end())
+                    imagery_filenames.push_back(filename);
+            }
+        }
+        for(auto fn : imagery_filenames)
+            std::cout << fn << "\n";
+        for(auto fn : imagery_filenames)
+            sampler.AddFile(fn);
         for (auto&& ti : imagery_tileinfos)
         {
             auto cdbTileJob = new CDBTileJob(&jobManager, params.cdb, std::ref(sampler), ti, jobReporter, false);
@@ -353,35 +379,46 @@ bool cdb_inject(cdb_inject_parameters& params)
         }
         jobReporter.setTotalJobCount(imagery_tileinfos.size());
         jobManager.waitForCompletion();
-
-#if 0
-        std::vector<std::future<bool>> tasks;
-        std::for_each(imagery_tileinfos.begin(), imagery_tileinfos.end(), [&](cognitics::cdb::TileInfo& ti) {
-            tasks.emplace_back(std::async(std::launch::async, cognitics::cdb::BuildImageryTileFromSampler, cdb, std::ref(sampler), ti)); });
-        for (size_t i = 0, c = tasks.size(); i < c; ++i)
-        {
-            tasks[i].get();
-            log << "[" << (i + 1) << "/" << c << "] " << cognitics::cdb::FileNameForTileInfo(imagery_tileinfos[i]) << log.endl;
-        }
-#endif
     }
 
     if (!elevation_tileinfos.empty())
     {
-        if(params.ipp_elevation)
+        GDALRasterSampler sampler;
+        for(auto ti : elevation_tileinfos)
         {
-            GDALRasterSampler sampler;
-            for (auto fn : elevation_filenames)
-                sampler.AddFile(fn);
-            for (auto&& ti : elevation_tileinfos)
+            double tile_north, tile_south, tile_east, tile_west;
+            std::tie(tile_north, tile_south, tile_east, tile_west) = cognitics::cdb::NSEWBoundsForTileInfo(ti);
+            auto coords = cognitics::cdb::CoordinatesRange(tile_west, tile_east, tile_south, tile_north);
+            auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)ti.dataset), ti.lod - 1);
+            auto coverage_tiles = cognitics::cdb::CoverageTilesForTiles(params.cdb, tiles);
+            for(auto ctile : coverage_tiles)
             {
-                auto cdbTileJob = new CDBTileJob(&jobManager, params.cdb, std::ref(sampler), ti, jobReporter, true);
-                jobManager.submitJob(cdbTileJob);
+                auto cdb = ctile.first;
+                auto tile = ctile.second;
+                auto tile_info = cognitics::cdb::TileInfoForTile(tile);
+                auto tile_filepath = cognitics::cdb::FilePathForTileInfo(tile_info);
+                auto tile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
+                auto filename = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename;
+                if(tile_info.dataset == 1)
+                    filename += ".tif";
+                if(tile_info.dataset == 4)
+                    filename += ".jp2";
+                if(std::find(elevation_filenames.begin(), elevation_filenames.end(), filename) == elevation_filenames.end())
+                    elevation_filenames.push_back(filename);
             }
-            jobReporter.setTotalJobCount(imagery_tileinfos.size());
-            jobManager.waitForCompletion();
         }
-        else
+        for(auto fn : elevation_filenames)
+            std::cout << fn << "\n";
+        for(auto fn : elevation_filenames)
+            sampler.AddFile(fn);
+        for (auto&& ti : elevation_tileinfos)
+        {
+            auto cdbTileJob = new CDBTileJob(&jobManager, params.cdb, std::ref(sampler), ti, jobReporter, true);
+            jobManager.submitJob(cdbTileJob);
+        }
+        jobReporter.setTotalJobCount(imagery_tileinfos.size());
+        jobManager.waitForCompletion();
+        /*
         {
             elev::DataSourceManager dsm(50 * 1024 * 1024);
             std::for_each(elevation_filenames.begin(), elevation_filenames.end(), [&](std::string& fn) { dsm.AddFile_Raster_GDAL(fn); });
@@ -394,6 +431,7 @@ bool cdb_inject(cdb_inject_parameters& params)
                 log << "[" << (i + 1) << "/" << c << "] " << cognitics::cdb::FileNameForTileInfo(ti) << log.endl;
             }
         }
+        */
     }
 
     if (params.build_overviews)

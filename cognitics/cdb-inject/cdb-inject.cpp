@@ -75,7 +75,6 @@ int main(int argc, char** argv)
     args.AddOption("workers", 1, "<N>", "specify the number of worker threads");
     args.AddOption("imagery", 1, "<filename/path>", "source imagery filename or path");
     args.AddOption("elevation", 1, "<filename/path>", "source elevation filename or path");
-    args.AddOption("ipp-elevation", 0, "", "use ipp for elevation");
     args.AddOption("dry-run", 0, "", "perform dry run");
     args.AddOption("count-tiles", 0, "", "perform a dry run, and only report the number of tiles");
     args.AddOption("build-overviews", 0, "", "perform LOD downsampling");
@@ -96,7 +95,6 @@ int main(int argc, char** argv)
     if(args.Option("workers"))
         params.workers = std::stoi(args.Parameters("workers").at(0));
     params.build_overviews = args.Option("build-overviews");
-    params.ipp_elevation = args.Option("ipp-elevation");
     params.count_tiles = args.Option("count-tiles");
     params.dry_run = args.Option("dry-run");
     params.imagery = args.Parameters("imagery");

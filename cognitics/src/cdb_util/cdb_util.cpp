@@ -547,17 +547,33 @@ RasterInfo ReadRasterInfo(const std::string& filename)
     auto x_max = info.OriginX + (info.Width * info.PixelSizeX);
     auto y_max = info.OriginY + (info.Height * info.PixelSizeY);
 
-    info.South = (y_max > y_min) ? y_min : y_max;
-    info.North = (y_max > y_min) ? y_max : y_min;
-    info.West = (x_max > x_min) ? x_min : x_max;
-    info.East = (x_max > x_min) ? x_max : x_min;
+    if(y_max < y_min)
+        std::swap(y_max, y_min);
+    if(x_max < x_min)
+        std::swap(x_max, x_min);
+
+    double sw_s = y_min;
+    double sw_w = x_min;
+    double se_s = y_min;
+    double se_e = x_min;
+    double nw_n = y_max;
+    double nw_w = x_max;
+    double ne_n = y_max;
+    double ne_e = x_max;
 
     if(transform)
     {
-        transform->Transform(1, &info.West, &info.South);
-        transform->Transform(1, &info.East, &info.North);
+        transform->Transform(1, &sw_w, &sw_s);
+        transform->Transform(1, &se_e, &se_s);
+        transform->Transform(1, &nw_w, &nw_n);
+        transform->Transform(1, &ne_e, &ne_n);
         OGRCoordinateTransformation::DestroyCT(transform);
     }
+
+    info.South = std::min<double>(sw_s, se_s);
+    info.North = std::max<double>(nw_n, ne_n);
+    info.West = std::min<double>(sw_w, nw_w);
+    info.East = std::max<double>(ne_e, ne_e);
 
     return info;
 }
@@ -984,6 +1000,51 @@ std::vector<std::string> VersionChainForCDB(const std::string& cdb)
     return result;
 }
 
+std::vector<std::pair<std::string, Tile>> CoverageTilesForTiles(const std::string& cdb, const std::vector<Tile>& source_tiles)
+{
+    auto cdblist = cognitics::cdb::VersionChainForCDB(cdb);
+    auto result = std::vector<std::pair<std::string, Tile>>();
+    auto tiles = source_tiles;
+    while(!tiles.empty())
+    {
+        auto parent_tiles = std::vector<cognitics::cdb::Tile>();
+        for(auto tile : tiles)
+        {
+            auto tile_info = cognitics::cdb::TileInfoForTile(tile);
+            auto tile_filepath = cognitics::cdb::FilePathForTileInfo(tile_info);
+            auto tile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
+            bool found = false;
+            for(auto local_cdb : cdblist)
+            {
+                auto filename = local_cdb + "/Tiles/" + tile_filepath + "/" + tile_filename;
+                if(tile_info.dataset == 1)
+                    filename += ".tif";
+                if(tile_info.dataset == 4)
+                    filename += ".jp2";
+                if(std::filesystem::exists(filename))
+                {
+                    result.emplace_back(local_cdb, tile);
+                    found = true;
+                    break;
+                }
+            }
+            if(found)
+                continue;
+            if(tile_info.lod - 1 < -10)
+                continue;
+            auto tile_bounds = cognitics::cdb::NSEWBoundsForTileInfo(tile_info);
+            auto parent_coords = cognitics::cdb::CoordinatesRange(std::get<3>(tile_bounds), std::get<2>(tile_bounds), std::get<1>(tile_bounds), std::get<0>(tile_bounds));
+            auto parent_tiles_add = cognitics::cdb::generate_tiles(parent_coords, cognitics::cdb::Dataset((uint16_t)tile_info.dataset), tile_info.lod - 1);
+            for(auto parent_tile : parent_tiles_add)
+            {
+                if(std::find(parent_tiles.begin(), parent_tiles.end(), parent_tile) == parent_tiles.end())
+                    parent_tiles.push_back(parent_tile);
+            }
+        }
+        tiles = parent_tiles;
+    }
+    return result;
+}
 
 }
 }

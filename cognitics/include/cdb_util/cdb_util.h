@@ -106,6 +106,7 @@ std::tuple<double, double, double, double> NSEWBoundsForCDB(const std::string& c
 std::string PreviousIncrementalRootDirectory(const std::string& cdb);
 std::vector<std::string> VersionChainForCDB(const std::string& cdb);
 
+std::vector<std::pair<std::string, Tile>> CoverageTilesForTiles(const std::string& cdb, const std::vector<Tile>& source_tiles);
 
 
 
