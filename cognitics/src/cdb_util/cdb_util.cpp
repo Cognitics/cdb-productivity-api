@@ -984,6 +984,47 @@ std::vector<std::string> VersionChainForCDB(const std::string& cdb)
     return result;
 }
 
+std::vector<Tile> CoverageTilesForTiles(const std::string& cdb, const std::vector<Tile>& source_tiles)
+{
+    auto cdblist = cognitics::cdb::VersionChainForCDB(cdb);
+    auto result = std::vector<Tile>();
+    auto tiles = source_tiles;
+    while(!tiles.empty())
+    {
+        auto parent_tiles = std::vector<cognitics::cdb::Tile>();
+        for(auto tile : tiles)
+        {
+            auto tile_info = cognitics::cdb::TileInfoForTile(tile);
+            auto tile_filepath = cognitics::cdb::FilePathForTileInfo(tile_info);
+            auto tile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
+            bool found = false;
+            for(auto cdb : cdblist)
+            {
+                auto filename = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename + ".jp2";
+                if(std::filesystem::exists(filename))
+                {
+                    found = true;
+                    result.push_back(tile);
+                }
+            }
+            if(found)
+                continue;
+            if(tile_info.lod - 1 < -10)
+                continue;
+            auto tile_bounds = cognitics::cdb::NSEWBoundsForTileInfo(tile_info);
+            auto parent_coords = cognitics::cdb::CoordinatesRange(std::get<3>(tile_bounds), std::get<2>(tile_bounds), std::get<1>(tile_bounds), std::get<0>(tile_bounds));
+            auto parent_tiles_add = cognitics::cdb::generate_tiles(parent_coords, cognitics::cdb::Dataset((uint16_t)tile_info.dataset), tile_info.lod - 1);
+            for(auto parent_tile : parent_tiles_add)
+            {
+                if(std::find(parent_tiles.begin(), parent_tiles.end(), parent_tile) == parent_tiles.end())
+                    parent_tiles.push_back(parent_tile);
+            }
+        }
+        tiles = parent_tiles;
+    }
+    return result;
+}
+
 
 }
 }
