@@ -32,37 +32,23 @@ bool cdb_sample(cdb_sample_parameters& params)
 
     auto coords = cognitics::cdb::CoordinatesRange(params.west, params.east, params.south, params.north);
     auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)params.dataset), target_lod);
+    auto coverage_tiles = cognitics::cdb::CoverageTilesForTiles(params.cdb, tiles);
 
     GDALRasterSampler sampler;
-
-    while(!tiles.empty())
+    for(auto ctile : coverage_tiles)
     {
-        auto parent_tiles = std::vector<cognitics::cdb::Tile>();
-        for(auto tile : tiles)
-        {
-            auto tile_info = cognitics::cdb::TileInfoForTile(tile);
-            auto tile_filepath = cognitics::cdb::FilePathForTileInfo(tile_info);
-            auto tile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
-            auto filename = params.cdb + "/Tiles/" + tile_filepath + "/" + tile_filename;
-            if(tile_info.dataset == 1)
-                filename += ".tif";
-            if(tile_info.dataset == 4)
-                filename += ".jp2";
-            if(std::filesystem::exists(filename))
-            {
-                sampler.AddFile(filename);
-                ccl::Log::instance()->write(ccl::LDEBUG, "  " + filename);
-                continue;
-            }
-            if(tile_info.lod - 1 < -10)
-                continue;
-            auto tile_bounds = cognitics::cdb::NSEWBoundsForTileInfo(tile_info);
-            auto parent_coords = cognitics::cdb::CoordinatesRange(std::get<3>(tile_bounds), std::get<2>(tile_bounds), std::get<1>(tile_bounds), std::get<0>(tile_bounds));
-            auto parent_tile = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)params.dataset), tile_info.lod - 1).at(0);
-            if(std::find(parent_tiles.begin(), parent_tiles.end(), parent_tile) == parent_tiles.end())
-                parent_tiles.push_back(parent_tile);
-        }
-        tiles = parent_tiles;
+        auto cdb = ctile.first;
+        auto tile = ctile.second;
+        auto tile_info = cognitics::cdb::TileInfoForTile(tile);
+        auto tile_filepath = cognitics::cdb::FilePathForTileInfo(tile_info);
+        auto tile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
+        auto filename = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename;
+        if(tile_info.dataset == 1)
+            filename += ".tif";
+        if(tile_info.dataset == 4)
+            filename += ".jp2";
+        sampler.AddFile(filename);
+        ccl::Log::instance()->write(ccl::LDEBUG, "  " + filename);
     }
 
     auto extents = gdalsampler::GeoExtents();
@@ -129,7 +115,9 @@ std::vector<unsigned char> cdb_sample_imagery(cdb_sample_parameters& params)
     raster_info.PixelSizeX = (raster_info.East - raster_info.West) / raster_info.Width;
     raster_info.PixelSizeY = (raster_info.South - raster_info.North) / raster_info.Height;
 
-    auto bytes = std::vector<unsigned char>(extents.width * extents.height * 3);
+    int channels = 3;
+
+    auto bytes = std::vector<unsigned char>(extents.width * extents.height * channels);
     if(params.blue_marble)
     {
         int bm_width = 21600;
@@ -151,11 +139,12 @@ std::vector<unsigned char> cdb_sample_imagery(cdb_sample_parameters& params)
                 if(bm_col >= bm_width)
                     continue;
 
-                int bytes_offset = (row * params.width * 3) + (col * 3);
+                int bytes_offset = (row * params.width * channels) + (col * channels);
                 int bm_offset = (bm_row * bm_width * 3) + (bm_col * 3);
                 unsigned char r = params.blue_marble[bm_offset + 0];
                 unsigned char g = params.blue_marble[bm_offset + 1];
                 unsigned char b = params.blue_marble[bm_offset + 2];
+                unsigned char a = 255;
                 if(!params.population.empty())
                 {
                     int ilat = 90 + std::floor(lat);
@@ -169,6 +158,8 @@ std::vector<unsigned char> cdb_sample_imagery(cdb_sample_parameters& params)
                 bytes[bytes_offset + 0] = r;
                 bytes[bytes_offset + 1] = g;
                 bytes[bytes_offset + 2] = b;
+                if(channels > 3)
+                    bytes[bytes_offset + 3] = a;
             }
         }
     }
@@ -177,45 +168,24 @@ std::vector<unsigned char> cdb_sample_imagery(cdb_sample_parameters& params)
         return bytes;
 
     auto coords = cognitics::cdb::CoordinatesRange(params.west, params.east, params.south, params.north);
-    auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)4), target_lod);
-
-    auto cdblist = cognitics::cdb::VersionChainForCDB(params.cdb);
+    auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)params.dataset), target_lod);
+    auto coverage_tiles = cognitics::cdb::CoverageTilesForTiles(params.cdb, tiles);
 
     GDALRasterSampler sampler;
-
-    while(!tiles.empty())
+    for(auto ctile : coverage_tiles)
     {
-        auto parent_tiles = std::vector<cognitics::cdb::Tile>();
-        for(auto tile : tiles)
-        {
-            auto tile_info = cognitics::cdb::TileInfoForTile(tile);
-            auto tile_filepath = cognitics::cdb::FilePathForTileInfo(tile_info);
-            auto tile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
-            bool found = false;
-            for(auto cdb : cdblist)
-            {
-                auto filename = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename + ".jp2";
-                if(std::filesystem::exists(filename))
-                {
-                    found = true;
-                    sampler.AddFile(filename);
-                    ccl::Log::instance()->write(ccl::LDEBUG, "  " + filename);
-                }
-            }
-            if(found)
-                continue;
-            if(tile_info.lod - 1 < -10)
-                continue;
-            auto tile_bounds = cognitics::cdb::NSEWBoundsForTileInfo(tile_info);
-            auto parent_coords = cognitics::cdb::CoordinatesRange(std::get<3>(tile_bounds), std::get<2>(tile_bounds), std::get<1>(tile_bounds), std::get<0>(tile_bounds));
-            auto parent_tiles_add = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)params.dataset), tile_info.lod - 1);
-            for(auto parent_tile : parent_tiles_add)
-            {
-                if(std::find(parent_tiles.begin(), parent_tiles.end(), parent_tile) == parent_tiles.end())
-                    parent_tiles.push_back(parent_tile);
-            }
-        }
-        tiles = parent_tiles;
+        auto cdb = ctile.first;
+        auto tile = ctile.second;
+        auto tile_info = cognitics::cdb::TileInfoForTile(tile);
+        auto tile_filepath = cognitics::cdb::FilePathForTileInfo(tile_info);
+        auto tile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
+        auto filename = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename;
+        if(tile_info.dataset == 1)
+            filename += ".tif";
+        if(tile_info.dataset == 4)
+            filename += ".jp2";
+        sampler.AddFile(filename);
+        ccl::Log::instance()->write(ccl::LDEBUG, "  " + filename);
     }
 
     bytes = cognitics::cdb::FlippedVertically(bytes, raster_info.Width, raster_info.Height, 3);
