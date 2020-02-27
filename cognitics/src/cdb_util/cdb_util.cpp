@@ -547,17 +547,33 @@ RasterInfo ReadRasterInfo(const std::string& filename)
     auto x_max = info.OriginX + (info.Width * info.PixelSizeX);
     auto y_max = info.OriginY + (info.Height * info.PixelSizeY);
 
-    info.South = (y_max > y_min) ? y_min : y_max;
-    info.North = (y_max > y_min) ? y_max : y_min;
-    info.West = (x_max > x_min) ? x_min : x_max;
-    info.East = (x_max > x_min) ? x_max : x_min;
+    if(y_max < y_min)
+        std::swap(y_max, y_min);
+    if(x_max < x_min)
+        std::swap(x_max, x_min);
+
+    double sw_s = y_min;
+    double sw_w = x_min;
+    double se_s = y_min;
+    double se_e = x_min;
+    double nw_n = y_max;
+    double nw_w = x_max;
+    double ne_n = y_max;
+    double ne_e = x_max;
 
     if(transform)
     {
-        transform->Transform(1, &info.West, &info.South);
-        transform->Transform(1, &info.East, &info.North);
+        transform->Transform(1, &sw_w, &sw_s);
+        transform->Transform(1, &se_e, &se_s);
+        transform->Transform(1, &nw_w, &nw_n);
+        transform->Transform(1, &ne_e, &ne_n);
         OGRCoordinateTransformation::DestroyCT(transform);
     }
+
+    info.South = std::min<double>(sw_s, se_s);
+    info.North = std::max<double>(nw_n, ne_n);
+    info.West = std::min<double>(sw_w, nw_w);
+    info.East = std::max<double>(ne_e, ne_e);
 
     return info;
 }
