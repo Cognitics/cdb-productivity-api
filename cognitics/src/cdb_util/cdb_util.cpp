@@ -984,10 +984,10 @@ std::vector<std::string> VersionChainForCDB(const std::string& cdb)
     return result;
 }
 
-std::vector<Tile> CoverageTilesForTiles(const std::string& cdb, const std::vector<Tile>& source_tiles)
+std::vector<std::pair<std::string, Tile>> CoverageTilesForTiles(const std::string& cdb, const std::vector<Tile>& source_tiles)
 {
     auto cdblist = cognitics::cdb::VersionChainForCDB(cdb);
-    auto result = std::vector<Tile>();
+    auto result = std::vector<std::pair<std::string, Tile>>();
     auto tiles = source_tiles;
     while(!tiles.empty())
     {
@@ -998,13 +998,18 @@ std::vector<Tile> CoverageTilesForTiles(const std::string& cdb, const std::vecto
             auto tile_filepath = cognitics::cdb::FilePathForTileInfo(tile_info);
             auto tile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
             bool found = false;
-            for(auto cdb : cdblist)
+            for(auto local_cdb : cdblist)
             {
-                auto filename = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename + ".jp2";
+                auto filename = local_cdb + "/Tiles/" + tile_filepath + "/" + tile_filename;
+                if(tile_info.dataset == 1)
+                    filename += ".tif";
+                if(tile_info.dataset == 4)
+                    filename += ".jp2";
                 if(std::filesystem::exists(filename))
                 {
+                    result.emplace_back(local_cdb, tile);
                     found = true;
-                    result.push_back(tile);
+                    break;
                 }
             }
             if(found)
@@ -1024,7 +1029,6 @@ std::vector<Tile> CoverageTilesForTiles(const std::string& cdb, const std::vecto
     }
     return result;
 }
-
 
 }
 }
