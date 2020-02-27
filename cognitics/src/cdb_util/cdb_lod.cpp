@@ -41,7 +41,6 @@ public:
     std::string cdb;
     int max_lod { 0 };
     cognitics::cdb::TileInfo tile_info;
-    GDALRasterSampler* sampler;
     
     std::vector<TileJob*> children;
     std::vector<std::string> child_filenames;
@@ -90,8 +89,29 @@ public:
         if(child_filenames.empty())
             return 0;
 
+        auto sampler_filenames = child_filenames;
+        double tile_north, tile_south, tile_east, tile_west;
+        std::tie(tile_north, tile_south, tile_east, tile_west) = cognitics::cdb::NSEWBoundsForTileInfo(tile_info);
+        auto coords = cognitics::cdb::CoordinatesRange(tile_west, tile_east, tile_south, tile_north);
+        auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)tile_info.dataset), tile_info.lod - 1);
+        auto coverage_tiles = cognitics::cdb::CoverageTilesForTiles(cdb, tiles);
+        for (auto ctile : coverage_tiles)
+        {
+            auto cdb = ctile.first;
+            auto tile = ctile.second;
+            auto tile_info = cognitics::cdb::TileInfoForTile(tile);
+            auto tile_filepath = cognitics::cdb::FilePathForTileInfo(tile_info);
+            auto tile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
+            auto filename = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename;
+            if (tile_info.dataset == 1)
+                filename += ".tif";
+            if (tile_info.dataset == 4)
+                filename += ".jp2";
+            if (std::find(sampler_filenames.begin(), sampler_filenames.end(), filename) == sampler_filenames.end())
+                sampler_filenames.push_back(filename);
+        }
         GDALRasterSampler sampler;
-        for(auto filename : child_filenames)
+        for(auto filename : sampler_filenames)
             sampler.AddFile(filename);
         if(tile_info.dataset == 1)
         {
@@ -126,7 +146,6 @@ public:
             job->cdb = cdb;
             job->max_lod = max_lod;
             job->tile_info = cognitics::cdb::TileInfoForTile(tile);
-            job->sampler = sampler;
             manager->submitJob(job);
         }
         return (int)children.size();
