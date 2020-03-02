@@ -14,7 +14,8 @@
 #endif //USE_EGL
 #include <GL/glew.h>
 
-#include <GL/glut.h>
+#define FREEGLUT_LIB_PRAGMAS 0
+#include <GL/freeglut.h>
 #ifndef WIN32
 #include <GL/glx.h>
 #endif

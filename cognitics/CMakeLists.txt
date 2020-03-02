@@ -51,8 +51,8 @@ if(UNIX)
 endif(UNIX)
 
 if(WIN32)
-    set(CMAKE_CXX_FLAGS_DEBUG "/MP /Od /EHsc /RTC1 /MDd /W3 /nologo /c /Zi /TP /errorReport:prompt -DCOG_DEBUG")
-    set(CMAKE_CXX_FLAGS_RELEASE "/MP /O2 /FD /EHsc /MD /W3 /nologo /c /Zi /TP /errorReport:prompt -DCOG_RELEASE")
+    set(CMAKE_CXX_FLAGS_DEBUG "/MP /Od /EHsc /RTC1 /MDd /W3 /nologo /c /Zi /TP /errorReport:prompt -DCOG_DEBUG" -DDEBUG=1)
+    set(CMAKE_CXX_FLAGS_RELEASE "/MP /O2 /FD /EHsc /MD /W3 /nologo /c /Zi /TP /errorReport:prompt -DCOG_RELEASE -DNDEBUG")
 endif(WIN32)
 
 message("THIRD_PARTY_DIR: ${THIRD_PARTY_DIR}")

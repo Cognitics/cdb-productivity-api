@@ -32,7 +32,8 @@ DEALINGS IN THE SOFTWARE.
 #ifdef __APPLE__
 #include <GLUT/glut.h>
 #else
-#include <GL/glut.h>
+#define FREEGLUT_LIB_PRAGMAS 0
+#include <GL/freeglut.h>
 #endif
 
 #include <scenegraph/Visitor.h>
