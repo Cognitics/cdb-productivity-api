@@ -204,7 +204,7 @@ bool cdb_lod(cdb_lod_parameters& params)
         int lon = std::stoi(geocell.second.substr(1));
         if(geocell.second[0] == 'W')
             lon *= -1;
-        if(0)
+        if(1)
         {
             auto maxlod_elevation = cognitics::cdb::MaxLodForDatasetPath(geocell_path + "/001_Elevation");
             if(maxlod_elevation >= 0)
