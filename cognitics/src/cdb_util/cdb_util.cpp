@@ -542,11 +542,25 @@ RasterInfo ReadRasterInfo(const std::string& filename)
     info.PixelSizeX = geotransform[1];
     info.PixelSizeY = geotransform[5];
 
-    auto x_min = info.OriginX;
-    auto y_min = info.OriginY;
-    auto x_max = info.OriginX + (info.Width * info.PixelSizeX);
-    auto y_max = info.OriginY + (info.Height * info.PixelSizeY);
-
+    double x_min = DBL_MAX;
+    double x_max = -DBL_MAX;
+    double y_min = DBL_MAX;
+    double y_max = -DBL_MAX;
+    for(int row = 0; row < info.Height; ++row)
+    {
+        for(int col = 0; col < info.Width; ++col)
+        {
+            //Xgeo = GT(0) + Xpixel * GT(1) + Yline * GT(2)
+            //Ygeo = GT(3) + Xpixel * GT(4) + Yline * GT(5)
+            auto x = geotransform[0] + (geotransform[1] * col) + (geotransform[2] * row);
+            auto y = geotransform[3] + (geotransform[4] * col) + (geotransform[5] * row);
+            x_min = std::min<double>(x_min, x);
+            x_max = std::max<double>(x_max, x);
+            y_min = std::min<double>(y_min, y);
+            y_max = std::max<double>(y_max, y);
+        }
+    }
+    
     if(y_max < y_min)
         std::swap(y_max, y_min);
     if(x_max < x_min)
