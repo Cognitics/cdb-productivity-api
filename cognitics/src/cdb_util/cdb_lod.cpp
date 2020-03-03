@@ -57,18 +57,14 @@ public:
             auto child_it = std::find(children.begin(), children.end(), job);
             if(child_it != children.end())
                 children.erase(child_it);
-            children_mutex.unlock();
+            auto child = dynamic_cast<TileJob*>(job);
+            auto child_fn = cdb + "/Tiles/" + FullFilenameForTileInfo(child->tile_info);
+            if(ccl::fileExists(child_fn))
             {
-                auto child = dynamic_cast<TileJob*>(job);
-                auto child_fn = cdb + "/Tiles/" + FullFilenameForTileInfo(child->tile_info);
-                if(ccl::fileExists(child_fn))
-                {
-                    children_mutex.lock();
-                    child_filenames.push_back(child_fn);
-                    child_filetimes.push_back(std::filesystem::last_write_time(child_fn));
-                    children_mutex.unlock();
-                }
+                child_filenames.push_back(child_fn);
+                child_filetimes.push_back(std::filesystem::last_write_time(child_fn));
             }
+            children_mutex.unlock();
             if(children.size() > 0)
                 return (int)children.size();
 
@@ -92,15 +88,19 @@ public:
                 return 0;
 
             auto sampler_filenames = child_filenames;
-            double tile_north, tile_south, tile_east, tile_west;
-            std::tie(tile_north, tile_south, tile_east, tile_west) = cognitics::cdb::NSEWBoundsForTileInfo(tile_info);
-            auto coords = cognitics::cdb::CoordinatesRange(tile_west, tile_east, tile_south, tile_north);
+            auto raster_info = cognitics::cdb::RasterInfoFromTileInfo(tile_info);
+            raster_info.West += raster_info.PixelSizeX / 3;
+            raster_info.East -= raster_info.PixelSizeX / 3;
+            raster_info.South += std::abs(raster_info.PixelSizeY / 3);
+            raster_info.North -= std::abs(raster_info.PixelSizeY / 3);
+            auto coords = cognitics::cdb::CoordinatesRange(raster_info.West, raster_info.East, raster_info.South, raster_info.North);
             auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)tile_info.dataset), tile_info.lod - 1);
             auto coverage_tiles = cognitics::cdb::CoverageTilesForTiles(cdb, tiles);
             auto filtered_tiles = std::vector<std::pair<std::string, cognitics::cdb::Tile>>();
             for (auto ctile : coverage_tiles)
             {
-                auto ctile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
+                auto ctile_info = cognitics::cdb::TileInfoForTile(ctile.second);
+                auto ctile_filename = cognitics::cdb::FileNameForTileInfo(ctile_info);
                 if(ctile_filename == cognitics::cdb::FileNameForTileInfo(tile_info))
                     continue;
                 filtered_tiles.push_back(ctile);
@@ -125,12 +125,12 @@ public:
                 sampler.AddFile(filename);
             if(tile_info.dataset == 1)
             {
-                printf("%s\n", cognitics::cdb::FileNameForTileInfo(tile_info).c_str());
+                printf("%s.tif\n", cognitics::cdb::FileNameForTileInfo(tile_info).c_str());
                 cognitics::cdb::BuildElevationTileFromSampler(cdb, sampler, tile_info);
             }
             if(tile_info.dataset == 4)
             {
-                printf("%s\n", cognitics::cdb::FileNameForTileInfo(tile_info).c_str());
+                printf("%s.jp2\n", cognitics::cdb::FileNameForTileInfo(tile_info).c_str());
                 cognitics::cdb::BuildImageryTileFromSampler(cdb, sampler, tile_info);
             }
             gdalsampler::CacheManager::getInstance()->Unload();
@@ -149,9 +149,14 @@ public:
             if(tile_info.lod >= max_lod)
                 return 0;
 
-            //printf("[TileJob] %s\n", cognitics::cdb::FileNameForTileInfo(tile_info).c_str());
+            //auto indent = std::string((tile_info.lod + 10) * 2, ' ');
+            //std::cout << indent << cognitics::cdb::FileNameForTileInfo(tile_info).c_str() << "\n";
 
             auto raster_info = cognitics::cdb::RasterInfoFromTileInfo(tile_info);
+            raster_info.West += raster_info.PixelSizeX / 3;
+            raster_info.East -= raster_info.PixelSizeX / 3;
+            raster_info.South += std::abs(raster_info.PixelSizeY / 3);
+            raster_info.North -= std::abs(raster_info.PixelSizeY / 3);
             auto coords = cognitics::cdb::CoordinatesRange(raster_info.West, raster_info.East, raster_info.South, raster_info.North);
             auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset(tile_info.dataset), tile_info.lod + 1);
             for(auto tile : tiles)
@@ -199,7 +204,7 @@ bool cdb_lod(cdb_lod_parameters& params)
         int lon = std::stoi(geocell.second.substr(1));
         if(geocell.second[0] == 'W')
             lon *= -1;
-        if(1)
+        if(0)
         {
             auto maxlod_elevation = cognitics::cdb::MaxLodForDatasetPath(geocell_path + "/001_Elevation");
             if(maxlod_elevation >= 0)
