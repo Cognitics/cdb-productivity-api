@@ -204,7 +204,7 @@ bool cdb_lod(cdb_lod_parameters& params)
         int lon = std::stoi(geocell.second.substr(1));
         if(geocell.second[0] == 'W')
             lon *= -1;
-        if(1)
+        if(params.elevation)
         {
             auto maxlod_elevation = cognitics::cdb::MaxLodForDatasetPath(geocell_path + "/001_Elevation");
             if(maxlod_elevation >= 0)
@@ -223,7 +223,7 @@ bool cdb_lod(cdb_lod_parameters& params)
                 job_manager.submitJob(job);
             }
         }
-        if(1)
+        if(params.imagery)
         {
             auto maxlod_imagery = cognitics::cdb::MaxLodForDatasetPath(geocell_path + "/004_Imagery");
             if(maxlod_imagery >= 0)
