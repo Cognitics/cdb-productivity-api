@@ -780,6 +780,16 @@ namespace ogr
 					return lineString;
 				}
 				break;
+			case wkbLineStringZM:
+				{
+					OGRLineString *ogr = (OGRLineString *)ogr_geometry;
+					sfa::LineString *lineString = new sfa::LineString;
+					int c = ogr->getNumPoints();
+					for(int i = 0; i < c; i++)
+						lineString->addPoint(new sfa::Point(ogr->getX(i), ogr->getY(i), ogr->getZ(i), ogr->getM(i)));
+					return lineString;
+				}
+				break;
 			case wkbPolygon:
 				{
 					OGRPolygon *ogr = (OGRPolygon *)ogr_geometry;
