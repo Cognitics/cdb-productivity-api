@@ -1,5 +1,6 @@
 
 #include <cdb_util/cdb_util.h>
+#include <ogr/File.h>
 
 #include <cdb_util/FeatureDataDictionary.h>
 
@@ -29,6 +30,82 @@ namespace std { namespace filesystem = std::experimental::filesystem; }
 
 namespace cognitics {
 namespace cdb {
+
+std::string DatasetName(int code)
+{
+    switch(code)
+    {
+        case 1: return "Elevation";
+        case 2: return "MinMaxElevation";
+        case 3: return "MaxCulture";
+        case 4: return "Imagery";
+        case 5: return "RMTexture";
+        case 6: return "RMDescriptor";
+        case 100: return "GSFeature";
+        case 101: return "GTFeature";
+        case 102: return "GeoPolitical";
+        case 200: return "VectorMaterial";
+        case 201: return "RoadNetwork";
+        case 202: return "RailRoadNetwork";
+        case 203: return "PowerLineNetwork";
+        case 204: return "HydrographyNetwork";
+        case 300: return "GSModelGeometry";
+        case 301: return "GSModelTexture";
+        case 302: return "GSModelSignature";
+        case 303: return "GSModelDescriptor";
+        case 400: return "NavData";
+        case 401: return "Navigation";
+        case 500: return "GTModelGeometry";
+        case 501: return "GTModelTexture";
+        case 502: return "GTModelSignature";
+        case 503: return "GTModelDescriptor";
+        case 600: return "MModelGeometry";
+        case 601: return "MModelTexture";
+        case 602: return "MModelSignature";
+        case 603: return "MModelDescriptor";
+    }
+    return "Unknown";
+}
+
+int DatasetCode(const std::string& name)
+{
+    if(name == "Elevation") return 1;
+    if(name == "MinMaxElevation") return 2;
+    if(name == "MaxCulture") return 3;
+    if(name == "Imagery") return 4;
+    if(name == "RMTexture") return 5;
+    if(name == "RMDescriptor") return 6;
+    if(name == "GSFeature") return 100;
+    if(name == "GTFeature") return 101;
+    if(name == "GeoPolitical") return 102;
+    if(name == "VectorMaterial") return 200;
+    if(name == "RoadNetwork") return 201;
+    if(name == "RailRoadNetwork") return 202;
+    if(name == "PowerLineNetwork") return 203;
+    if(name == "HydrographyNetwork") return 204;
+    if(name == "GSModelGeometry") return 300;
+    if(name == "GSModelTexture") return 301;
+    if(name == "GSModelSignature") return 302;
+    if(name == "GSModelDescriptor") return 303;
+    if(name == "NavData") return 400;
+    if(name == "Navigation") return 401;
+    if(name == "GTModelGeometry") return 500;
+    if(name == "GTModelTexture") return 501;
+    if(name == "GTModelSignature") return 502;
+    if(name == "GTModelDescriptor") return 503;
+    if(name == "MModelGeometry") return 600;
+    if(name == "MModelTexture") return 601;
+    if(name == "MModelSignature") return 602;
+    if(name == "MModelDescriptor") return 603;
+    return 0;
+}
+
+int ComponentSelector1Code(int dataset, const std::string& name)
+{
+    if((dataset == 1) && (name == "ManMade")) return 1;
+    return 0;
+}
+
 
 int LodForPixelSize(double pixel_size)
 {
@@ -95,8 +172,8 @@ std::vector<std::string> FileNamesForTiledDataset(const std::string& cdb, int da
 
 std::vector<TileInfo> FeatureTileInfoForTiledDataset(const std::string& cdb, int dataset, std::tuple<double, double, double, double> nsew)
 {
-    auto filenames = cognitics::cdb::FileNamesForTiledDataset(cdb, dataset);
-    auto tiles = cognitics::cdb::TileInfoForFileNames(filenames);
+    auto filenames = FileNamesForTiledDataset(cdb, dataset);
+    auto tiles = TileInfoForFileNames(filenames);
     tiles.erase(std::remove_if(tiles.begin(), tiles.end(), [](const TileInfo& tile)
         {
             return !((tile.selector2 == 1) || (tile.selector2 == 3) || (tile.selector2 == 5) || (tile.selector2 == 7) || (tile.selector2 == 9));
@@ -107,7 +184,7 @@ std::vector<TileInfo> FeatureTileInfoForTiledDataset(const std::string& cdb, int
         tiles.erase(std::remove_if(tiles.begin(), tiles.end(), [=](const TileInfo& tile)
             {
                 double tile_north, tile_south, tile_east, tile_west;
-                std::tie(tile_north, tile_south, tile_east, tile_west) = cognitics::cdb::NSEWBoundsForTileInfo(tile);
+                std::tie(tile_north, tile_south, tile_east, tile_west) = NSEWBoundsForTileInfo(tile);
                 return (tile_north <= std::get<1>(nsew)) || (tile_south >= std::get<0>(nsew)) || (tile_east <= std::get<3>(nsew)) || (tile_west >= std::get<2>(nsew));
             }
         ), tiles.end());
@@ -340,21 +417,21 @@ std::pair<bool, std::vector<std::string>> TextureFileNamesForModel(const std::st
 std::vector<std::string> GSModelReferencesForTile(const std::string& cdb, const TileInfo& tileinfo, std::tuple<double, double, double, double> nsew)
 {
     auto result = std::vector<std::string>();
-    auto shp_filepath = cognitics::cdb::FilePathForTileInfo(tileinfo);
-    auto shp_filename = cognitics::cdb::FileNameForTileInfo(tileinfo);
+    auto shp_filepath = FilePathForTileInfo(tileinfo);
+    auto shp_filename = FileNameForTileInfo(tileinfo);
     auto shp = cdb + "/Tiles/" + shp_filepath + "/" + shp_filename + ".shp";
-    auto features = cognitics::cdb::FeaturesForOGRFile(shp, nsew);
+    auto features = FeaturesForOGRFile(shp, nsew);
     if(features.empty())
         return result;
 
     auto dbf_tile = tileinfo;
     ++dbf_tile.selector2;
-    auto dbf_filepath = cognitics::cdb::FilePathForTileInfo(dbf_tile);
-    auto dbf_filename = cognitics::cdb::FileNameForTileInfo(dbf_tile);
+    auto dbf_filepath = FilePathForTileInfo(dbf_tile);
+    auto dbf_filename = FileNameForTileInfo(dbf_tile);
     auto dbf = cdb + "/Tiles/" + dbf_filepath + "/" + dbf_filename + ".dbf";
 
-    auto attrvec = cognitics::cdb::AttributesForDBF(dbf);
-    auto attrmap = cognitics::cdb::AttributesByCNAM(attrvec);
+    auto attrvec = AttributesForDBF(dbf);
+    auto attrmap = AttributesByCNAM(attrvec);
     if(attrmap.empty())
         return result;
 
@@ -362,8 +439,8 @@ std::vector<std::string> GSModelReferencesForTile(const std::string& cdb, const 
     zip_tile.dataset = 300;
     zip_tile.selector1 = 1;
     zip_tile.selector2 = 1;
-    auto zip_filepath = cognitics::cdb::FilePathForTileInfo(zip_tile);
-    auto zip_filename = cognitics::cdb::FileNameForTileInfo(zip_tile);
+    auto zip_filepath = FilePathForTileInfo(zip_tile);
+    auto zip_filename = FileNameForTileInfo(zip_tile);
     auto zip = cdb + "/Tiles/" + zip_filepath + "/" + zip_filename + ".zip";
 
     for (auto feature : features)
@@ -386,25 +463,25 @@ std::vector<std::string> GSModelReferencesForTile(const std::string& cdb, const 
 std::vector<std::string> GTModelReferencesForTile(const std::string& cdb, const TileInfo& tileinfo, std::tuple<double, double, double, double> nsew)
 {
     auto result = std::vector<std::string>();
-    auto shp_filepath = cognitics::cdb::FilePathForTileInfo(tileinfo);
-    auto shp_filename = cognitics::cdb::FileNameForTileInfo(tileinfo);
+    auto shp_filepath = FilePathForTileInfo(tileinfo);
+    auto shp_filename = FileNameForTileInfo(tileinfo);
     auto shp = cdb + "/Tiles/" + shp_filepath + "/" + shp_filename + ".shp";
-    auto features = cognitics::cdb::FeaturesForOGRFile(shp, nsew);
+    auto features = FeaturesForOGRFile(shp, nsew);
     if(features.empty())
         return result;
 
     auto dbf_tile = tileinfo;
     ++dbf_tile.selector2;
-    auto dbf_filepath = cognitics::cdb::FilePathForTileInfo(dbf_tile);
-    auto dbf_filename = cognitics::cdb::FileNameForTileInfo(dbf_tile);
+    auto dbf_filepath = FilePathForTileInfo(dbf_tile);
+    auto dbf_filename = FileNameForTileInfo(dbf_tile);
     auto dbf = cdb + "/Tiles/" + dbf_filepath + "/" + dbf_filename + ".dbf";
 
-    auto attrvec = cognitics::cdb::AttributesForDBF(dbf);
-    auto attrmap = cognitics::cdb::AttributesByCNAM(attrvec);
+    auto attrvec = AttributesForDBF(dbf);
+    auto attrmap = AttributesByCNAM(attrvec);
     if(attrmap.empty())
         return result;
 
-    auto fdd = cognitics::cdb::FeatureDataDictionary();
+    auto fdd = FeatureDataDictionary();
 
     for (auto feature : features)
     {
@@ -723,13 +800,13 @@ bool WriteFloatsToTIF(const std::string& filename, const RasterInfo& rasterinfo,
     return true;
 }
 
-RasterInfo RasterInfoFromTileInfo(const cognitics::cdb::TileInfo& tileinfo)
+RasterInfo RasterInfoFromTileInfo(const TileInfo& tileinfo)
 {
     auto result = RasterInfo();
-    std::tie(result.North, result.South, result.East, result.West) = cognitics::cdb::NSEWBoundsForTileInfo(tileinfo);
+    std::tie(result.North, result.South, result.East, result.West) = NSEWBoundsForTileInfo(tileinfo);
     result.OriginX = result.West;
     result.OriginY = result.North;
-    result.Width = cognitics::cdb::TileDimensionForLod(tileinfo.lod);
+    result.Width = TileDimensionForLod(tileinfo.lod);
     result.Height = result.Width;
     result.PixelSizeX = (result.East - result.West) / result.Width;
     result.PixelSizeY = (result.South - result.North) / result.Height;
@@ -766,15 +843,15 @@ std::vector<float> FlippedVertically(const std::vector<float>& floats, size_t wi
 
 bool BuildImageryTileFromSampler(const std::string& cdb, GDALRasterSampler& sampler, const TileInfo& tileinfo)
 {
-    auto jp2_filepath = cognitics::cdb::FilePathForTileInfo(tileinfo);
-    auto jp2_filename = cognitics::cdb::FileNameForTileInfo(tileinfo);
+    auto jp2_filepath = FilePathForTileInfo(tileinfo);
+    auto jp2_filename = FileNameForTileInfo(tileinfo);
     auto outfilename = cdb + "/Tiles/" + jp2_filepath + "/" + jp2_filename + ".jp2";
-    auto dim = cognitics::cdb::TileDimensionForLod(tileinfo.lod);
+    auto dim = TileDimensionForLod(tileinfo.lod);
     auto bytes = std::vector<unsigned char>();
     if (std::filesystem::exists(outfilename))
     {
         bytes = BytesFromJP2(outfilename);
-        bytes = cognitics::cdb::FlippedVertically(bytes, dim, dim, 3);
+        bytes = FlippedVertically(bytes, dim, dim, 3);
     }
 
     if(bytes.empty())
@@ -783,25 +860,25 @@ bool BuildImageryTileFromSampler(const std::string& cdb, GDALRasterSampler& samp
         bytes.resize(dimension * dimension * 3);
     }
 
-    cognitics::cdb::BuildImageryTileBytesFromSampler(sampler, tileinfo, bytes);    
-    bytes = cognitics::cdb::FlippedVertically(bytes, dim, dim, 3);
+    BuildImageryTileBytesFromSampler(sampler, tileinfo, bytes);    
+    bytes = FlippedVertically(bytes, dim, dim, 3);
     auto info = RasterInfoFromTileInfo(tileinfo);
     ccl::makeDirectory(ccl::FileInfo(outfilename).getDirName());
     std::remove(outfilename.c_str());
-    return cognitics::cdb::WriteBytesToJP2(outfilename, info, bytes);
+    return WriteBytesToJP2(outfilename, info, bytes);
 }
 
 bool BuildElevationTileFromSampler(const std::string& cdb, GDALRasterSampler& sampler, const TileInfo& tileinfo)
 {
-    auto tif_filepath = cognitics::cdb::FilePathForTileInfo(tileinfo);
-    auto tif_filename = cognitics::cdb::FileNameForTileInfo(tileinfo);
+    auto tif_filepath = FilePathForTileInfo(tileinfo);
+    auto tif_filename = FileNameForTileInfo(tileinfo);
     auto outfilename = cdb + "/Tiles/" + tif_filepath + "/" + tif_filename + ".tif";
-    auto dim = cognitics::cdb::TileDimensionForLod(tileinfo.lod);
+    auto dim = TileDimensionForLod(tileinfo.lod);
     auto floats = std::vector<float>();
     if(std::filesystem::exists(outfilename))
     {
         floats = FloatsFromTIF(outfilename);
-        floats = cognitics::cdb::FlippedVertically(floats, dim, dim, 1);
+        floats = FlippedVertically(floats, dim, dim, 1);
     }
     if(floats.empty())
     {
@@ -812,19 +889,19 @@ bool BuildElevationTileFromSampler(const std::string& cdb, GDALRasterSampler& sa
 
     std::fill(floats.begin(), floats.end(), -1.0f);
 
-    cognitics::cdb::BuildElevationTileFloatsFromSampler(sampler, tileinfo, floats);
-    floats = cognitics::cdb::FlippedVertically(floats, dim, dim, 1);
+    BuildElevationTileFloatsFromSampler(sampler, tileinfo, floats);
+    floats = FlippedVertically(floats, dim, dim, 1);
     auto info = RasterInfoFromTileInfo(tileinfo);
     ccl::makeDirectory(ccl::FileInfo(outfilename).getDirName());
     std::remove(outfilename.c_str());
-    //cognitics::cdb::WriteFloatsToText(outfilename + ".txt", info, floats);
-    return cognitics::cdb::WriteFloatsToTIF(outfilename, info, floats);
+    //WriteFloatsToText(outfilename + ".txt", info, floats);
+    return WriteFloatsToTIF(outfilename, info, floats);
 }
 
 bool BuildElevationTileFromSampler2(const std::string& cdb, elev::Elevation_DSM& sampler, const TileInfo& tileinfo)
 {
-    auto tif_filepath = cognitics::cdb::FilePathForTileInfo(tileinfo);
-    auto tif_filename = cognitics::cdb::FileNameForTileInfo(tileinfo);
+    auto tif_filepath = FilePathForTileInfo(tileinfo);
+    auto tif_filename = FileNameForTileInfo(tileinfo);
     auto outfilename = cdb + "/Tiles/" + tif_filepath + "/" + tif_filename + ".tif";
 
     auto floats = std::vector<float>();
@@ -837,14 +914,14 @@ bool BuildElevationTileFromSampler2(const std::string& cdb, elev::Elevation_DSM&
         std::fill(floats.begin(), floats.end(), -32767.0f);
     }
 
-    cognitics::cdb::BuildElevationTileFloatsFromSampler2(sampler, tileinfo, floats);
-    auto dim = cognitics::cdb::TileDimensionForLod(tileinfo.lod);
-    floats = cognitics::cdb::FlippedVertically(floats, dim, dim, 1);
+    BuildElevationTileFloatsFromSampler2(sampler, tileinfo, floats);
+    auto dim = TileDimensionForLod(tileinfo.lod);
+    floats = FlippedVertically(floats, dim, dim, 1);
     auto info = RasterInfoFromTileInfo(tileinfo);
     ccl::makeDirectory(ccl::FileInfo(outfilename).getDirName());
     std::remove(outfilename.c_str());
-    //cognitics::cdb::WriteFloatsToText(outfilename + ".txt", info, floats);
-    return cognitics::cdb::WriteFloatsToTIF(outfilename, info, floats);
+    //WriteFloatsToText(outfilename + ".txt", info, floats);
+    return WriteFloatsToTIF(outfilename, info, floats);
 }
 
 
@@ -1016,17 +1093,17 @@ std::vector<std::string> VersionChainForCDB(const std::string& cdb)
 
 std::vector<std::pair<std::string, Tile>> CoverageTilesForTiles(const std::string& cdb, const std::vector<Tile>& source_tiles)
 {
-    auto cdblist = cognitics::cdb::VersionChainForCDB(cdb);
+    auto cdblist = VersionChainForCDB(cdb);
     auto result = std::vector<std::pair<std::string, Tile>>();
     auto tiles = source_tiles;
     while(!tiles.empty())
     {
-        auto parent_tiles = std::vector<cognitics::cdb::Tile>();
+        auto parent_tiles = std::vector<Tile>();
         for(auto tile : tiles)
         {
-            auto tile_info = cognitics::cdb::TileInfoForTile(tile);
-            auto tile_filepath = cognitics::cdb::FilePathForTileInfo(tile_info);
-            auto tile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
+            auto tile_info = TileInfoForTile(tile);
+            auto tile_filepath = FilePathForTileInfo(tile_info);
+            auto tile_filename = FileNameForTileInfo(tile_info);
             bool found = false;
             for(auto local_cdb : cdblist)
             {
@@ -1046,9 +1123,9 @@ std::vector<std::pair<std::string, Tile>> CoverageTilesForTiles(const std::strin
                 continue;
             if(tile_info.lod - 1 < -10)
                 continue;
-            auto tile_bounds = cognitics::cdb::NSEWBoundsForTileInfo(tile_info);
-            auto parent_coords = cognitics::cdb::CoordinatesRange(std::get<3>(tile_bounds), std::get<2>(tile_bounds), std::get<1>(tile_bounds), std::get<0>(tile_bounds));
-            auto parent_tiles_add = cognitics::cdb::generate_tiles(parent_coords, cognitics::cdb::Dataset((uint16_t)tile_info.dataset), tile_info.lod - 1);
+            auto tile_bounds = NSEWBoundsForTileInfo(tile_info);
+            auto parent_coords = CoordinatesRange(std::get<3>(tile_bounds), std::get<2>(tile_bounds), std::get<1>(tile_bounds), std::get<0>(tile_bounds));
+            auto parent_tiles_add = generate_tiles(parent_coords, Dataset((uint16_t)tile_info.dataset), tile_info.lod - 1);
             for(auto parent_tile : parent_tiles_add)
             {
                 if(std::find(parent_tiles.begin(), parent_tiles.end(), parent_tile) == parent_tiles.end())
@@ -1059,6 +1136,102 @@ std::vector<std::pair<std::string, Tile>> CoverageTilesForTiles(const std::strin
     }
     return result;
 }
+
+bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::string& filename)
+{
+    if (!IsCDB(cdb))
+        MakeCDB(cdb);
+    ccl::ObjLog log;
+    double north = -DBL_MAX;
+    double south = DBL_MAX;
+    double east = -DBL_MAX;
+    double west = DBL_MAX;
+    auto features = std::vector<sfa::Feature*>();
+    {
+        // TODO: coordinate transforms
+        auto file = ogr::File();
+        if(!file.open(filename))
+            return false;
+        auto layers = file.getLayers();
+        for(auto layer : layers)
+        {
+            while(auto feature = layer->getNextFeature())
+                features.push_back(feature);
+            double left, bottom, right, top;
+            layer->getExtent(left, bottom, right, top, false);
+            north = std::max<double>(north, top);
+            south = std::min<double>(south, bottom);
+            east = std::max<double>(east, right);
+            west = std::min<double>(west, left);
+        }
+        file.close();
+    }
+    auto coords = CoordinatesRange(west, east, south, north);
+    auto tiles = generate_tiles(coords, Dataset((uint16_t)dataset), lod);
+    log << "INJECT " << filename << " ((" << west << ", " << south << ") (" << east << ", " << north << ")) : " << tiles.size() << " tiles" << log.endl;
+    for(auto tile : tiles)
+    {
+        auto tile_info = TileInfoForTile(tile);
+        double tile_north, tile_south, tile_east, tile_west;
+        std::tie(tile_north, tile_south, tile_east, tile_west) = NSEWBoundsForTileInfo(tile_info);
+        auto tile_features = std::vector<sfa::Feature*>();
+        for(auto feature : features)
+        {
+            if(!feature->geometry)
+                continue;
+            auto envelope = std::make_unique<sfa::LineString>(dynamic_cast<sfa::LineString*>(feature->geometry->getEnvelope()));
+            auto point_min = envelope->getPointN(0);
+            auto point_max = envelope->getPointN(1);
+            if(point_min->Y() > tile_north)
+                continue;
+            if(point_min->X() > tile_east)
+                continue;
+            if(point_max->Y() < tile_south)
+                continue;
+            if(point_max->X() < tile_west)
+                continue;
+            tile_features.push_back(feature);
+        }
+        if(tile_features.empty())
+            continue;
+        auto tile_filepath = FilePathForTileInfo(tile_info);
+        auto tile_filename = FileNameForTileInfo(tile_info);
+        auto tile_fn = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename + ".shp";
+        log << "    " << tile_filename << ": " << tile_features.size() << " features" << log.endl;
+        ccl::makeDirectory(cdb + "/Tiles/" + tile_filepath);
+        auto file = ogr::File();
+        if(!file.open(tile_fn, true))
+        {
+            if(!file.create(tile_fn))
+                return false;
+            // TODO: create layer?
+        }
+        for(auto feature : tile_features)
+        {
+            // TODO: crop linears/polygons
+
+            // TODO: attribute handling
+
+            file.addFeature(feature);
+        }
+        file.close();
+    }
+    for(auto feature : features)
+        delete feature;
+    return true;
+}
+
+bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::vector<std::string>& filenames)
+{
+    bool result = true;
+    for(auto fn : filenames)
+    {
+        if(!InjectFeatures(cdb, dataset, cs1, cs2, lod, fn))
+            result = false;
+    }
+    return result;
+}
+
 
 }
 }

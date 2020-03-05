@@ -46,6 +46,10 @@ struct RasterInfo
     double East { 0 };
 };
 
+std::string DatasetName(int code);
+int DatasetCode(const std::string& name);
+int ComponentSelector1Code(int dataset, const std::string& name);
+
 TileInfo TileInfoForTile(const Tile& tile);
 int LodForPixelSize(double pixel_size);
 int TileDimensionForLod(int lod);
@@ -79,7 +83,7 @@ bool TextureExists(const std::string& filename);
 RasterInfo ReadRasterInfo(const std::string& filename);
 bool WriteBytesToJP2(const std::string& filename, const RasterInfo& rasterinfo, const std::vector<unsigned char>& bytes);
 bool WriteFloatsToTIF(const std::string& filename, const RasterInfo& rasterinfo, const std::vector<float>& floats);
-RasterInfo RasterInfoFromTileInfo(const cognitics::cdb::TileInfo& tileinfo);
+RasterInfo RasterInfoFromTileInfo(const TileInfo& tileinfo);
 std::vector<unsigned char> FlippedVertically(const std::vector<unsigned char>& bytes, size_t width, size_t height, size_t depth);
 std::vector<float> FlippedVertically(const std::vector<float>& bytes, size_t width, size_t height, size_t depth);
 
@@ -108,6 +112,8 @@ std::vector<std::string> VersionChainForCDB(const std::string& cdb);
 
 std::vector<std::pair<std::string, Tile>> CoverageTilesForTiles(const std::string& cdb, const std::vector<Tile>& source_tiles);
 
+bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::string& filename);
+bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::vector<std::string>& filenames);
 
 
 }
