@@ -115,6 +115,7 @@ std::vector<std::pair<std::string, Tile>> CoverageTilesForTiles(const std::strin
 bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::string& filename);
 bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::vector<std::string>& filenames);
 
+std::vector<sfa::Feature*> FeaturesForTileCroppedFeature(const TileInfo& tile_info, const sfa::Feature& feature);
 
 }
 }

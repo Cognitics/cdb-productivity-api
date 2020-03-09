@@ -1208,11 +1208,14 @@ bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int l
         }
         for(auto feature : tile_features)
         {
-            // TODO: crop linears/polygons
-
             // TODO: attribute handling
 
-            file.addFeature(feature);
+            auto new_features = FeaturesForTileCroppedFeature(tile_info, *feature);
+            for(auto new_feature : new_features)
+            {
+                delete file.addFeature(new_feature);
+                delete new_feature;
+            }
         }
         file.close();
     }
@@ -1232,6 +1235,43 @@ bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int l
     return result;
 }
 
+std::vector<sfa::Feature*> FeaturesForTileCroppedFeature(const TileInfo& tile_info, const sfa::Feature& feature)
+{
+    if(!feature.geometry)
+        return std::vector<sfa::Feature*>();
+    double tile_north, tile_south, tile_east, tile_west;
+    std::tie(tile_north, tile_south, tile_east, tile_west) = NSEWBoundsForTileInfo(tile_info);
+    auto tile_ring = new sfa::LineString;
+    tile_ring->addPoint(new sfa::Point(tile_west, tile_south));
+    tile_ring->addPoint(new sfa::Point(tile_east, tile_south));
+    tile_ring->addPoint(new sfa::Point(tile_east, tile_north));
+    tile_ring->addPoint(new sfa::Point(tile_west, tile_north));
+    tile_ring->addPoint(new sfa::Point(tile_west, tile_south));
+    sfa::Polygon tile_aabb;
+    tile_aabb.addRing(tile_ring);
+    auto isect_geometry = tile_aabb.intersection(feature.geometry);
+    if(!isect_geometry)
+        return std::vector<sfa::Feature*>();
+    sfa::GeometryCollection* isect_collection = dynamic_cast<sfa::GeometryCollection*>(isect_geometry);
+    if(!isect_collection)
+    {
+        isect_collection = new sfa::GeometryCollection;
+        isect_collection->addGeometry(isect_geometry);
+    }
+    auto result = std::vector<sfa::Feature*>();
+    for(int i = 0, c = isect_collection->getNumGeometries(); i < c; ++i)
+    {
+        auto geometry = isect_collection->getGeometryN(i + 1);
+        if(geometry->getWKBGeometryType() != feature.geometry->getWKBGeometryType())
+            continue;
+        auto rfeature = new sfa::Feature;
+        rfeature->attributes = feature.attributes;
+        rfeature->geometry = geometry->copy();
+        result.push_back(rfeature);
+    }
+    delete isect_collection;
+    return result;
+}
 
 }
 }
