@@ -117,5 +117,8 @@ bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int l
 
 std::vector<sfa::Feature*> FeaturesForTileCroppedFeature(const TileInfo& tile_info, const sfa::Feature& feature);
 
+void ReportMissingGSFeatureData(const std::string& cdb, std::tuple<double, double, double, double> nsew = std::make_tuple(DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX));
+void ReportMissingGTFeatureData(const std::string& cdb, std::tuple<double, double, double, double> nsew = std::make_tuple(DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX));
+
 }
 }

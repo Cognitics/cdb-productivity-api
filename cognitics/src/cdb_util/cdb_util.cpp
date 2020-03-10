@@ -1273,5 +1273,107 @@ std::vector<sfa::Feature*> FeaturesForTileCroppedFeature(const TileInfo& tile_in
     return result;
 }
 
+void ReportMissingGSFeatureData(const std::string& cdb, std::tuple<double, double, double, double> nsew)
+{
+    ccl::ObjLog log;
+    auto tiles = FeatureTileInfoForTiledDataset(cdb, 100, nsew);
+    auto model_filenames = std::vector<std::string>();
+    for(auto tile : tiles)
+    {
+        auto tile_models = GSModelReferencesForTile(cdb, tile, nsew);
+        if(tile_models.empty())
+            continue;
+        log << "GS TILE: " << FileNameForTileInfo(tile) << " (" << tile_models.size() << " model references)" << log.endl;
+        model_filenames.insert(model_filenames.end(), tile_models.begin(), tile_models.end());
+
+        if(model_filenames.size() > 10)
+            break;
+    }
+
+    std::sort(model_filenames.begin(), model_filenames.end());
+    model_filenames.erase(std::unique(model_filenames.begin(), model_filenames.end()), model_filenames.end());
+    log << model_filenames.size() << " models" << log.endl;
+
+    auto texture_filenames = std::vector<std::string>();
+    for(auto model_filename : model_filenames)
+    {
+        auto filenames = TextureFileNamesForModel(model_filename);
+        if(!filenames.first)
+        {
+            log << "MODEL MISSING: " << model_filename << log.endl;
+            continue;
+        }
+        for (auto filename : filenames.second)
+        {
+            auto fn = ccl::FileInfo(ccl::FileInfo(model_filename).getDirName()).getDirName() + "/" + filename;
+            if(ccl::fileExists(fn))
+            {
+                texture_filenames.push_back(fn);
+                continue;
+            }
+            auto base = ccl::FileInfo(fn).getBaseName();
+            auto tileinfo = TileInfoForFileName(base);
+            auto zipfn = ccl::FileInfo(fn).getDirName() + "/" + FileNameForTileInfo(tileinfo) + ".zip";
+            texture_filenames.push_back(zipfn + "/" + base);
+        }
+    }
+
+    std::sort(texture_filenames.begin(), texture_filenames.end());
+    texture_filenames.erase(std::unique(texture_filenames.begin(), texture_filenames.end()), texture_filenames.end());
+    log << texture_filenames.size() << " textures" << log.endl;
+
+    for(auto texture_filename : texture_filenames)
+    {
+        if(!TextureExists(texture_filename))
+            log << "TEXTURE MISSING: " << texture_filename << log.endl;
+    }
+}
+
+void ReportMissingGTFeatureData(const std::string& cdb, std::tuple<double, double, double, double> nsew)
+{
+    ccl::ObjLog log;
+    auto tiles = FeatureTileInfoForTiledDataset(cdb, 101, nsew);
+    auto model_filenames = std::vector<std::string>();
+    for(auto tile : tiles)
+    {
+        auto tile_models = GTModelReferencesForTile(cdb, tile, nsew);
+        if(tile_models.empty())
+            continue;
+        log << "GT TILE: " << FileNameForTileInfo(tile) << " (" << tile_models.size() << " model references)" << log.endl;
+        model_filenames.insert(model_filenames.end(), tile_models.begin(), tile_models.end());
+    }
+
+    std::sort(model_filenames.begin(), model_filenames.end());
+    model_filenames.erase(std::unique(model_filenames.begin(), model_filenames.end()), model_filenames.end());
+    log << model_filenames.size() << " models" << log.endl;
+
+    auto texture_filenames = std::vector<std::string>();
+    for(auto model_filename : model_filenames)
+    {
+        auto filenames = TextureFileNamesForModel(model_filename);
+        if(!filenames.first)
+        {
+            log << "MODEL MISSING: " << model_filename << log.endl;
+            continue;
+        }
+        for (auto filename : filenames.second)
+        {
+            auto fn = ccl::FileInfo(model_filename).getDirName() + "/" + filename;
+            texture_filenames.push_back(fn);
+        }
+    }
+
+    std::sort(texture_filenames.begin(), texture_filenames.end());
+    texture_filenames.erase(std::unique(texture_filenames.begin(), texture_filenames.end()), texture_filenames.end());
+    log << texture_filenames.size() << " textures" << log.endl;
+
+    for(auto texture_filename : texture_filenames)
+    {
+        if(!ccl::fileExists(texture_filename))
+            log << "TEXTURE MISSING: " << texture_filename << log.endl;
+    }
+}
+
+
 }
 }
