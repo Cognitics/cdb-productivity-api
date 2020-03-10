@@ -80,7 +80,7 @@ int usage(const std::string& error = "")
     std::cout << "        INJECT                 inject data into a dataset\n";
     std::cout << "        LOD                    generate LODs for dataset(s)\n";
     //std::cout << "        SAMPLE                 sample a dataset\n";
-    //std::cout << "        VALIDATE               validate a dataset\n";
+    std::cout << "        VALIDATE               validate a dataset\n";
     return error.empty() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
@@ -91,8 +91,9 @@ int usage_inject(const std::string& error = "")
     std::cout << "Usage: " << args[0] << " [options] <cdbpath> INJECT [command_options] <dataset> <cs1> <cs2> <source> [source] [source] [...]\n";
     cout_global_options();
     std::cout << "    Command Options:\n";
-    std::cout << "        -lod <lod>             forced level of detail\n";
-    std::cout << "        -workers <#>           number of worker threads (default: 8)\n";
+    std::cout << "        -bounds <n> <s> <e> <w>  bounds for area of interest\n";
+    std::cout << "        -lod <lod>               forced level of detail\n";
+    std::cout << "        -workers <#>             number of worker threads (default: 8)\n";
     std::cout << "    Supported Components (dataset cs1 cs2):\n";
     std::cout << "        Imagery 001 001\n";
     std::cout << "        Elevation 001 001\n";
@@ -112,6 +113,20 @@ int usage_lod(const std::string& error = "")
     std::cout << "    Supported Components:\n";
     std::cout << "        Imagery 001 001\n";
     std::cout << "        Elevation 001 001\n";
+    return error.empty() ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+
+int usage_validate(const std::string& error = "")
+{
+    if(!error.empty())
+        std::cerr << "\nERROR: " << error << "\n\n";
+    std::cout << "Usage: " << args[0] << " [options] <cdbpath> VALIDATE [command_options] <dataset> <cs1> <cs2>\n";
+    cout_global_options();
+    std::cout << "    Command Options:\n";
+    std::cout << "        -bounds <n> <s> <e> <w>  bounds for area of interest\n";
+    std::cout << "    Supported Components (dataset cs1 cs2):\n";
+    std::cout << "        GTFeature 001 001\n";
+    std::cout << "        GSFeature 001 001\n";
     return error.empty() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
@@ -308,6 +323,71 @@ int main_lod(size_t arg_start)
     return EXIT_SUCCESS;
 }
 
+int main_validate(size_t arg_start)
+{
+    double north { DBL_MAX };
+    double south { -DBL_MAX };
+    double east { DBL_MAX };
+    double west { -DBL_MAX };
+    int dataset { 0 };
+    int cs1 { 0 };
+    int cs2 { 0 };
+    for(size_t argi = arg_start, argc = args.size(); argi < argc; ++argi)
+    {
+        if(args[argi] == "-bounds")
+        {
+            if(argi > argc - 4)
+                return usage_validate("Missing bounds");
+            ++argi;
+            north = to_double(args[argi], DBL_MAX);
+            ++argi;
+            south = to_double(args[argi], -DBL_MAX);
+            ++argi;
+            east = to_double(args[argi], DBL_MAX);
+            ++argi;
+            west = to_double(args[argi], -DBL_MAX);
+            continue;
+        }
+        if(dataset == 0)
+        {
+            dataset = to_int(args[argi], 0);
+            if(dataset == 0)
+                dataset = cognitics::cdb::DatasetCode(args[argi]);
+            if(dataset == 0)
+                return usage_validate("Invalid Dataset: " + args[argi]);
+            continue;
+        }
+        if(cs1 == 0)
+        {
+            cs1 = to_int(args[argi], 0);
+            if(cs1 == 0)
+                return usage_validate("Invalid Component Selector 1: " + args[argi]);
+            continue;
+        }
+        if(cs2 == 0)
+        {
+            cs2 = to_int(args[argi], 0);
+            if(cs2 == 0)
+                return usage_validate("Invalid Component Selector 2: " + args[argi]);
+            continue;
+        }
+    }
+    if((dataset == 100) && (cs1 == 1) && (cs2 == 1))    // GSFeature, Man-made, point features
+    {
+        cognitics::cdb::ReportMissingGSFeatureData(cdb, std::make_tuple(north, south, east, west));
+        return EXIT_SUCCESS;
+    }
+    if((dataset == 101) && (cs1 == 1) && (cs2 == 1))    // GTFeature, Man-made, point features
+    {
+        cognitics::cdb::ReportMissingGTFeatureData(cdb, std::make_tuple(north, south, east, west));
+        return EXIT_SUCCESS;
+    }
+    else
+    {
+        return usage_validate("Unsupported Component: " + cognitics::cdb::DatasetName(dataset) + " " + std::to_string(cs1) + " " + std::to_string(cs2));
+    }
+    return EXIT_SUCCESS;
+}
 
 int main(int argc, char** argv)
 {
@@ -353,7 +433,7 @@ int main(int argc, char** argv)
     else if(command == "sample")
         result = result;    // TODO
     else if(command == "validate")
-        result = result;    // TODO
+        result = main_validate(command_argi);
     else
         return usage("Invalid command: " + command);
 
