@@ -2,6 +2,7 @@
 #include <cdb_util/cdb_util.h>
 #include <cdb_util/cdb_inject.h>
 #include <cdb_util/cdb_lod.h>
+#include <cdb_util/cdb_sample.h>
 
 #include <ccl/LogStream.h>
 #include <ccl/ObjLog.h>
@@ -53,7 +54,7 @@ namespace
         catch(...) { return default_value; }
     }
 
-    int to_double(const std::string& str, double default_value)
+    double to_double(const std::string& str, double default_value)
     {
         try { return std::stod(str); }
         catch(...) { return default_value; }
@@ -110,6 +111,22 @@ int usage_lod(const std::string& error = "")
     cout_global_options();
     std::cout << "    Command Options:\n";
     std::cout << "        -workers <#>           number of worker threads (default: 8)\n";
+    std::cout << "    Supported Components:\n";
+    std::cout << "        Imagery 001 001\n";
+    std::cout << "        Elevation 001 001\n";
+    return error.empty() ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+
+int usage_sample(const std::string& error = "")
+{
+    if(!error.empty())
+        std::cerr << "\nERROR: " << error << "\n\n";
+    std::cout << "Usage: " << args[0] << " [options] <cdbpath> SAMPLE [command_options] <dataset> <cs1> <cs2> <outfile>\n";
+    cout_global_options();
+    std::cout << "    Command Options:\n";
+    std::cout << "        -bounds <n> <s> <e> <w>  bounds for area of interest\n";
+    std::cout << "        -width <#>               width (x) dimension\n";
+    std::cout << "        -height <#>              height (y) dimension\n";
     std::cout << "    Supported Components:\n";
     std::cout << "        Imagery 001 001\n";
     std::cout << "        Elevation 001 001\n";
@@ -323,6 +340,114 @@ int main_lod(size_t arg_start)
     return EXIT_SUCCESS;
 }
 
+int main_sample(size_t arg_start)
+{
+    double north { DBL_MAX };
+    double south { -DBL_MAX };
+    double east { DBL_MAX };
+    double west { -DBL_MAX };
+    double width { 1024 };
+    double height { 1024 };
+    int dataset { 0 };
+    int cs1 { 0 };
+    int cs2 { 0 };
+    std::string outfile;
+    for(size_t argi = arg_start, argc = args.size(); argi < argc; ++argi)
+    {
+        if(args[argi] == "-bounds")
+        {
+            if(argi > argc - 4)
+                return usage_sample("Missing bounds");
+            ++argi;
+            north = to_double(args[argi], DBL_MAX);
+            ++argi;
+            south = to_double(args[argi], -DBL_MAX);
+            ++argi;
+            east = to_double(args[argi], DBL_MAX);
+            ++argi;
+            west = to_double(args[argi], -DBL_MAX);
+            continue;
+        }
+        if(args[argi] == "-width")
+        {
+            ++argi;
+            if(argi > argc - 1)
+                return usage_inject("Missing width");
+            width = to_int(args[argi], 1024);
+            continue;
+        }
+        if(args[argi] == "-height")
+        {
+            ++argi;
+            if(argi > argc - 1)
+                return usage_inject("Missing width");
+            width = to_int(args[argi], 1024);
+            continue;
+        }
+        if(dataset == 0)
+        {
+            dataset = to_int(args[argi], 0);
+            if(dataset == 0)
+                dataset = cognitics::cdb::DatasetCode(args[argi]);
+            if(dataset == 0)
+                return usage_sample("Invalid Dataset: " + args[argi]);
+            continue;
+        }
+        if(cs1 == 0)
+        {
+            cs1 = to_int(args[argi], 0);
+            if(cs1 == 0)
+                return usage_sample("Invalid Component Selector 1: " + args[argi]);
+            continue;
+        }
+        if(cs2 == 0)
+        {
+            cs2 = to_int(args[argi], 0);
+            if(cs2 == 0)
+                return usage_sample("Invalid Component Selector 2: " + args[argi]);
+            continue;
+        }
+        outfile = args[argi];
+    }
+    if(outfile.empty())
+        return usage_sample("Missing outfile parameter");
+    if((dataset == 1) && (cs1 == 1) && (cs2 == 1))  // Elevation, PrimaryTerrainElevation
+    {
+        auto params = cognitics::cdb::cdb_sample_parameters();
+        params.cdb = cdb;
+        params.dataset = dataset;
+        params.north = north;
+        params.south = south;
+        params.east = east;
+        params.west = west;
+        params.width = width;
+        params.height = height;
+        params.outfile = outfile;
+        bool result = cognitics::cdb::cdb_sample(params);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 4) && (cs1 == 1) && (cs2 == 1))  // Imagery, YearlyVstiRepresentation
+    {
+        auto params = cognitics::cdb::cdb_sample_parameters();
+        params.cdb = cdb;
+        params.dataset = dataset;
+        params.north = north;
+        params.south = south;
+        params.east = east;
+        params.west = west;
+        params.width = width;
+        params.height = height;
+        params.outfile = outfile;
+        bool result = cognitics::cdb::cdb_sample(params);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else
+    {
+        return usage_sample("Unsupported Component: " + cognitics::cdb::DatasetName(dataset) + " " + std::to_string(cs1) + " " + std::to_string(cs2));
+    }
+    return EXIT_SUCCESS;
+}
+
 int main_validate(size_t arg_start)
 {
     double north { DBL_MAX };
@@ -425,13 +550,14 @@ int main(int argc, char** argv)
         return usage();
     if(command.empty())
         return usage();
+    std::transform(command.begin(), command.end(), command.begin(), ::tolower);
 
     if(command == "inject")
         result = main_inject(command_argi);
     else if(command == "lod")
         result = main_lod(command_argi);
     else if(command == "sample")
-        result = result;    // TODO
+        result = main_sample(command_argi);
     else if(command == "validate")
         result = main_validate(command_argi);
     else
