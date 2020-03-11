@@ -80,7 +80,7 @@ int usage(const std::string& error = "")
     std::cout << "    Commands:\n";
     std::cout << "        INJECT                 inject data into a dataset\n";
     std::cout << "        LOD                    generate LODs for dataset(s)\n";
-    //std::cout << "        SAMPLE                 sample a dataset\n";
+    std::cout << "        SAMPLE                 sample a dataset\n";
     std::cout << "        VALIDATE               validate a dataset\n";
     return error.empty() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
@@ -411,6 +411,8 @@ int main_sample(size_t arg_start)
     }
     if(outfile.empty())
         return usage_sample("Missing outfile parameter");
+    if(north == DBL_MAX)
+        return usage_sample("-bounds option is required");
     if((dataset == 1) && (cs1 == 1) && (cs2 == 1))  // Elevation, PrimaryTerrainElevation
     {
         auto params = cognitics::cdb::cdb_sample_parameters();
