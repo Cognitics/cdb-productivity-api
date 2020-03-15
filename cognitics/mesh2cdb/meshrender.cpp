@@ -368,7 +368,6 @@ void renderToFile(RenderJob &job)
     int width = 1024;
     int height = 1024;
     int depth = 3;
-    GLenum glErr;
 #ifndef QUICK_OBJ
     if (scene)
         delete scene;
@@ -478,7 +477,7 @@ void renderToFile(RenderJob &job)
     for(auto&& file : job.objFiles)
     {
         ccl::FileInfo objFi(file);
-        cognitics::QuickObj qo(file,job.offsetX,job.offsetY,job.offsetZ,objFi.getDirName(),true);
+        cognitics::QuickObj qo(file,job.srs,objFi.getDirName(),true);
         if(qo.isValid())
         {
             //logger << "Rendering " << file << logger.endl;

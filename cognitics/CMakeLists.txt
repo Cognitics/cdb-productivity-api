@@ -51,7 +51,7 @@ if(UNIX)
 endif(UNIX)
 
 if(WIN32)
-    set(CMAKE_CXX_FLAGS_DEBUG "/MP /Od /EHsc /RTC1 /MDd /W3 /nologo /c /Zi /TP /errorReport:prompt -DCOG_DEBUG" -DDEBUG=1)
+    set(CMAKE_CXX_FLAGS_DEBUG "/MP /Od /EHsc /RTC1 /MDd /W3 /nologo /c /Zi /TP /errorReport:prompt -DCOG_DEBUG -DDEBUG=1")
     set(CMAKE_CXX_FLAGS_RELEASE "/MP /O2 /FD /EHsc /MD /W3 /nologo /c /Zi /TP /errorReport:prompt -DCOG_RELEASE -DNDEBUG")
 endif(WIN32)
 
@@ -921,6 +921,7 @@ include_directories("${THIRD_PARTY_DIR}/fbxsdk/include")
 if(WIN32)
     message("CONFIGURATION: ${CMAKE_BUILD_TYPE}")
     include_directories("${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/include")
+    #include_directories("${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/include/osg")
     include_directories("${THIRD_PARTY_DIR}/ipp2019/include")
     include_directories("${THIRD_PARTY_DIR}/jpeg-8c/include")
     include_directories("${THIRD_PARTY_DIR}/lpng154/include")
@@ -968,6 +969,44 @@ source_group("Source Files\\sfa" REGULAR_EXPRESSION "src/sfa/.*$")
 source_group("Source Files\\tg" REGULAR_EXPRESSION "src/tg/.*$")
 source_group("Source Files\\ogr" REGULAR_EXPRESSION "src/ogr/.*$")
 link_libraries(cogcore)
+
+
+if(FALSE) #WIN32)
+SET(OBJ_EXT_SOURCES ./obj-extract/obj-extract.cpp
+                    ./obj-extract/obj-extract.h
+                    ./obj-extract/transformvisitor.cpp
+                    ./obj-extract/transformvisitor.h)
+
+add_executable(obj-extract ${OBJ_EXT_SOURCES})
+
+    set(CMAKE_DEBUG_POSTFIX "d")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+
+    target_link_libraries(obj-extract 
+        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgd.lib"
+        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osg.lib")
+
+    target_link_libraries(obj-extract 
+        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgGAd.lib"
+        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgGA.lib")
+
+    target_link_libraries(obj-extract 
+        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgDBd.lib"
+        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgDB.lib")
+
+    target_link_libraries(obj-extract 
+        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib//osgUtild.lib"
+        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgUtil.lib")
+
+    target_link_libraries(obj-extract 
+        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib//OpenThreadsd.lib"
+        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/OpenThreads.lib")
+
+endif(WIN32)
+
 
 add_executable(cdbinfo cdbinfo/cdbinfo.cpp)
 if(WIN32)

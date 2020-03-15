@@ -24,6 +24,76 @@ DEALINGS IN THE SOFTWARE.
 #include <vector>
 #include <ccl/ObjLog.h>
 
+#include <sfa/Point.h>
+
+#pragma warning ( push )
+#pragma warning ( disable : 4251 )        // C4251: 'GDALColorTable::aoEntries' : class 'std::vector<_Ty>' needs to have dll-interface to be used by clients of class 'GDALColorTable'
+#include "gdal_priv.h"
+#include "ogr_api.h"
+#include "ogr_spatialref.h"
+#pragma warning ( pop )
+
+#include "CoordinateSystems/EllipsoidTangentPlane.h"
+
+class ObjSrs
+{
+public:
+    std::string srsWKT;
+    sfa::Point offsetPt;
+    sfa::Point geoOrigin;
+
+    std::string ToString() const
+    {
+        std::stringstream ss;
+        ss.precision(6);
+        ss << "\t<SRS ";
+        ss << "offset-x=\"" << offsetPt.X() << "\" ";
+        ss << "offset-y=\"" << offsetPt.Y() << "\" ";
+        ss << "offset-z=\"" << offsetPt.Z() << "\" ";
+        ss << "srsWKT=\"" << srsWKT << "\" ";
+        ss << "/> ";
+        return ss.str();
+    }
+
+    bool getOrigin(double &lat, double &lon)
+    {
+        if(srsWKT.length())
+        {
+            OGRSpatialReference wgs;
+            OGRCoordinateTransformation* coordTrans;
+            wgs.SetFromUserInput("WGS84");
+            OGRSpatialReference *file_srs = new OGRSpatialReference;
+            const char *prjstr = srsWKT.c_str();
+            OGRErr err = file_srs->importFromWkt((char **)&prjstr);
+            if (err != OGRERR_NONE)
+            {
+                delete file_srs;
+                return false;
+            }
+            coordTrans = OGRCreateCoordinateTransformation(file_srs, &wgs);
+            double x = offsetPt.X();
+            double y = offsetPt.Y();
+            double z = offsetPt.Z();
+            //Use the offset for the origin
+            coordTrans->Transform(1, &x, &y, &z);
+            lat = y;
+            lon = x;
+            
+            auto ltp_ellipsoid = new Cognitics::CoordinateSystems::EllipsoidTangentPlane(lat, lon);
+            geoOrigin.setX(lon);
+            geoOrigin.setY(lat);
+            delete file_srs;
+            return true;
+        }
+        else
+        {
+            lat = this->geoOrigin.Y();
+            lon = this->geoOrigin.X();
+        }
+        return true;
+    }
+};
+
 namespace cognitics {
 
     class Color
@@ -104,9 +174,7 @@ namespace cognitics {
         float minZ;
         float maxZ;
 
-        float offsetX;
-        float offsetY;
-        float offsetZ;
+        ObjSrs srs;
 
         std::vector<QuickVert> verts;
         std::vector<QuickVert> norms;
@@ -132,16 +200,19 @@ namespace cognitics {
 
     public:
         ~QuickObj();
-        QuickObj(const std::string &objFilename,
-        float offsetX=0, float offsetY=0, float offsetZ=0,
-        const std::string &textureDirectory="", 
-        bool loadTextures=false);
+        QuickObj(const std::string &objFilename, const ObjSrs &_srs,
+                const std::string &textureDirectory="", 
+                bool loadTextures=false);
 
         void getBounds(float &minX, float &maxX,
                        float &minY, float &maxY,
                        float &minZ, float &maxZ);
         bool glRender();
         bool isValid() { return _isValid;}
+
+        bool transform(Cognitics::CoordinateSystems::EllipsoidTangentPlane *_etp,
+            OGRCoordinateTransformation *_coordTrans,
+            const sfa::Point &_offset);
     };
 
 

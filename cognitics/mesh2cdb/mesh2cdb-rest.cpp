@@ -29,7 +29,6 @@ ccl::ObjLog logger;
 bool testRequest()
 {
     std::string url = "https://jsonplaceholder.typicode.com/todos/1";
-    CURLcode res;
     CURLcode code;
     static char errorBuffer[CURL_ERROR_SIZE];
     static std::string buffer;
@@ -137,8 +136,8 @@ int main(int argc, char **argv)
     logger << ccl::LINFO;
     GDALAllRegister();
     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
-
-    Obj2CDB obj2_cdb(objRootDir, rootCDBOutput,metadataXML,hiveMapperMode);
+    ObjSrs srs;
+    Obj2CDB obj2_cdb(objRootDir, rootCDBOutput,srs, metadataXML,hiveMapperMode);
 
     CPLSetConfigOption("LODMIN", "-10");
     CPLSetConfigOption("LODMAX", argv[3]);

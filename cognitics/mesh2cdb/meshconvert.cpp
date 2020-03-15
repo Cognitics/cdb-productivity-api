@@ -24,7 +24,8 @@ bool Obj2CDB::readMetadataXML(const std::string &sourceDir)
     if (!theFile.is_open())
     {
         log << "Unable to open " << sourceDir << log.endl;
-        exit(1);
+        //exit(1);
+        return false;
     }
     std::vector<char> buffer((std::istreambuf_iterator<char>(theFile)), std::istreambuf_iterator<char>());
     buffer.push_back('\0');
@@ -45,8 +46,10 @@ bool Obj2CDB::readMetadataXML(const std::string &sourceDir)
                 std::vector<std::string> parts = ccl::splitString(srs_string.substr(4), ",");
                 if (parts.size() == 2)
                 {
-                    dbOriginLat = atof(parts[0].c_str());
-                    dbOriginLon = atof(parts[1].c_str());
+                    double originLat = atof(parts[0].c_str());
+                    double originLon = atof(parts[1].c_str());
+                    srs.geoOrigin.setX(originLon);
+                    srs.geoOrigin.setX(originLat);
                 }
                 else
                 {
@@ -66,9 +69,7 @@ bool Obj2CDB::readMetadataXML(const std::string &sourceDir)
             std::vector<std::string> parts = ccl::splitString(srs_offset_string, ",");
             if (parts.size() == 3)
             {
-                offsetX = atof(parts[0].c_str());
-                offsetY = atof(parts[1].c_str());
-                offsetZ = atof(parts[2].c_str());
+                srs.offsetPt = sfa::Point(atof(parts[0].c_str()),atof(parts[1].c_str()),atof(parts[2].c_str()));
             }
             else
             {
@@ -84,11 +85,9 @@ bool Obj2CDB::readMetadataXML(const std::string &sourceDir)
 
 
 Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
-    const std::string &outputCDBDir, std::string metadataFilename, bool hiveMapperMode) :
-    objRootDir(inputOBJDir), cdbOutputDir(outputCDBDir), metadataFilename(metadataFilename), hiveMapperMode(hiveMapperMode)
+    const std::string &outputCDBDir, ObjSrs &_srs, std::string metadataFilename, bool hiveMapperMode) :
+    objRootDir(inputOBJDir), cdbOutputDir(outputCDBDir), srs(_srs), metadataFilename(metadataFilename), hiveMapperMode(hiveMapperMode)
 {
-    dbOriginLat = 0;
-    dbOriginLon = 0;
     ltp_ellipsoid = NULL;
     dbTop = -DBL_MAX;
     dbBottom = DBL_MAX;
@@ -96,9 +95,6 @@ Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
     dbRight = -DBL_MAX;
     dbMinZ = DBL_MAX;
     dbMaxZ = -DBL_MAX;
-    offsetX = 0;
-    offsetY = 0;
-    offsetZ = 0;
 
     std::string versionXmlPath = ccl::joinPaths(cdbOutputDir, "Metadata");
     if (!ccl::fileExists(versionXmlPath))
@@ -124,15 +120,17 @@ Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
     {
         readMetadataXML(metadataFilename);
     }
-
-    ltp_ellipsoid = new Cognitics::CoordinateSystems::EllipsoidTangentPlane(dbOriginLat, dbOriginLon);
+    double originLat = 0;
+    double originLon = 0;
+    srs.getOrigin(originLat, originLon);
+    ltp_ellipsoid = new Cognitics::CoordinateSystems::EllipsoidTangentPlane(originLat, originLon);
     if (!hiveMapperMode)
     {
         collectHighestLODTiles();
     }
     else
     {
-        objFiles = ccl::FileInfo::getAllFiles(objRootDir, "*.*", true);
+        objFiles = ccl::FileInfo::getAllFiles(objRootDir, "*.obj", true);
     }
     buildBSP();
 }
@@ -180,7 +178,7 @@ void Obj2CDB::buildBSP()
         float right = -FLT_MAX;
         float minZ = FLT_MAX;
         float maxZ = -FLT_MAX;
-        cognitics::QuickObj qo(fi.getFileName());
+        cognitics::QuickObj qo(fi.getFileName(),srs);
         if(!qo.isValid())
         {
             log << "Unable to read " << fi.getFileName() << log.endl;
@@ -303,7 +301,7 @@ renderJobList_t Obj2CDB::collectRenderJobs(cognitics::cdb::Dataset dataset, int 
     renderJobList_t renderJobs;
     for (auto&& tile : cdbTiles)
     {
-        RenderJob renderJob(tile);
+        RenderJob renderJob(tile, srs);
         sfa::BSPCollectGeometriesVisitor bspVisitor;
         std::string absoluteFilePath = ccl::joinPaths(cdbOutputDir, tile.getFilename());
         if(ccl::fileExists(absoluteFilePath))
@@ -341,9 +339,7 @@ renderJobList_t Obj2CDB::collectRenderJobs(cognitics::cdb::Dataset dataset, int 
         // For some reason, hivemapper puts an origin in that makes no sense.
         if (!hiveMapperMode)
         {
-            renderJob.offsetX = offsetX;
-            renderJob.offsetY = offsetY;
-            renderJob.offsetZ = offsetZ;
+            renderJob.srs = srs;
         }
 
         log << "Tile Extents (Cartesian):" << log.endl;

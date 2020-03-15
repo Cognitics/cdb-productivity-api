@@ -61,8 +61,34 @@
 
 namespace cognitics {
 
-    QuickObj::QuickObj(const std::string &objFilename, float _offsetX, float _offsetY, float _offsetZ,const std::string &_textureDirectory, bool loadTextures) :
-        objFilename(objFilename),offsetX(_offsetX), offsetY(_offsetY), offsetZ(_offsetZ), textureDirectory(_textureDirectory), minX(FLT_MIN),maxX(-FLT_MAX),minY(FLT_MIN),maxY(-FLT_MAX),minZ(FLT_MIN),maxZ(-FLT_MAX),_isValid(false)
+    bool fileToENU(Cognitics::CoordinateSystems::EllipsoidTangentPlane *ltp_ellipsoid, OGRCoordinateTransformation* coordTrans, float &x, float &y, float &z)
+    {
+        double local_x = 0, local_y = 0, local_z = 0;
+        double dx = x;
+        double dy = y;
+        double dz = z;
+        coordTrans->Transform(1, &dx, &dy, &dz);
+        ltp_ellipsoid->GeodeticToLocal(dy,
+            dx,
+            dz,
+            local_x,
+            local_y,
+            local_z);
+        x = local_x;
+        y = local_y;
+        z = local_z;
+        return true;
+    }
+
+    QuickObj::QuickObj(const std::string &objFilename,
+            const ObjSrs &srs,
+            const std::string &_textureDirectory, 
+            bool loadTextures) :
+                objFilename(objFilename),
+                textureDirectory(_textureDirectory),
+                minX(FLT_MAX),maxX(-FLT_MAX),minY(FLT_MAX),
+                maxY(-FLT_MAX),minZ(FLT_MAX),maxZ(-FLT_MAX),
+                _isValid(false)
     {
         log.init("QuickObj",this);
         ccl::FileInfo fi(objFilename);
@@ -118,15 +144,19 @@ namespace cognitics {
                 char *y = strtok(NULL," ");
                 if(!y)
                     continue;
-                QuickVert v;
-                v.x = atof(x) + offsetX;
-                v.y = atof(y) + offsetY;
+                QuickVert v;                
+                
+                v.x = atof(x) + srs.offsetPt.X();
+                v.y = atof(y) + srs.offsetPt.Y();
                 char *z = strtok(NULL," ");
                 if(!z)
-                    v.z = offsetZ;
+                    v.z = srs.offsetPt.Z();
                 else
-                    v.z = atof(z) + offsetZ;
-                
+                    v.z = atof(z) + srs.offsetPt.Z();
+                if(v.x < (srs.offsetPt.X()/2))
+                {
+                    printf("!!!");
+                }
                 minX = std::min<float>(minX,v.x);
                 minY = std::min<float>(minY,v.y);
                 minZ = std::min<float>(minZ,v.z);
@@ -233,6 +263,48 @@ namespace cognitics {
         fclose(f);
         _isValid = true;
         delete[] fileContents;
+        //Transform if needed. If there is no WKT, assume it's already in ENU
+        if(srs.srsWKT.size()>0)
+        {
+            OGRSpatialReference wgs;
+            OGRCoordinateTransformation* coordTrans;
+            wgs.SetFromUserInput("WGS84");
+            OGRSpatialReference *file_srs = new OGRSpatialReference;
+            const char *prjstr = srs.srsWKT.c_str();
+            OGRErr err = file_srs->importFromWkt((char **)&prjstr);
+            if (err != OGRERR_NONE)
+            {
+                delete file_srs;
+                return;
+            }
+            coordTrans = OGRCreateCoordinateTransformation(file_srs, &wgs);
+
+            double originLat = 0;
+            double originLon = 0;
+            double x = srs.offsetPt.X();
+            double y = srs.offsetPt.Y();
+            double z = srs.offsetPt.Z();
+            //Use the offset for the origin
+            coordTrans->Transform(1, &x, &y, &z);
+            //now x,y,z should be geo
+            originLat = y;
+            originLon = x;
+            std::stringstream ss;
+            ss.precision(12);
+            ss << "Using an origin of lat=" << originLat << " lon=" << originLon;
+            auto ltp_ellipsoid = new Cognitics::CoordinateSystems::EllipsoidTangentPlane(originLat, originLon);
+
+            double local_x = 0, local_y = 0, local_z = 0;
+            
+            for(int i=1,ic=verts.size();i<ic;i++)
+            {
+                QuickVert &vert = verts[i];
+                fileToENU(ltp_ellipsoid, coordTrans, vert.x, vert.y, vert.z);
+            }
+            fileToENU(ltp_ellipsoid, coordTrans, minX, minY, minZ);
+            fileToENU(ltp_ellipsoid, coordTrans, maxX, maxY, maxZ);
+            return;
+        }
     }
 
     void QuickObj::getBounds(float &minX, float &maxX,
@@ -675,5 +747,28 @@ namespace cognitics {
         }
     }
 
+    bool QuickObj::transform(Cognitics::CoordinateSystems::EllipsoidTangentPlane *etp,
+        OGRCoordinateTransformation *coordTrans,
+        const sfa::Point &offset) 
+    {
+        for(auto& vert : verts)
+        {
+            double x = vert.x + offset.X();
+            double y = vert.y + offset.Y();
+            double z = vert.z + offset.Z();
+            double local_x = 0, local_y = 0, local_z = 0;
+            coordTrans->Transform(1, &x, &y, &z);
+            etp->GeodeticToLocal(y,
+                x,
+                z,
+                local_x,
+                local_y,
+                local_z);
+            vert.x = local_x;
+            vert.y = local_y;
+            vert.z = local_z;
+        }
+        return true;
+    }
 
 }

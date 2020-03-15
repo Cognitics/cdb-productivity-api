@@ -1,8 +1,8 @@
 #include <ccl/ObjLog.h>
 #include <ccl/LogStream.h>
 #include <ccl/Timer.h>
-#include "scenegraphobj/scenegraphobj.h"
-#include "scenegraphflt/scenegraphflt.h"
+//#include "scenegraphobj/scenegraphobj.h"
+//#include "scenegraphflt/scenegraphflt.h"
 #include "ip/pngwrapper.h"
 #include "MeshRender.h"
 #include "mesh2cdb.h"
@@ -92,8 +92,11 @@ int main(int argc, char **argv)
     logger << ccl::LINFO;
     GDALAllRegister();
     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
-
-    Obj2CDB obj2_cdb(objRootDir, rootCDBOutput,metadataXML,hiveMapperMode);
+    ObjSrs srs;
+    srs.srsWKT = "PROJCS[\"WGS 84 / UTM zone 18N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",-75],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AUTHORITY[\"EPSG\",\"32618\"]]";
+    srs.offsetPt = sfa::Point(309113.64844575466, 4291674.189701308, 65.70969764043629);
+    //Obj2CDB obj2_cdb(objRootDir, rootCDBOutput, srs,metadataXML,hiveMapperMode);
+    Obj2CDB obj2_cdb(objRootDir, rootCDBOutput, srs, metadataXML, hiveMapperMode);
 
     CPLSetConfigOption("LODMIN", "-10");
     CPLSetConfigOption("LODMAX", argv[3]);
