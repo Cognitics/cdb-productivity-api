@@ -52,108 +52,6 @@ void newflt()
 
 
 
-void ReportMissingGSFeatureData(const std::string& cdb, std::tuple<double, double, double, double> nsew = std::make_tuple(DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX) )
-{
-    ccl::ObjLog log;
-    auto tiles = cognitics::cdb::FeatureTileInfoForTiledDataset(cdb, 100, nsew);
-    auto model_filenames = std::vector<std::string>();
-    for(auto tile : tiles)
-    {
-        auto tile_models = cognitics::cdb::GSModelReferencesForTile(cdb, tile, nsew);
-        if(tile_models.empty())
-            continue;
-        log << "GS TILE: " << cognitics::cdb::FileNameForTileInfo(tile) << " (" << tile_models.size() << " model references)" << log.endl;
-        model_filenames.insert(model_filenames.end(), tile_models.begin(), tile_models.end());
-
-        if(model_filenames.size() > 10)
-            break;
-    }
-
-    std::sort(model_filenames.begin(), model_filenames.end());
-    model_filenames.erase(std::unique(model_filenames.begin(), model_filenames.end()), model_filenames.end());
-    log << model_filenames.size() << " models" << log.endl;
-
-    auto texture_filenames = std::vector<std::string>();
-    for(auto model_filename : model_filenames)
-    {
-        auto filenames = cognitics::cdb::TextureFileNamesForModel(model_filename);
-        if(!filenames.first)
-        {
-            log << "MODEL MISSING: " << model_filename << log.endl;
-            continue;
-        }
-        for (auto filename : filenames.second)
-        {
-            auto fn = ccl::FileInfo(ccl::FileInfo(model_filename).getDirName()).getDirName() + "/" + filename;
-            if(ccl::fileExists(fn))
-            {
-                texture_filenames.push_back(fn);
-                continue;
-            }
-            auto base = ccl::FileInfo(fn).getBaseName();
-            auto tileinfo = cognitics::cdb::TileInfoForFileName(base);
-            auto zipfn = ccl::FileInfo(fn).getDirName() + "/" + cognitics::cdb::FileNameForTileInfo(tileinfo) + ".zip";
-            texture_filenames.push_back(zipfn + "/" + base);
-        }
-    }
-
-    std::sort(texture_filenames.begin(), texture_filenames.end());
-    texture_filenames.erase(std::unique(texture_filenames.begin(), texture_filenames.end()), texture_filenames.end());
-    log << texture_filenames.size() << " textures" << log.endl;
-
-    for(auto texture_filename : texture_filenames)
-    {
-        if(!cognitics::cdb::TextureExists(texture_filename))
-            log << "TEXTURE MISSING: " << texture_filename << log.endl;
-    }
-}
-
-void ReportMissingGTFeatureData(const std::string& cdb, std::tuple<double, double, double, double> nsew = std::make_tuple(DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX) )
-{
-    ccl::ObjLog log;
-    auto tiles = cognitics::cdb::FeatureTileInfoForTiledDataset(cdb, 101, nsew);
-    auto model_filenames = std::vector<std::string>();
-    for(auto tile : tiles)
-    {
-        auto tile_models = cognitics::cdb::GTModelReferencesForTile(cdb, tile, nsew);
-        if(tile_models.empty())
-            continue;
-        log << "GT TILE: " << cognitics::cdb::FileNameForTileInfo(tile) << " (" << tile_models.size() << " model references)" << log.endl;
-        model_filenames.insert(model_filenames.end(), tile_models.begin(), tile_models.end());
-    }
-
-    std::sort(model_filenames.begin(), model_filenames.end());
-    model_filenames.erase(std::unique(model_filenames.begin(), model_filenames.end()), model_filenames.end());
-    log << model_filenames.size() << " models" << log.endl;
-
-    auto texture_filenames = std::vector<std::string>();
-    for(auto model_filename : model_filenames)
-    {
-        auto filenames = cognitics::cdb::TextureFileNamesForModel(model_filename);
-        if(!filenames.first)
-        {
-            log << "MODEL MISSING: " << model_filename << log.endl;
-            continue;
-        }
-        for (auto filename : filenames.second)
-        {
-            auto fn = ccl::FileInfo(model_filename).getDirName() + "/" + filename;
-            texture_filenames.push_back(fn);
-        }
-    }
-
-    std::sort(texture_filenames.begin(), texture_filenames.end());
-    texture_filenames.erase(std::unique(texture_filenames.begin(), texture_filenames.end()), texture_filenames.end());
-    log << texture_filenames.size() << " textures" << log.endl;
-
-    for(auto texture_filename : texture_filenames)
-    {
-        if(!ccl::fileExists(texture_filename))
-            log << "TEXTURE MISSING: " << texture_filename << log.endl;
-    }
-}
-
-
 int main(int argc, char** argv)
 {
     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
@@ -197,9 +95,9 @@ int main(int argc, char** argv)
 
     auto ts_start = std::chrono::steady_clock::now();
     if(args.Option("gtfeatures"))
-        ReportMissingGTFeatureData(cdb, std::make_tuple(north, south, east, west));
+        cognitics::cdb::ReportMissingGTFeatureData(cdb, std::make_tuple(north, south, east, west));
     if(args.Option("gsfeatures"))
-        ReportMissingGSFeatureData(cdb, std::make_tuple(north, south, east, west));
+        cognitics::cdb::ReportMissingGSFeatureData(cdb, std::make_tuple(north, south, east, west));
     auto ts_stop = std::chrono::steady_clock::now();
     log << "ReportMissingFeatureData: " << std::chrono::duration<double>(ts_stop - ts_start).count() << "s" << log.endl;
     

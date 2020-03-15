@@ -309,8 +309,12 @@ class WMSRequestHandler
         auto sample_params = cdb_sample_parameters();
         if(cdb_request.query_map.find("layers") == cdb_request.query_map.end())
             return RespondError("No LAYERS parameter specified");
-        if(cdb_request.query_map["layers"] != "Imagery")
-            return RespondError("Invalid LAYERS requested: " + cdb_request.query_map["layers"]);
+        auto layers = cdb_request.query_map["layers"];
+        sample_params.dataset = 0;
+        if(layers == "Imagery")
+            sample_params.dataset = 4;
+        if(sample_params.dataset == 0)
+            return RespondError("Unknown LAYERS parameter specified");
         if(cdb_request.query_map.find("format") == cdb_request.query_map.end())
             return RespondError("No FORMAT parameter specified");
         if(cdb_request.query_map["format"] != "image/png")
@@ -335,7 +339,6 @@ class WMSRequestHandler
             return RespondError("No HEIGHT parameter specified");
         sample_params.height = std::stoi(cdb_request.query_map["height"]);
         sample_params.cdb = cdb_request.cdb;
-        sample_params.dataset = 4;
         sample_params.blue_marble = blue_marble;
         sample_params.population = population;
 
