@@ -586,12 +586,13 @@ namespace cognitics {
         glPushAttrib(GL_ALL_ATTRIB_BITS);
             
         glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-
+        glEnable(GL_TEXTURE_2D);
+        
         for (auto&& submesh : subMeshes)
         {
             GLuint texid = getOrLoadTextureID(materialMap[submesh.materialName].textureFile);
+            std::cout << submesh.materialName << " tex=" << texid << " filename=" << materialMap[submesh.materialName].textureFile << "\n";
             glBindTexture(GL_TEXTURE_2D, texid);
-            glEnable(GL_TEXTURE_2D);
             glBegin(GL_TRIANGLES);
             if (submesh.vertIdxs.size() != submesh.uvIdxs.size())
             {
@@ -610,14 +611,11 @@ namespace cognitics {
                 }
                 glTexCoord2f(uvs[uvidx].x, uvs[uvidx].y);
                 glVertex3f(verts[idx].x, verts[idx].y, verts[idx].z);
-
-                //glNormal3f(x, y, z);
-
             }
+            glEnd();
         }
-        glEnd();
+        
         glPopAttrib();
-
         return true;
     }
 
@@ -686,7 +684,7 @@ namespace cognitics {
         // Create one OpenGL texture
         GLuint textureID;
         glGenTextures(1, &textureID);
-
+        textures[texname] = textureID;
         // "Bind" the newly created texture : all future texture functions will modify this texture
         glBindTexture(GL_TEXTURE_2D, textureID);
         unsigned int blockSize = (format == GL_COMPRESSED_RGBA_S3TC_DXT1_EXT) ? 8 : 16;
@@ -709,6 +707,88 @@ namespace cognitics {
 
     }
 
+    class TexturePixels
+    {
+    public:
+        ccl::binary pixels;
+        std::string filename;
+        int width;
+        int height;
+        int depth;
+    };
+
+    typedef std::map<std::string, TexturePixels> texture_pixels_map_t;
+
+    //Global texture cache:
+
+    class TextureCache
+    {
+        int max_textures;
+        std::map<std::string, TexturePixels> images;
+        std::map<std::string, int> textureAge;
+
+        void removeOldest()
+        {
+            int max_age = 0;
+            for(auto && age : textureAge)
+            {
+                max_age = std::max<int>(age.second,max_age);
+            }
+            //auto age_iter = textureAge.find(filename);
+           // if (age_iter != textureAge.end())
+            //{
+            //    textureAge.erase(age_iter);
+            //}
+        }
+
+        void removeTexture(const std::string &filename)
+        {
+            auto iter = images.find(filename);
+            if(iter!=images.end())
+            {
+                images.erase(iter);
+            }
+
+            auto age_iter = textureAge.find(filename);
+            if (age_iter != textureAge.end())
+            {
+                textureAge.erase(age_iter);
+            }
+        }
+
+        void increaseAge()
+        {
+            for(auto &&tage : textureAge)
+            {
+                tage.second++;
+            }
+        }
+
+        void resetAge(const std::string &filename)
+        {
+            auto age_iter = textureAge.find(filename);
+            if (age_iter != textureAge.end())
+            {
+               age_iter->second = 0;
+            }
+        }
+    public:
+        TextureCache(int max_textures) : max_textures(max_textures)
+        {
+            
+        }
+
+        void store(TexturePixels image)
+        {
+            if(images.size()>max_textures)
+            {
+                
+            }
+        }
+    };
+
+
+
     GLuint QuickObj::getOrLoadTextureID(const std::string &texname)
     {
         //std::string texpath = ccl::joinPaths(textureDirectory,texname);
@@ -725,21 +805,25 @@ namespace cognitics {
         {
             ip::FlipVertically(info, buffer);
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-
-            GLuint texid = 0;
-            glGenTextures(1, &texid);
-            GLenum glerror = glGetError();
-            textures[texname] = texid;
             glEnable(GL_TEXTURE_2D);
+            GLuint texid = 0;
+            GLenum glerror = glGetError();
+            glGenTextures(1, &texid);
+            //std::cout << "texid=" << texid << " err=" << (int)glerror << "\n";
+            glBindTexture(GL_TEXTURE_2D, texid);
             glerror = glGetError();
+            textures[texname] = texid;
+            GL_INVALID_ENUM;
             
             glerror = glGetError();
             unsigned char *p = (unsigned char *)&buffer.at(0);
 
-            if(info.depth==3 && info.interleaved && info.dataType==ip::ImageInfo::UBYTE)
+            if (info.depth == 3 && info.interleaved && info.dataType == ip::ImageInfo::UBYTE)
                 glTexImage2D(GL_TEXTURE_2D, 0, 3, info.width, info.height, 0, GL_RGB, GL_UNSIGNED_BYTE, p);
-            else if(info.depth==4 && info.interleaved && info.dataType==ip::ImageInfo::UBYTE)
+            else if (info.depth == 4 && info.interleaved && info.dataType == ip::ImageInfo::UBYTE)
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, info.width, info.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, p);
+            else
+                std::cout << "Error, unknown texture format!\n";
             //if(glGenerateMipmapfunc)
             //    glGenerateMipmapfunc(GL_TEXTURE_2D);
             glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
@@ -747,7 +831,7 @@ namespace cognitics {
             glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
             glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
             glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-            glBindTexture(GL_TEXTURE_2D, texid);
+            
             return texid;
         }
 
@@ -761,7 +845,11 @@ namespace cognitics {
         {
             if(iter->second!=-1)
             {
+                int texid = iter->second;                
                 glDeleteTextures(1,&iter->second);
+                GLenum glerror = glGetError();
+                std::string t = iter->first;
+                std::cout << "deleted texture=" << t << " texid=" << texid << " err=" << (int)glerror << "\n";
             }
             iter++;
         }

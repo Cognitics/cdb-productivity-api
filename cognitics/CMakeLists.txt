@@ -971,14 +971,17 @@ source_group("Source Files\\ogr" REGULAR_EXPRESSION "src/ogr/.*$")
 link_libraries(cogcore)
 
 
-if(FALSE) #WIN32)
+
 SET(OBJ_EXT_SOURCES ./obj-extract/obj-extract.cpp
-                    ./obj-extract/obj-extract.h
-                    ./obj-extract/transformvisitor.cpp
-                    ./obj-extract/transformvisitor.h)
+                    ./obj-extract/obj-extract.h)
 
 add_executable(obj-extract ${OBJ_EXT_SOURCES})
+target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
+target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
 
+if(FALSE) #WIN32)
     set(CMAKE_DEBUG_POSTFIX "d")
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
