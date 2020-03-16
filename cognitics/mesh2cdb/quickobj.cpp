@@ -153,10 +153,10 @@ namespace cognitics {
                     v.z = srs.offsetPt.Z();
                 else
                     v.z = atof(z) + srs.offsetPt.Z();
-                if(v.x < (srs.offsetPt.X()/2))
+                /*if(v.x < (srs.offsetPt.X()/2))
                 {
                     printf("!!!");
-                }
+                }*/
                 minX = std::min<float>(minX,v.x);
                 minY = std::min<float>(minY,v.y);
                 minZ = std::min<float>(minZ,v.z);
@@ -264,7 +264,7 @@ namespace cognitics {
         _isValid = true;
         delete[] fileContents;
         //Transform if needed. If there is no WKT, assume it's already in ENU
-        if(srs.srsWKT.size()>0)
+        if(srs.srsWKT.size()>0 && srs.srsWKT != "ENU")
         {
             OGRSpatialReference wgs;
             OGRCoordinateTransformation* coordTrans;

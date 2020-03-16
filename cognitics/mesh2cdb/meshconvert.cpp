@@ -15,8 +15,9 @@
 #include "quickobj.h"
 
 using namespace rapidxml;
-bool Obj2CDB::readMetadataXML(const std::string &sourceDir)
+bool Obj2CDB::readMetadataXMLxxx(const std::string &sourceDir)
 {
+    /*
     xml_document<> doc;
     xml_node<> * root_node;
     // Read the xml file into a vector
@@ -78,15 +79,13 @@ bool Obj2CDB::readMetadataXML(const std::string &sourceDir)
             }
         }
     }
-
+    */
     return true;
 }
 
 
 
-Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
-    const std::string &outputCDBDir, ObjSrs &_srs, std::string metadataFilename, bool hiveMapperMode) :
-    objRootDir(inputOBJDir), cdbOutputDir(outputCDBDir), srs(_srs), metadataFilename(metadataFilename), hiveMapperMode(hiveMapperMode)
+Obj2CDB::Obj2CDB(const Mesh2CDBParams &_parms) : parms(_parms)
 {
     ltp_ellipsoid = NULL;
     dbTop = -DBL_MAX;
@@ -96,7 +95,7 @@ Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
     dbMinZ = DBL_MAX;
     dbMaxZ = -DBL_MAX;
 
-    std::string versionXmlPath = ccl::joinPaths(cdbOutputDir, "Metadata");
+    std::string versionXmlPath = ccl::joinPaths(parms.outputDirectory, "Metadata");
     if (!ccl::fileExists(versionXmlPath))
     {
         ccl::makeDirectory(versionXmlPath);
@@ -111,26 +110,17 @@ Obj2CDB::Obj2CDB(const std::string &inputOBJDir,
         outfile.close();
     }
 
-    //Read metadata
-    if (!hiveMapperMode)
-    {
-        readMetadataXML(ccl::joinPaths(inputOBJDir, "metadata.xml"));
-    }
-    else
-    {
-        readMetadataXML(metadataFilename);
-    }
-    double originLat = 0;
-    double originLon = 0;
-    srs.getOrigin(originLat, originLon);
+    double originLat = parms.origin.Y();
+    double originLon = parms.origin.X();
     ltp_ellipsoid = new Cognitics::CoordinateSystems::EllipsoidTangentPlane(originLat, originLon);
-    if (!hiveMapperMode)
+
+    if (parms.highestLODOnly)
     {
         collectHighestLODTiles();
     }
     else
     {
-        objFiles = ccl::FileInfo::getAllFiles(objRootDir, "*.obj", true);
+        objFiles = ccl::FileInfo::getAllFiles(parms.objPath, "*.*", parms.searchObjSubdirectories);
     }
     buildBSP();
 }
@@ -178,6 +168,10 @@ void Obj2CDB::buildBSP()
         float right = -FLT_MAX;
         float minZ = FLT_MAX;
         float maxZ = -FLT_MAX;
+        ObjSrs srs;
+        srs.geoOrigin = parms.origin;
+        srs.srsWKT = parms.wkt;
+        srs.offsetPt = parms.offset;
         cognitics::QuickObj qo(fi.getFileName(),srs);
         if(!qo.isValid())
         {
@@ -257,7 +251,7 @@ void Obj2CDB::collectHighestLODTiles()
 {
     std::map<std::string, int> highestTileLODNum;
     std::map<std::string, std::string> highestTileLODFilename;
-    std::vector<ccl::FileInfo> files = ccl::FileInfo::getAllFiles(objRootDir, "*.*", true);
+    std::vector<ccl::FileInfo> files = ccl::FileInfo::getAllFiles(parms.objPath, "*.*", parms.highestLODOnly);
 
     for (auto&& fi : files)
     {
@@ -299,11 +293,15 @@ renderJobList_t Obj2CDB::collectRenderJobs(cognitics::cdb::Dataset dataset, int 
     cognitics::cdb::CoordinatesRange cdbAOI(cdbLL, cdbUR);
     auto cdbTiles = cognitics::cdb::generate_tiles(cdbAOI, dataset, lod);
     renderJobList_t renderJobs;
+    ObjSrs srs;
+    srs.geoOrigin = parms.origin;
+    srs.srsWKT = parms.wkt;
+    srs.offsetPt = parms.offset;
     for (auto&& tile : cdbTiles)
     {
         RenderJob renderJob(tile, srs);
         sfa::BSPCollectGeometriesVisitor bspVisitor;
-        std::string absoluteFilePath = ccl::joinPaths(cdbOutputDir, tile.getFilename());
+        std::string absoluteFilePath = ccl::joinPaths(parms.outputDirectory, tile.getFilename());
         if(ccl::fileExists(absoluteFilePath))
         {
             log << absoluteFilePath << " already exists. Skipping..." << log.endl;
@@ -336,11 +334,8 @@ renderJobList_t Obj2CDB::collectRenderJobs(cognitics::cdb::Dataset dataset, int 
         renderJob.enuMaxX = tileLocalRight;
         renderJob.enuMinY = tileLocalBottom;
         renderJob.enuMaxY = tileLocalTop;
-        // For some reason, hivemapper puts an origin in that makes no sense.
-        if (!hiveMapperMode)
-        {
-            renderJob.srs = srs;
-        }
+        renderJob.srs = srs;
+
 
         log << "Tile Extents (Cartesian):" << log.endl;
         log << "LL: " << tileLocalLeft << " , " << tileLocalBottom << log.endl;

@@ -68,6 +68,7 @@ int main(int argc, char **argv)
 {
     testRequest();
     return 1;
+    /*
     //argv[1] = Input OBJ directory (where metadata.xml exists)
     //argv[2] = Output  CDB directory (the parent directory where Tiles lives)
     //argv[3] = The LOD to generate
@@ -137,7 +138,7 @@ int main(int argc, char **argv)
     GDALAllRegister();
     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
     ObjSrs srs;
-    Obj2CDB obj2_cdb(objRootDir, rootCDBOutput,srs, metadataXML,hiveMapperMode);
+    Obj2CDB obj2_cdb(parms);
 
     CPLSetConfigOption("LODMIN", "-10");
     CPLSetConfigOption("LODMAX", argv[3]);
@@ -156,6 +157,6 @@ int main(int argc, char **argv)
         if (renderJobs.size() > 0)
            renderInit(argc, argv, renderJobs, rootCDBOutput);
     }
-
+    */
     return 0;
 }

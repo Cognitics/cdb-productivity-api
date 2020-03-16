@@ -1,8 +1,7 @@
 #include <ccl/ObjLog.h>
 #include <ccl/LogStream.h>
 #include <ccl/Timer.h>
-//#include "scenegraphobj/scenegraphobj.h"
-//#include "scenegraphflt/scenegraphflt.h"
+
 #include "ip/pngwrapper.h"
 #include "MeshRender.h"
 #include "mesh2cdb.h"
@@ -23,45 +22,75 @@
 #pragma warning ( pop )
 ccl::ObjLog logger;
 
+void showHelp()
+{
+    std::cout << "Example Configuration File:\n\n";
+    std::cout << "    < ? xml version=\"1.0\" encoding=\"utf-8\"?>\n";
+    std::cout << "    < mesh2cdb  highest_lod_only=\"false\" maxlod=\"1\" outputdir=\"\">\n";
+    std::cout << "    < origin x=\"0\" y=\"0\"/>\n";
+    std::cout << "    < offset x=\"0\" y=\"0\" z=\"0\"/>\n";
+    std::cout << "    <wkt>PROJCS[\"WGS 84 / UTM zone 18N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",-75],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AUTHORITY[\"EPSG\",\"32618\"]]</wkt>\n";
+    std::cout << "    < sources texturepath=\"\" objdir=\"\" recurse=\"true\">\n";
+    std::cout << "    < sourceobj file=\"\"/>\n";
+    std::cout << "    < / sources>\n";
+    std::cout << "    < / mesh2cdb>\n";
+    std::cout << "\n";
+
+}
 
 int main(int argc, char **argv)
 {
-    //argv[1] = Input OBJ directory (where metadata.xml exists)
-    //argv[2] = Output  CDB directory (the parent directory where Tiles lives)
-    //argv[3] = The LOD to generate
     cognitics::ArgumentParser args;
     args.AddOption("dry-run",0,"","Analyze data and dump a job list, without processing any jobs");
-    args.AddOption("metadata",1,"<metadata-filename>","Specify metadata file with the origin and offsets.");
-    args.AddOption("hivemapper",0,"","Hivemapper compatability mode (all OBJ files are used, no LOD sorting).");
-    args.AddArgument("Input OBJ Directory");
-    args.AddArgument("Output CDB directory");
-    args.AddArgument("Output LOD number");
+    args.AddOption("config",1,"<config.xml>","Specify configuration file.");
+    //args.AddOption("lod", 1, "<LOD>", "Maximum LOD to create, range is -10 through 20 for CDB");
+    args.AddOption("cdb", 1, "<output path>", "Use the specified path, ignoring the contents of the config file.");
+    args.AddOption("help",0,"","Display help, including sample xml file");
+
     if(args.Parse(argc,argv)==EXIT_FAILURE)
     {
         return EXIT_FAILURE;
     }
-    std::string metadataXML;
-    bool dryRun = false;
-    bool hiveMapperMode = false;
-    std::string rootCDBOutput = args.Arguments()[1];
-    std::string objRootDir = args.Arguments()[0];
-    int cdbLOD = atoi(args.Arguments()[2].c_str());
-    if(args.Option("hivemapper"))
+
+    if (args.Option("help"))
     {
-        hiveMapperMode = true;
+        args.Usage();
+        showHelp();
+        return 0;
     }
+      
+
+    std::string configXML;
+    bool dryRun = false;
+    
     if(args.Option("dry-run"))
     {
         dryRun = true;
     }
-    if(args.Option("metadata"))
+    if(args.Option("config"))
     {
-        metadataXML = args.Parameters("metadata")[0];
+        configXML = args.Parameters("config")[0];
     }
-    if(argc > 4)
+    else
     {
-        metadataXML = argv[4];
-        logger << "Using metadata file: " << metadataXML << "." << logger.endl;
+        args.Usage("You must specify a configuration file with -config <file>.");
+        return 1;
+    }
+    Mesh2CDBParams parms;
+    parms.parse(configXML);
+    if (args.Option("cdb"))
+    {
+        parms.outputDirectory = args.Parameters("cdb")[0];
+    }
+    if (args.Option("lod"))
+    {
+        std::string maxLODStr = args.Parameters("lod")[0];
+        parms.maxLOD = strtod(maxLODStr.c_str(), nullptr);
+    }
+    if(!parms.isValid())
+    {
+        std::cout << "Error: Invalid config file.\n";
+        return 1;
     }
 
 #ifndef WIN32
@@ -93,15 +122,18 @@ int main(int argc, char **argv)
     GDALAllRegister();
     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
     ObjSrs srs;
-    srs.srsWKT = "PROJCS[\"WGS 84 / UTM zone 18N\",GEOGCS[\"WGS 84\",DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\",6378137,298.257223563,AUTHORITY[\"EPSG\",\"7030\"]],AUTHORITY[\"EPSG\",\"6326\"]],PRIMEM[\"Greenwich\",0,AUTHORITY[\"EPSG\",\"8901\"]],UNIT[\"degree\",0.0174532925199433,AUTHORITY[\"EPSG\",\"9122\"]],AUTHORITY[\"EPSG\",\"4326\"]],PROJECTION[\"Transverse_Mercator\"],PARAMETER[\"latitude_of_origin\",0],PARAMETER[\"central_meridian\",-75],PARAMETER[\"scale_factor\",0.9996],PARAMETER[\"false_easting\",500000],PARAMETER[\"false_northing\",0],UNIT[\"metre\",1,AUTHORITY[\"EPSG\",\"9001\"]],AUTHORITY[\"EPSG\",\"32618\"]]";
-    srs.offsetPt = sfa::Point(309113.64844575466, 4291674.189701308, 65.70969764043629);
+    srs.srsWKT = parms.wkt;
+    srs.offsetPt = parms.offset;
+    srs.geoOrigin = parms.origin;
+    
+    //srs.offsetPt = sfa::Point(309113.64844575466, 4291674.189701308, 65.70969764043629);
     //Obj2CDB obj2_cdb(objRootDir, rootCDBOutput, srs,metadataXML,hiveMapperMode);
-    Obj2CDB obj2_cdb(objRootDir, rootCDBOutput, srs, metadataXML, hiveMapperMode);
+    Obj2CDB obj2_cdb(parms);
 
     CPLSetConfigOption("LODMIN", "-10");
     CPLSetConfigOption("LODMAX", argv[3]);
 
-    renderJobList_t renderJobs = obj2_cdb.collectRenderJobs(cognitics::cdb::Dataset::Imagery, cdbLOD);
+    renderJobList_t renderJobs = obj2_cdb.collectRenderJobs(cognitics::cdb::Dataset::Imagery, parms.maxLOD);
     logger << "Rendering " << renderJobs.size() << " CDB imagery tiles." << logger.endl;
     if(dryRun)
     {
@@ -113,7 +145,7 @@ int main(int argc, char **argv)
     else
     {
         if (renderJobs.size() > 0)
-           renderInit(argc, argv, renderJobs, rootCDBOutput);
+           renderInit(argc, argv, renderJobs, parms.outputDirectory);
     }
 
     return 0;
