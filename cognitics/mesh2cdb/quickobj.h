@@ -158,6 +158,15 @@ namespace cognitics {
         float z;
     } QuickVert;
 
+    class QuickSubMesh
+    {
+    public:
+        std::vector<uint32_t> vertIdxs;
+        std::vector<uint32_t> uvIdxs;
+        std::vector<uint32_t> normIdxs;
+        std::string materialName;
+    };
+
     /*
         QuickObj makes a bunch of assumptions, such as each 
         face being a triangle.
@@ -175,7 +184,7 @@ namespace cognitics {
         float maxZ;
 
         ObjSrs srs;
-
+        std::vector <QuickSubMesh> subMeshes;
         std::vector<QuickVert> verts;
         std::vector<QuickVert> norms;
         std::vector<QuickVert> uvs;

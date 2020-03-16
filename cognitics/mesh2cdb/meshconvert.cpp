@@ -109,11 +109,50 @@ Obj2CDB::Obj2CDB(const Mesh2CDBParams &_parms) : parms(_parms)
 
         outfile.close();
     }
-
+    //Use the parms origin only if the wkt is empty or ENU
     double originLat = parms.origin.Y();
     double originLon = parms.origin.X();
-    ltp_ellipsoid = new Cognitics::CoordinateSystems::EllipsoidTangentPlane(originLat, originLon);
+    if (parms.wkt.size() > 0 && parms.wkt != "ENU")
+    {
+        OGRSpatialReference wgs;
+        OGRCoordinateTransformation* coordTrans;
+        wgs.SetFromUserInput("WGS84");
+        OGRSpatialReference *file_srs = new OGRSpatialReference;
 
+        const char *prjstr = parms.wkt.c_str();
+        OGRErr err;
+        if (prjstr[0] == '+')
+        {
+            err = file_srs->importFromProj4(prjstr);
+        }
+        else
+        {
+            err = file_srs->importFromWkt((char **)&prjstr);
+        }
+
+        if (err != OGRERR_NONE)
+        {
+            delete file_srs;
+            return;
+        }
+        coordTrans = OGRCreateCoordinateTransformation(file_srs, &wgs);
+
+        originLat = 0;
+        originLon = 0;
+        double x = parms.offset.X();
+        double y = parms.offset.Y();
+        double z = parms.offset.Z();
+        //Use the offset for the origin
+        coordTrans->Transform(1, &x, &y, &z);
+        //now x,y,z should be geo
+        originLat = y;
+        originLon = x;
+        std::stringstream ss;
+        ss.precision(12);
+        ss << "Using an origin of lat=" << originLat << " lon=" << originLon;
+    }
+    
+    ltp_ellipsoid = new Cognitics::CoordinateSystems::EllipsoidTangentPlane(originLat, originLon);
     if (parms.highestLODOnly)
     {
         collectHighestLODTiles();
@@ -155,9 +194,11 @@ void Obj2CDB::buildBSP()
     //objFiles
     for (auto&& fi : objFiles)
     {
-        // HAAAAAACK
-        //if (loop > 10)
-//            break;
+        //if(fi.getFileName())
+        if(!ccl::stringEndsWith(fi.getFileName(),".obj",false))
+        {
+            continue;
+        }
         loop++;
 
 

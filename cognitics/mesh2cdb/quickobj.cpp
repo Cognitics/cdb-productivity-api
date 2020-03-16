@@ -224,15 +224,20 @@ namespace cognitics {
                     }
                     uint32_t vertId = atoi(vp);
                     vertIdxs.push_back(vertId);
+                    auto &lastMesh = subMeshes.back();
+                    lastMesh.vertIdxs.push_back(vertId);
+
                     if(vtp)
                     {
                         uint32_t uvId = atoi(vtp);
                         uvIdxs.push_back(uvId);
+                        lastMesh.uvIdxs.push_back(uvId);
                     }
                     if(vnp)
                     {
                         uint32_t normId = atoi(vnp);
                         normIdxs.push_back(normId);
+                        lastMesh.normIdxs.push_back(normId);
                     }
                     tok = strtok(NULL," ");
                 }
@@ -247,10 +252,12 @@ namespace cognitics {
             else if(strcmp(tok,"usemtl")==0)
             {
                 //Defines a new material from this point on
-                //Todo: figure out how to track this (just use the first one?)
                 char *material = strtok(NULL," ");
-                if(materialName.empty())
-                    materialName = std::string(material);
+                materialName = std::string(material);
+                QuickSubMesh submesh;
+                submesh.materialName = materialName;
+                subMeshes.push_back(submesh);
+                auto lastMesh = subMeshes.back();
             }
             //Skip and remaining cr/lf
             while((pos < fileSize) && 
@@ -270,8 +277,18 @@ namespace cognitics {
             OGRCoordinateTransformation* coordTrans;
             wgs.SetFromUserInput("WGS84");
             OGRSpatialReference *file_srs = new OGRSpatialReference;
+            
             const char *prjstr = srs.srsWKT.c_str();
-            OGRErr err = file_srs->importFromWkt((char **)&prjstr);
+            OGRErr err;
+            if(prjstr[0]=='+')
+            {
+                err = file_srs->importFromProj4(prjstr);
+            }
+            else
+            {
+                err = file_srs->importFromWkt((char **)&prjstr);
+            }
+             
             if (err != OGRERR_NONE)
             {
                 delete file_srs;
@@ -569,33 +586,35 @@ namespace cognitics {
         glPushAttrib(GL_ALL_ATTRIB_BITS);
             
         glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
-        
-        GLuint texid = getOrLoadTextureID(materialMap[materialName].textureFile);
-        glBindTexture(GL_TEXTURE_2D, texid);
-        glEnable(GL_TEXTURE_2D);
-        glBegin(GL_TRIANGLES);
-        if(vertIdxs.size()!=uvIdxs.size())
-        {
-            log << "The number of vertices does not match the number of UV coordinates." << log.endl;
-            return false;
-        }
 
-        for(size_t i=0,ic=vertIdxs.size();i<ic;i++)
+        for (auto&& submesh : subMeshes)
         {
-            uint32_t idx = vertIdxs[i];
-            uint32_t uvidx = uvIdxs[i];
-            if(idx==0 || uvidx==0)
+            GLuint texid = getOrLoadTextureID(materialMap[submesh.materialName].textureFile);
+            glBindTexture(GL_TEXTURE_2D, texid);
+            glEnable(GL_TEXTURE_2D);
+            glBegin(GL_TRIANGLES);
+            if (submesh.vertIdxs.size() != submesh.uvIdxs.size())
             {
-                log << "Vert/UV index of 0 is invalid for OBJ." << log.endl;
+                log << "The number of vertices does not match the number of UV coordinates." << log.endl;
                 return false;
             }
-            glTexCoord2f(uvs[uvidx].x,uvs[uvidx].y);
-            glVertex3f(verts[idx].x,verts[idx].y,verts[idx].z);
-            
-            //glNormal3f(x, y, z);
-            
-        }
 
+            for (size_t i = 0, ic = submesh.vertIdxs.size(); i < ic; i++)
+            {
+                uint32_t idx = submesh.vertIdxs[i];
+                uint32_t uvidx = submesh.uvIdxs[i];
+                if (idx == 0 || uvidx == 0)
+                {
+                    log << "Vert/UV index of 0 is invalid for OBJ." << log.endl;
+                    return false;
+                }
+                glTexCoord2f(uvs[uvidx].x, uvs[uvidx].y);
+                glVertex3f(verts[idx].x, verts[idx].y, verts[idx].z);
+
+                //glNormal3f(x, y, z);
+
+            }
+        }
         glEnd();
         glPopAttrib();
 
@@ -713,7 +732,7 @@ namespace cognitics {
             textures[texname] = texid;
             glEnable(GL_TEXTURE_2D);
             glerror = glGetError();
-            glBindTexture(GL_TEXTURE_2D,texid);
+            
             glerror = glGetError();
             unsigned char *p = (unsigned char *)&buffer.at(0);
 
@@ -725,9 +744,10 @@ namespace cognitics {
             //    glGenerateMipmapfunc(GL_TEXTURE_2D);
             glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
             glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-             glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
+            glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
             glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_REPEAT);
             glTexParameterf(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
+            glBindTexture(GL_TEXTURE_2D, texid);
             return texid;
         }
 
