@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mesh2cdb maxlod="12" outputdir="D:\data\ph_cdb" highest_lod_only="true">
+	<origin x="-79.47359" y="35.19605"/>
+	<offset x="0" y="0" z="89"/>
+	<wkt>ENU</wkt>
+	<sources texturepath="" objdir="D:\data\pinehurst\ground" recurse="true">
+		<sourceobj file=""/>
+	</sources>
+</mesh2cdb>
+
+
