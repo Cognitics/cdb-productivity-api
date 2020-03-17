@@ -54,7 +54,7 @@ OGRSpatialReference *LoadProjectionFromPRJ(const std::string &filename)
     
     std::ifstream prjfile(filename.c_str());
     if (!prjfile)
-        return false;
+        return NULL;
     std::stringstream buffer;
     buffer << prjfile.rdbuf();
     data = buffer.str();
