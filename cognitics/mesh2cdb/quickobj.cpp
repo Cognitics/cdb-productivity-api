@@ -591,7 +591,7 @@ namespace cognitics {
         for (auto&& submesh : subMeshes)
         {
             GLuint texid = getOrLoadTextureID(materialMap[submesh.materialName].textureFile);
-            std::cout << submesh.materialName << " tex=" << texid << " filename=" << materialMap[submesh.materialName].textureFile << "\n";
+            //std::cout << submesh.materialName << " tex=" << texid << " filename=" << materialMap[submesh.materialName].textureFile << "\n";
             glBindTexture(GL_TEXTURE_2D, texid);
             glBegin(GL_TRIANGLES);
             if (submesh.vertIdxs.size() != submesh.uvIdxs.size())
@@ -712,9 +712,7 @@ namespace cognitics {
     public:
         ccl::binary pixels;
         std::string filename;
-        int width;
-        int height;
-        int depth;
+        ip::ImageInfo info;
     };
 
     typedef std::map<std::string, TexturePixels> texture_pixels_map_t;
@@ -726,23 +724,30 @@ namespace cognitics {
         int max_textures;
         std::map<std::string, TexturePixels> images;
         std::map<std::string, int> textureAge;
-
+        ccl::mutex mut;
         void removeOldest()
         {
+            mut.lock();
             int max_age = 0;
             for(auto && age : textureAge)
             {
                 max_age = std::max<int>(age.second,max_age);
             }
-            //auto age_iter = textureAge.find(filename);
-           // if (age_iter != textureAge.end())
-            //{
-            //    textureAge.erase(age_iter);
-            //}
+            for (auto && age : textureAge)
+            {
+                if(age.second == max_age)
+                {
+                    removeTexture(age.first);
+                    mut.unlock();
+                    return;
+                }
+            }
+            mut.unlock();
         }
 
         void removeTexture(const std::string &filename)
         {
+            mut.lock();
             auto iter = images.find(filename);
             if(iter!=images.end())
             {
@@ -754,23 +759,28 @@ namespace cognitics {
             {
                 textureAge.erase(age_iter);
             }
+            mut.unlock();
         }
 
         void increaseAge()
         {
+            mut.lock();
             for(auto &&tage : textureAge)
             {
                 tage.second++;
             }
+            mut.unlock();
         }
 
         void resetAge(const std::string &filename)
         {
+            mut.lock();
             auto age_iter = textureAge.find(filename);
             if (age_iter != textureAge.end())
             {
                age_iter->second = 0;
             }
+            mut.unlock();
         }
     public:
         TextureCache(int max_textures) : max_textures(max_textures)
@@ -780,13 +790,34 @@ namespace cognitics {
 
         void store(TexturePixels image)
         {
-            if(images.size()>max_textures)
+            mut.lock();
+            if (images.size() > max_textures)
             {
-                
+                removeOldest();
             }
+            textureAge[image.filename] = 0;
+            images[image.filename] = image;
+            mut.unlock();
+        }
+
+        bool get(const std::string &textureFilename, TexturePixels &image)
+        {
+            mut.lock();
+            auto iter = images.find(textureFilename);
+            if (iter == images.end())
+            {
+                mut.unlock();
+                return false;
+            }
+            increaseAge();
+            resetAge(textureFilename);
+            image = iter->second;
+            mut.unlock();
+            return true;
         }
     };
 
+    TextureCache gTextureCache(20);
 
 
     GLuint QuickObj::getOrLoadTextureID(const std::string &texname)
@@ -798,12 +829,23 @@ namespace cognitics {
         {
             return getOrLoadDDSTextureID(texname);
         }
-        ccl::binary buffer;
-        ccl::binary buffer2;
+
+        TexturePixels tpix;
         ip::ImageInfo info;
-        if(ip::GetImagePixels(texname,info,buffer))
+        if(!gTextureCache.get(texname,tpix))
         {
-            ip::FlipVertically(info, buffer);
+            ccl::binary buffer;         
+            if (ip::GetImagePixels(texname, info, buffer))
+            {
+                ip::FlipVertically(info, buffer);
+                tpix.pixels = buffer;
+                tpix.info = info;
+                tpix.filename = texname;
+                gTextureCache.store(tpix);
+            }
+        }
+        info = tpix.info;
+        {
             glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
             glEnable(GL_TEXTURE_2D);
             GLuint texid = 0;
@@ -813,10 +855,9 @@ namespace cognitics {
             glBindTexture(GL_TEXTURE_2D, texid);
             glerror = glGetError();
             textures[texname] = texid;
-            GL_INVALID_ENUM;
             
             glerror = glGetError();
-            unsigned char *p = (unsigned char *)&buffer.at(0);
+            unsigned char *p = (unsigned char *)&tpix.pixels.at(0);
 
             if (info.depth == 3 && info.interleaved && info.dataType == ip::ImageInfo::UBYTE)
                 glTexImage2D(GL_TEXTURE_2D, 0, 3, info.width, info.height, 0, GL_RGB, GL_UNSIGNED_BYTE, p);
@@ -847,9 +888,9 @@ namespace cognitics {
             {
                 int texid = iter->second;                
                 glDeleteTextures(1,&iter->second);
-                GLenum glerror = glGetError();
-                std::string t = iter->first;
-                std::cout << "deleted texture=" << t << " texid=" << texid << " err=" << (int)glerror << "\n";
+                //GLenum glerror = glGetError();
+                //std::string t = iter->first;
+                //std::cout << "deleted texture=" << t << " texid=" << texid << " err=" << (int)glerror << "\n";
             }
             iter++;
         }

@@ -118,11 +118,16 @@ namespace ip {
                 break;
             }
             int ii = ((info.height-1) - i);
+            //unsigned char *src = &buffer[(i*len)];
+            //unsigned char *dest = &copy[(ii*len)];
+            //memcpy(dest, src, len);
             // copy the row
+            
             for(int j=0;j<len;j++)
             {
                 buffer[(i*len)+j] = copy[(ii*len)+j];
             }
+            
         }
     }
 
