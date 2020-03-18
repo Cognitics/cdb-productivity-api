@@ -99,7 +99,27 @@ int usage_inject(const std::string& error = "")
     std::cout << "        Imagery 001 001\n";
     std::cout << "        Elevation 001 001\n";
     std::cout << "        GTFeature 001 001 (in development)\n";
-    std::cout << "        RoadNetwork 002 003 (in development)\n";
+    std::cout << "        GeoPolitical 001 001\n";
+    std::cout << "        GeoPolitical 001 003\n";
+    std::cout << "        GeoPolitical 001 005\n";
+    std::cout << "        GeoPolitical 002 001\n";
+    std::cout << "        GeoPolitical 002 003\n";
+    std::cout << "        GeoPolitical 002 005\n";
+    std::cout << "        GeoPolitical 003 001\n";
+    std::cout << "        GeoPolitical 003 003\n";
+    std::cout << "        GeoPolitical 003 005\n";
+    std::cout << "        RoadNetwork 002 003\n";
+    std::cout << "        RoadNetwork 002 007\n";
+    std::cout << "        RoadNetwork 003 003\n";
+    std::cout << "        RoadNetwork 003 005\n";
+    std::cout << "        RailRoadNetwork 002 003\n";
+    std::cout << "        RailRoadNetwork 002 007\n";
+    std::cout << "        PowerLineNetwork 002 003\n";
+    std::cout << "        PowerLineNetwork 002 007\n";
+    std::cout << "        HydrographyNetwork 002 003\n";
+    std::cout << "        HydrographyNetwork 002 005\n";
+    std::cout << "        HydrographyNetwork 002 007\n";
+    std::cout << "        HydrographyNetwork 002 009\n";
     return error.empty() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
@@ -257,7 +277,147 @@ int main_inject(size_t arg_start)
         bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
         return result ? EXIT_SUCCESS : EXIT_FAILURE;
     }
+    else if((dataset == 102) && (cs1 == 1) && (cs2 == 1))    // GeoPoliticalGTFeature, Boundary, point features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 102) && (cs1 == 1) && (cs2 == 3))    // GeoPoliticalGTFeature, Boundary, lineal features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 102) && (cs1 == 1) && (cs2 == 5))    // GeoPoliticalGTFeature, Boundary, polygon features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 102) && (cs1 == 2) && (cs2 == 1))    // GeoPoliticalGTFeature, Location, point features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 102) && (cs1 == 2) && (cs2 == 3))    // GeoPoliticalGTFeature, Location, lineal features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 102) && (cs1 == 2) && (cs2 == 5))    // GeoPoliticalGTFeature, Location, polygon features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 102) && (cs1 == 3) && (cs2 == 1))    // GeoPoliticalGTFeature, Constraint, point features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 102) && (cs1 == 3) && (cs2 == 3))    // GeoPoliticalGTFeature, Constraint, lineal features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 102) && (cs1 == 3) && (cs2 == 5))    // GeoPoliticalGTFeature, Constraint, polygon features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
     else if((dataset == 201) && (cs1 == 2) && (cs2 == 3))    // RoadNetwork, Road Network, lineal features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 201) && (cs1 == 2) && (cs2 == 7))    // RoadNetwork, Road Network, lineal figure point features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 201) && (cs1 == 3) && (cs2 == 3))    // RoadNetwork, Airport Network, lineal features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 201) && (cs1 == 3) && (cs2 == 5))    // RoadNetwork, Airport Network, polygon features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 202) && (cs1 == 2) && (cs2 == 3))    // RailRoadNetwork, RailRoad Network, lineal features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 202) && (cs1 == 2) && (cs2 == 7))    // RailRoadNetwork, RailRoad Network, lineal figure point features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 203) && (cs1 == 2) && (cs2 == 3))    // PowerLineNetwork, PowerLine Network, lineal features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 203) && (cs1 == 2) && (cs2 == 7))    // PowerLineNetwork, PowerLine Network, lineal figure point features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 204) && (cs1 == 2) && (cs2 == 3))    // HydrographyNetwork, Hydrography Network, lineal features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 204) && (cs1 == 2) && (cs2 == 5))    // HydrographyNetwork, Hydrography Network, polygon features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 204) && (cs1 == 2) && (cs2 == 7))    // HydrographyNetwork, Hydrography Network, lineal figure point features
+    {
+        if(lod == 24)
+            lod = 0;
+        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
+        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 204) && (cs1 == 2) && (cs2 == 9))    // HydrographyNetwork, Hydrography Network, polygon figure point features
     {
         if(lod == 24)
             lod = 0;
