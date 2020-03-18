@@ -191,7 +191,7 @@ namespace cognitics {
         std::vector<uint32_t> vertIdxs;
         std::vector<uint32_t> uvIdxs;
         std::vector<uint32_t> normIdxs;
-        std::string objFilename;
+        
         std::string textureFilename;
         std::string textureDirectory;
         std::string materialFilename;
@@ -208,6 +208,9 @@ namespace cognitics {
         uint32_t getOrLoadDDSTextureID(const std::string &texname);
 
     public:
+        QuickObj(const QuickObj &other);
+        QuickObj &operator=(const QuickObj &other);
+        std::string objFilename;
         ~QuickObj();
         QuickObj(const std::string &objFilename, const ObjSrs &_srs,
                 const std::string &textureDirectory="", 
@@ -224,5 +227,23 @@ namespace cognitics {
             const sfa::Point &_offset);
     };
 
+    class ObjCache
+    {
+        int max_objs;
+        std::map<std::string, QuickObj *> objs;
+        std::map<std::string, int> objAge;
+        ccl::mutex mut;
+        void removeOldest();
+        void removeobj(const std::string &filename);
+        void increaseAge();
+        void resetAge(const std::string &filename);
 
+    public:
+        ObjCache(int max_objs);
+        ~ObjCache();
+        void store(QuickObj *obj);
+        QuickObj* get(const std::string &objFilename);
+    };
+
+    extern ObjCache gObjCache;
 }

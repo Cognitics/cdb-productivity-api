@@ -477,11 +477,16 @@ void renderToFile(RenderJob &job)
     for(auto&& file : job.objFiles)
     {
         ccl::FileInfo objFi(file);
-        cognitics::QuickObj qo(file,job.srs,objFi.getDirName(),true);
-        if(qo.isValid())
+        cognitics::QuickObj *qo = cognitics::gObjCache.get(file);
+        if(!qo)
+        {
+            qo = new cognitics::QuickObj(file, job.srs, objFi.getDirName(), true);
+            cognitics::gObjCache.store(qo);
+        }
+        if(qo->isValid())
         {
             //logger << "Rendering " << file << logger.endl;
-            qo.glRender();
+            qo->glRender();
         }
         else
         {
