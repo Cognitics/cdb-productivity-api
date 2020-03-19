@@ -1137,7 +1137,7 @@ std::vector<std::pair<std::string, Tile>> CoverageTilesForTiles(const std::strin
     return result;
 }
 
-bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::string& filename)
+bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::string& filename, const std::string& models_path)
 {
     if (!IsCDB(cdb))
         MakeCDB(cdb);
@@ -1219,17 +1219,21 @@ bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int l
         }
         file.close();
     }
+    if(!models_path.empty())
+    {
+        InjectGTModels(cdb, features, models_path);
+    }
     for(auto feature : features)
         delete feature;
     return true;
 }
 
-bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::vector<std::string>& filenames)
+bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::vector<std::string>& filenames, const std::string& models_path)
 {
     bool result = true;
     for(auto fn : filenames)
     {
-        if(!InjectFeatures(cdb, dataset, cs1, cs2, lod, fn))
+        if(!InjectFeatures(cdb, dataset, cs1, cs2, lod, fn, models_path))
             result = false;
     }
     return result;
@@ -1374,6 +1378,139 @@ void ReportMissingGTFeatureData(const std::string& cdb, std::tuple<double, doubl
     }
 }
 
+std::map<std::string, std::pair<std::string, std::string>> FACCandFSCbyMODLforFeatures(const std::vector<sfa::Feature*>& features)
+{
+    auto result = std::map<std::string, std::pair<std::string, std::string>>();
+    for(auto feature : features)
+    {
+        if(!feature->attributes.hasAttribute("FACC"))
+            continue;
+        if(!feature->attributes.hasAttribute("FSC"))
+            continue;
+        if(!feature->attributes.hasAttribute("MODL"))
+            continue;
+        auto facc = feature->attributes.getAttributeAsString("FACC");
+        auto fsc = feature->attributes.getAttributeAsString("FSC");
+        auto modl = feature->attributes.getAttributeAsString("MODL");
+        result[modl] = std::make_pair(facc, fsc);
+    }
+    return result;
+}
+
+void InjectGTModels(const std::string& cdb, const std::vector<sfa::Feature*>& features, const std::string& source_model_path)
+{
+    ccl::ObjLog log;
+    auto fdd = FeatureDataDictionary();
+    auto source_by_target = std::map<std::string, std::string>();
+    for(auto feature : features)
+    {
+        if(!feature->attributes.hasAttribute("FACC"))
+            continue;
+        if(!feature->attributes.hasAttribute("FSC"))
+            continue;
+        if(!feature->attributes.hasAttribute("MODL"))
+            continue;
+        auto facc = feature->attributes.getAttributeAsString("FACC");
+        auto fsc = feature->attributes.getAttributeAsString("FSC");
+        while (fsc.size() < 3)
+            fsc = "0" + fsc;
+        auto modl = feature->attributes.getAttributeAsString("MODL");
+        auto infile = source_model_path + "/" + modl + ".flt";
+        auto outfile = cdb + "/GTModel/500_GTModelGeometry/" + fdd.Subdirectory(facc) + "/D500_S001_T001_" + facc + "_" + fsc + "_" + modl + ".flt";
+        source_by_target[outfile] = infile;
+    }
+    for(auto entry : source_by_target)
+    {
+        auto outfile = entry.first;
+        if(ccl::fileExists(outfile))
+            continue;
+        auto infile = entry.second;
+        if(!ccl::fileExists(infile))
+        {
+            log << "Missing source model: " << infile << log.endl;
+            continue;
+        }
+        auto outpath = ccl::FileInfo(outfile).getDirName();
+        ccl::makeDirectory(outpath);
+        if(ccl::copyFile(infile, outfile))
+            log << infile << " -> " << outfile << ": SUCCESS" << log.endl;
+        else
+            log << infile << " -> " << outfile << ": FAILED" << log.endl;
+
+    }
+}
+
+bool WriteFeaturesToOGRFile(const std::string& filename, const std::vector<sfa::Feature*> features)
+{
+    auto file = ogr::File();
+    if (!file.open(filename, true))
+    {
+        if (!file.create(filename))
+            return false;
+    }
+    for (auto feature : features)
+        delete file.addFeature(feature);
+    file.close();
+    return true;
+}
+
+std::vector<sfa::Feature*> FeaturesForTileInfo(const std::string& cdb, const TileInfo& tile_info)
+{
+    auto tile_filepath = FilePathForTileInfo(tile_info);
+    auto tile_filename = FileNameForTileInfo(tile_info);
+    auto tile_fn = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename + ".shp";
+    auto class_tile = tile_info;
+    class_tile.selector2 = tile_info.selector2 + 1;
+    auto class_tile_filepath = FilePathForTileInfo(class_tile);
+    auto class_tile_filename = FileNameForTileInfo(class_tile);
+    auto class_tile_fn = cdb + "/Tiles/" + class_tile_filepath + "/" + class_tile_filename + ".dbf";
+    auto ext_tile = tile_info;
+    ext_tile.selector2 = 16;
+    if(tile_info.selector2 == 3)
+        ext_tile.selector2 = 17;
+    if(tile_info.selector2 == 5)
+        ext_tile.selector2 = 18;
+    auto ext_tile_filepath = FilePathForTileInfo(ext_tile);
+    auto ext_tile_filename = FileNameForTileInfo(ext_tile);
+    auto ext_tile_fn = cdb + "/Tiles/" + ext_tile_filepath + "/" + ext_tile_filename + ".dbf";
+    auto features = cognitics::cdb::FeaturesForOGRFile(tile_fn);
+    auto class_attr = cognitics::cdb::AttributesForDBF(class_tile_fn);
+    auto class_map = cognitics::cdb::AttributesByCNAM(class_attr);
+    auto ext_attr = cognitics::cdb::AttributesForDBF(ext_tile_fn);
+    auto ext_map = cognitics::cdb::AttributesByCNAM(ext_attr);
+    for (auto feature : features)
+    {
+        auto cnam = feature->attributes.getAttributeAsString("CNAM");
+        if (class_map.find(cnam) != class_map.end())
+        {
+            auto attributes = class_map[cnam].getVariantMap();
+            for (auto attr : *attributes)
+                feature->attributes.setAttribute(attr.first, attr.second);
+        }
+        if (ext_map.find(cnam) != ext_map.end())
+        {
+            auto attributes = ext_map[cnam].getVariantMap();
+            for (auto attr : *attributes)
+                feature->attributes.setAttribute(attr.first, attr.second);
+        }
+    }
+    return features;
+}
+
+std::vector<sfa::Feature*> Features(const std::string& cdb, int dataset, int cs1, int cs2, int lod, std::tuple<double, double, double, double> nsew)
+{
+    auto result = std::vector<sfa::Feature*>();
+    auto coords = CoordinatesRange(std::get<3>(nsew), std::get<2>(nsew), std::get<1>(nsew), std::get<0>(nsew));
+    auto tiles = generate_tiles(coords, Dataset((uint16_t)dataset), lod);
+    for(auto tile : tiles)
+    {
+        auto tile_info = TileInfoForTile(tile);
+        auto features = FeaturesForTileInfo(cdb, tile_info);
+        for(auto feature : features)
+            result.push_back(feature);
+    }
+    return result;
+}
 
 }
 }

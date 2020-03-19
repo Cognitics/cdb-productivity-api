@@ -19,6 +19,7 @@ struct cdb_sample_parameters
     int width { 1024 };
     int height { 1024 };
     int dataset { 4 };
+    int lod { 24 };
     const unsigned char* blue_marble { nullptr };
     std::vector<unsigned char> population;
 };

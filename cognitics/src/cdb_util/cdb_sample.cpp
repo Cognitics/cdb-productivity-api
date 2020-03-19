@@ -28,7 +28,9 @@ bool cdb_sample(cdb_sample_parameters& params)
     auto pixel_size_x = std::abs((params.east - params.west) / params.width);
     auto pixel_size_y = std::abs((params.north - params.south) / params.height);
     auto pixel_size = std::min<double>(pixel_size_x, pixel_size_y);
-    auto target_lod = cognitics::cdb::LodForPixelSize(pixel_size);
+    auto target_lod = params.lod;
+    if(target_lod == 24)
+        target_lod = cognitics::cdb::LodForPixelSize(pixel_size);
 
     auto coords = cognitics::cdb::CoordinatesRange(params.west, params.east, params.south, params.north);
     auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)params.dataset), target_lod);

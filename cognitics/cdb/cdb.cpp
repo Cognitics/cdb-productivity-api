@@ -94,11 +94,13 @@ int usage_inject(const std::string& error = "")
     std::cout << "    Command Options:\n";
     std::cout << "        -bounds <n> <s> <e> <w>  bounds for area of interest\n";
     std::cout << "        -lod <lod>               forced level of detail\n";
+    std::cout << "        -models <path>           path to models\n";
     std::cout << "        -workers <#>             number of worker threads (default: 8)\n";
     std::cout << "    Supported Components (dataset cs1 cs2):\n";
     std::cout << "        Imagery 001 001\n";
     std::cout << "        Elevation 001 001\n";
     std::cout << "        GTFeature 001 001 (in development)\n";
+    std::cout << "        GTFeature 002 001 (in development)\n";
     std::cout << "        GeoPolitical 001 001\n";
     std::cout << "        GeoPolitical 001 003\n";
     std::cout << "        GeoPolitical 001 005\n";
@@ -147,9 +149,49 @@ int usage_sample(const std::string& error = "")
     std::cout << "        -bounds <n> <s> <e> <w>  bounds for area of interest\n";
     std::cout << "        -width <#>               width (x) dimension\n";
     std::cout << "        -height <#>              height (y) dimension\n";
+    std::cout << "        -lod <lod>               forced level of detail\n";
     std::cout << "    Supported Components:\n";
     std::cout << "        Imagery 001 001\n";
     std::cout << "        Elevation 001 001\n";
+    std::cout << "        GSFeature 001 001\n";
+    std::cout << "        GSFeature 001 003\n";
+    std::cout << "        GSFeature 001 005\n";
+    std::cout << "        GSFeature 002 001\n";
+    std::cout << "        GSFeature 002 003\n";
+    std::cout << "        GSFeature 002 005\n";
+    std::cout << "        GSFeature 003 001\n";
+    std::cout << "        GSFeature 004 001\n";
+    std::cout << "        GSFeature 004 003\n";
+    std::cout << "        GSFeature 004 005\n";
+    std::cout << "        GSFeature 005 001\n";
+    std::cout << "        GTFeature 001 001\n";
+    std::cout << "        GTFeature 001 003\n";
+    std::cout << "        GTFeature 001 005\n";
+    std::cout << "        GTFeature 002 001\n";
+    std::cout << "        GTFeature 002 003\n";
+    std::cout << "        GTFeature 002 005\n";
+    std::cout << "        GTFeature 003 001\n";
+    std::cout << "        GeoPolitical 001 001\n";
+    std::cout << "        GeoPolitical 001 003\n";
+    std::cout << "        GeoPolitical 001 005\n";
+    std::cout << "        GeoPolitical 002 001\n";
+    std::cout << "        GeoPolitical 002 003\n";
+    std::cout << "        GeoPolitical 002 005\n";
+    std::cout << "        GeoPolitical 003 001\n";
+    std::cout << "        GeoPolitical 003 003\n";
+    std::cout << "        GeoPolitical 003 005\n";
+    std::cout << "        RoadNetwork 002 003\n";
+    std::cout << "        RoadNetwork 002 007\n";
+    std::cout << "        RoadNetwork 003 003\n";
+    std::cout << "        RoadNetwork 003 005\n";
+    std::cout << "        RailRoadNetwork 002 003\n";
+    std::cout << "        RailRoadNetwork 002 007\n";
+    std::cout << "        PowerLineNetwork 002 003\n";
+    std::cout << "        PowerLineNetwork 002 007\n";
+    std::cout << "        HydrographyNetwork 002 003\n";
+    std::cout << "        HydrographyNetwork 002 005\n";
+    std::cout << "        HydrographyNetwork 002 007\n";
+    std::cout << "        HydrographyNetwork 002 009\n";
     return error.empty() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
@@ -163,6 +205,7 @@ int usage_validate(const std::string& error = "")
     std::cout << "        -bounds <n> <s> <e> <w>  bounds for area of interest\n";
     std::cout << "    Supported Components (dataset cs1 cs2):\n";
     std::cout << "        GTFeature 001 001\n";
+    std::cout << "        GTFeature 002 001\n";
     std::cout << "        GSFeature 001 001\n";
     return error.empty() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
@@ -178,6 +221,7 @@ int main_inject(size_t arg_start)
     int dataset { 0 };
     int cs1 { 0 };
     int cs2 { 0 };
+    auto models = std::string();
     auto sources = std::vector<std::string>();
     for(size_t argi = arg_start, argc = args.size(); argi < argc; ++argi)
     {
@@ -187,6 +231,14 @@ int main_inject(size_t arg_start)
             if(argi > argc - 1)
                 return usage_inject("Missing target LOD");
             lod = to_int(args[argi], 24);
+            continue;
+        }
+        if(args[argi] == "-models")
+        {
+            ++argi;
+            if(argi > argc - 1)
+                return usage_inject("Missing source models path");
+            models = args[argi];
             continue;
         }
         if(args[argi] == "-workers")
@@ -238,196 +290,77 @@ int main_inject(size_t arg_start)
     }
     if(sources.empty())
         return usage_inject();
+    auto params = cognitics::cdb::cdb_inject_parameters();
+    params.cdb = cdb;
+    if(lod != 24)
+        params.lod = lod;
+    if(workers != 8)
+        params.workers = workers;
+    params.north = north;
+    params.south = south;
+    params.east = east;
+    params.west = west;
+    if(lod == 24)
+        lod = 0;
+
     if((dataset == 1) && (cs1 == 1) && (cs2 == 1))  // Elevation, PrimaryTerrainElevation
     {
-        auto params = cognitics::cdb::cdb_inject_parameters();
-        params.cdb = cdb;
-        if(lod != 24)
-            params.lod = lod;
-        if(workers != 8)
-            params.workers = workers;
-        params.north = north;
-        params.south = south;
-        params.east = east;
-        params.west = west;
         params.elevation = sources;
-        bool result = cognitics::cdb::cdb_inject(params);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+        return cognitics::cdb::cdb_inject(params) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
     else if((dataset == 4) && (cs1 == 1) && (cs2 == 1))  // Imagery, YearlyVstiRepresentation
     {
-        auto params = cognitics::cdb::cdb_inject_parameters();
-        params.cdb = cdb;
-        if(lod != 24)
-            params.lod = lod;
-        if(workers != 8)
-            params.workers = workers;
-        params.north = north;
-        params.south = south;
-        params.east = east;
-        params.west = west;
         params.imagery = sources;
-        bool result = cognitics::cdb::cdb_inject(params);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+        return cognitics::cdb::cdb_inject(params) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
     else if((dataset == 101) && (cs1 == 1) && (cs2 == 1))    // GTFeature, Man-made, point features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 101) && (cs1 == 2) && (cs2 == 1))    // GTFeature, Tree, point features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 1) && (cs2 == 1))    // GeoPoliticalGTFeature, Boundary, point features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 1) && (cs2 == 3))    // GeoPoliticalGTFeature, Boundary, lineal features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 1) && (cs2 == 5))    // GeoPoliticalGTFeature, Boundary, polygon features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 2) && (cs2 == 1))    // GeoPoliticalGTFeature, Location, point features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 2) && (cs2 == 3))    // GeoPoliticalGTFeature, Location, lineal features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 2) && (cs2 == 5))    // GeoPoliticalGTFeature, Location, polygon features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 3) && (cs2 == 1))    // GeoPoliticalGTFeature, Constraint, point features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 3) && (cs2 == 3))    // GeoPoliticalGTFeature, Constraint, lineal features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 3) && (cs2 == 5))    // GeoPoliticalGTFeature, Constraint, polygon features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 201) && (cs1 == 2) && (cs2 == 3))    // RoadNetwork, Road Network, lineal features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 201) && (cs1 == 2) && (cs2 == 7))    // RoadNetwork, Road Network, lineal figure point features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 201) && (cs1 == 3) && (cs2 == 3))    // RoadNetwork, Airport Network, lineal features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 201) && (cs1 == 3) && (cs2 == 5))    // RoadNetwork, Airport Network, polygon features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 202) && (cs1 == 2) && (cs2 == 3))    // RailRoadNetwork, RailRoad Network, lineal features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 202) && (cs1 == 2) && (cs2 == 7))    // RailRoadNetwork, RailRoad Network, lineal figure point features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 203) && (cs1 == 2) && (cs2 == 3))    // PowerLineNetwork, PowerLine Network, lineal features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 203) && (cs1 == 2) && (cs2 == 7))    // PowerLineNetwork, PowerLine Network, lineal figure point features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 204) && (cs1 == 2) && (cs2 == 3))    // HydrographyNetwork, Hydrography Network, lineal features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 204) && (cs1 == 2) && (cs2 == 5))    // HydrographyNetwork, Hydrography Network, polygon features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 204) && (cs1 == 2) && (cs2 == 7))    // HydrographyNetwork, Hydrography Network, lineal figure point features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 204) && (cs1 == 2) && (cs2 == 9))    // HydrographyNetwork, Hydrography Network, polygon figure point features
-    {
-        if(lod == 24)
-            lod = 0;
-        bool result = cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models) ? EXIT_SUCCESS : EXIT_FAILURE;
     else
-    {
         return usage_inject("Unsupported Component: " + cognitics::cdb::DatasetName(dataset) + " " + std::to_string(cs1) + " " + std::to_string(cs2));
-    }
     return EXIT_SUCCESS;
 }
 
@@ -471,37 +404,29 @@ int main_lod(size_t arg_start)
             continue;
         }
     }
+    auto params = cognitics::cdb::cdb_lod_parameters();
+    params.cdb = cdb;
+    params.workers = workers;
+    params.elevation = false;
+    params.imagery = false;
     if((dataset == 1) && (cs1 == 1) && (cs2 == 1))  // Elevation, PrimaryTerrainElevation
     {
-        auto params = cognitics::cdb::cdb_lod_parameters();
-        params.cdb = cdb;
-        if(workers != 8)
-            params.workers = workers;
         params.elevation = true;
-        params.imagery = false;
-        bool result = cognitics::cdb::cdb_lod(params);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+        return cognitics::cdb::cdb_lod(params) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
     else if((dataset == 4) && (cs1 == 1) && (cs2 == 1))  // Imagery, YearlyVstiRepresentation
     {
-        auto params = cognitics::cdb::cdb_lod_parameters();
-        params.cdb = cdb;
-        if(workers != 8)
-            params.workers = workers;
-        params.elevation = false;
         params.imagery = true;
-        bool result = cognitics::cdb::cdb_lod(params);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+        return cognitics::cdb::cdb_lod(params) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
     else
-    {
         return usage_lod("Unsupported Component: " + cognitics::cdb::DatasetName(dataset) + " " + std::to_string(cs1) + " " + std::to_string(cs2));
-    }
     return EXIT_SUCCESS;
 }
 
 int main_sample(size_t arg_start)
 {
+    int lod { 24 };
     double north { DBL_MAX };
     double south { -DBL_MAX };
     double east { DBL_MAX };
@@ -514,6 +439,14 @@ int main_sample(size_t arg_start)
     std::string outfile;
     for(size_t argi = arg_start, argc = args.size(); argi < argc; ++argi)
     {
+        if(args[argi] == "-lod")
+        {
+            ++argi;
+            if(argi > argc - 1)
+                return usage_inject("Missing target LOD");
+            lod = to_int(args[argi], 24);
+            continue;
+        }
         if(args[argi] == "-bounds")
         {
             if(argi > argc - 4)
@@ -573,40 +506,257 @@ int main_sample(size_t arg_start)
         return usage_sample("Missing outfile parameter");
     if(north == DBL_MAX)
         return usage_sample("-bounds option is required");
+    auto params = cognitics::cdb::cdb_sample_parameters();
+    params.cdb = cdb;
+    params.dataset = dataset;
+    params.north = north;
+    params.south = south;
+    params.east = east;
+    params.west = west;
+    params.width = width;
+    params.height = height;
+    params.lod = lod;
+    params.outfile = outfile;
     if((dataset == 1) && (cs1 == 1) && (cs2 == 1))  // Elevation, PrimaryTerrainElevation
-    {
-        auto params = cognitics::cdb::cdb_sample_parameters();
-        params.cdb = cdb;
-        params.dataset = dataset;
-        params.north = north;
-        params.south = south;
-        params.east = east;
-        params.west = west;
-        params.width = width;
-        params.height = height;
-        params.outfile = outfile;
-        bool result = cognitics::cdb::cdb_sample(params);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::cdb_sample(params) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 4) && (cs1 == 1) && (cs2 == 1))  // Imagery, YearlyVstiRepresentation
+        return cognitics::cdb::cdb_sample(params) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 100) && (cs1 == 1) && (cs2 == 1))    // GSFeature, Man-made, point features
     {
-        auto params = cognitics::cdb::cdb_sample_parameters();
-        params.cdb = cdb;
-        params.dataset = dataset;
-        params.north = north;
-        params.south = south;
-        params.east = east;
-        params.west = west;
-        params.width = width;
-        params.height = height;
-        params.outfile = outfile;
-        bool result = cognitics::cdb::cdb_sample(params);
-        return result ? EXIT_SUCCESS : EXIT_FAILURE;
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 100) && (cs1 == 1) && (cs2 == 3))    // GSFeature, Man-made, lineal features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 100) && (cs1 == 1) && (cs2 == 5))    // GSFeature, Man-made, polygon features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 100) && (cs1 == 2) && (cs2 == 1))    // GSFeature, Natural, point features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 100) && (cs1 == 2) && (cs2 == 3))    // GSFeature, Natural, lineal features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 100) && (cs1 == 2) && (cs2 == 5))    // GSFeature, Natural, polygon features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 100) && (cs1 == 3) && (cs2 == 1))    // GSFeature, Trees, point features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 100) && (cs1 == 4) && (cs2 == 1))    // GSFeature, Airport light, point features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 100) && (cs1 == 4) && (cs2 == 3))    // GSFeature, Airport, lineal features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 100) && (cs1 == 4) && (cs2 == 5))    // GSFeature, Airport, polygon features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 100) && (cs1 == 5) && (cs2 == 1))    // GSFeature, Environmental light, point features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 101) && (cs1 == 1) && (cs2 == 1))    // GTFeature, Man-made, point features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 101) && (cs1 == 1) && (cs2 == 3))    // GTFeature, Man-made, lineal features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 101) && (cs1 == 1) && (cs2 == 5))    // GTFeature, Man-made, polygon features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 101) && (cs1 == 2) && (cs2 == 1))    // GTFeature, Tree, point features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 101) && (cs1 == 2) && (cs2 == 3))    // GTFeature, Tree, lineal features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 101) && (cs1 == 2) && (cs2 == 5))    // GTFeature, Tree, polygon features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 101) && (cs1 == 3) && (cs2 == 1))    // GTFeature, Moving Model, point features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 102) && (cs1 == 1) && (cs2 == 1))    // GeoPoliticalGTFeature, Boundary, point features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 102) && (cs1 == 1) && (cs2 == 3))    // GeoPoliticalGTFeature, Boundary, lineal features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 102) && (cs1 == 1) && (cs2 == 5))    // GeoPoliticalGTFeature, Boundary, polygon features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 102) && (cs1 == 2) && (cs2 == 1))    // GeoPoliticalGTFeature, Location, point features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 102) && (cs1 == 2) && (cs2 == 3))    // GeoPoliticalGTFeature, Location, lineal features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 102) && (cs1 == 2) && (cs2 == 5))    // GeoPoliticalGTFeature, Location, polygon features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 102) && (cs1 == 3) && (cs2 == 1))    // GeoPoliticalGTFeature, Constraint, point features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 102) && (cs1 == 3) && (cs2 == 3))    // GeoPoliticalGTFeature, Constraint, lineal features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 102) && (cs1 == 3) && (cs2 == 5))    // GeoPoliticalGTFeature, Constraint, polygon features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 201) && (cs1 == 2) && (cs2 == 3))    // RoadNetwork, Road Network, lineal features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 201) && (cs1 == 2) && (cs2 == 7))    // RoadNetwork, Road Network, lineal figure point features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 201) && (cs1 == 3) && (cs2 == 3))    // RoadNetwork, Airport Network, lineal features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 201) && (cs1 == 3) && (cs2 == 5))    // RoadNetwork, Airport Network, polygon features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 202) && (cs1 == 2) && (cs2 == 3))    // RailRoadNetwork, RailRoad Network, lineal features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 202) && (cs1 == 2) && (cs2 == 7))    // RailRoadNetwork, RailRoad Network, lineal figure point features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 203) && (cs1 == 2) && (cs2 == 3))    // PowerLineNetwork, PowerLine Network, lineal features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 203) && (cs1 == 2) && (cs2 == 7))    // PowerLineNetwork, PowerLine Network, lineal figure point features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 204) && (cs1 == 2) && (cs2 == 3))    // HydrographyNetwork, Hydrography Network, lineal features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 204) && (cs1 == 2) && (cs2 == 5))    // HydrographyNetwork, Hydrography Network, polygon features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 204) && (cs1 == 2) && (cs2 == 7))    // HydrographyNetwork, Hydrography Network, lineal figure point features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
+    }
+    else if((dataset == 204) && (cs1 == 2) && (cs2 == 9))    // HydrographyNetwork, Hydrography Network, polygon figure point features
+    {
+        auto features = cognitics::cdb::Features(cdb, dataset, cs1, cs2, lod, std::make_tuple(north, south, east, west));
+        cognitics::cdb::WriteFeaturesToOGRFile(outfile, features);
+        return EXIT_SUCCESS;
     }
     else
-    {
         return usage_sample("Unsupported Component: " + cognitics::cdb::DatasetName(dataset) + " " + std::to_string(cs1) + " " + std::to_string(cs2));
-    }
     return EXIT_SUCCESS;
 }
 
@@ -665,6 +815,11 @@ int main_validate(size_t arg_start)
         return EXIT_SUCCESS;
     }
     if((dataset == 101) && (cs1 == 1) && (cs2 == 1))    // GTFeature, Man-made, point features
+    {
+        cognitics::cdb::ReportMissingGTFeatureData(cdb, std::make_tuple(north, south, east, west));
+        return EXIT_SUCCESS;
+    }
+    if((dataset == 101) && (cs1 == 2) && (cs2 == 1))    // GTFeature, Tree, point features
     {
         cognitics::cdb::ReportMissingGTFeatureData(cdb, std::make_tuple(north, south, east, west));
         return EXIT_SUCCESS;
