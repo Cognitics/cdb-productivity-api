@@ -878,6 +878,60 @@ namespace cognitics {
 
         return -1;
     }
+    QuickObj &QuickObj::operator=(const QuickObj &other)
+    {
+        this->minX = other.minX;
+        this->minY = other.minY;
+        this->maxX = other.maxX;
+        this->maxY = other.maxY;
+        this->minZ = other.minZ;
+        this->maxZ = other.maxZ;
+        this->srs = other.srs;
+        this->subMeshes = other.subMeshes;
+        this->verts = other.verts;
+        this->norms = other.norms;
+        this->uvs = other.uvs;
+        this->vertIdxs = other.vertIdxs;
+        this->uvIdxs = other.uvIdxs;
+        this->normIdxs = other.normIdxs;
+        this->textureFilename = other.textureFilename;
+        this->textureDirectory = other.textureDirectory;
+        this->materialFilename = other.materialFilename;
+        this->materialName = other.materialName;
+        this->currentMaterial = other.currentMaterial;
+        this->materialMap = other.materialMap;
+        this->_isValid = other._isValid;
+        this->textures = other.textures;
+        this->objFilename = other.objFilename;
+        return *this;
+    }
+
+    QuickObj::QuickObj(const QuickObj &other)
+    {
+        this->minX = other.minX;
+        this->minY = other.minY;
+        this->maxX = other.maxX;
+        this->maxY = other.maxY;
+        this->minZ = other.minZ;
+        this->maxZ = other.maxZ;
+        this->srs = other.srs;
+        this->subMeshes = other.subMeshes;
+        this->verts = other.verts;
+        this->norms = other.norms;
+        this->uvs = other.uvs;
+        this->vertIdxs = other.vertIdxs;
+        this->uvIdxs = other.uvIdxs;
+        this->normIdxs = other.normIdxs;
+        this->textureFilename = other.textureFilename;
+        this->textureDirectory = other.textureDirectory;
+        this->materialFilename = other.materialFilename;
+        this->materialName = other.materialName;
+        this->currentMaterial = other.currentMaterial;
+        this->materialMap = other.materialMap;
+        this->_isValid = other._isValid;
+        this->textures = other.textures;
+        this->objFilename = other.objFilename;
+    }
 
     QuickObj::~QuickObj()
     {
@@ -920,4 +974,91 @@ namespace cognitics {
         return true;
     }
 
+    ObjCache::ObjCache(int max_objs) : max_objs(max_objs)
+    {
+
+    }
+
+    ObjCache::~ObjCache()
+    {
+        mut.lock();
+        for (auto && age : objAge)
+        {
+            delete objs[age.first];
+        }
+        mut.unlock();
+    }
+
+    //store takes ownership of obj and will delete it
+    void ObjCache::store(QuickObj *obj)
+    {
+        mut.lock();
+        if (objs.size() > max_objs)
+        {
+            removeOldest();
+        }
+        objAge[obj->objFilename] = 0;
+        objs[obj->objFilename] = obj;
+        mut.unlock();
+    }
+
+    QuickObj* ObjCache::get(const std::string &objFilename)
+    {
+        mut.lock();
+        QuickObj* obj = NULL;
+        auto iter = objs.find(objFilename);
+        if (iter == objs.end())
+        {
+            mut.unlock();
+            return NULL;
+        }
+        increaseAge();
+        resetAge(objFilename);
+        obj = iter->second;
+        mut.unlock();
+        return obj;
+    }
+
+    void ObjCache::removeOldest()
+    {
+        mut.lock();
+        int max_age = 0;
+        for (auto && age : objAge)
+        {
+            max_age = std::max<int>(age.second, max_age);
+        }
+        for (auto && age : objAge)
+        {
+            if (age.second == max_age)
+            {
+                delete objs[age.first];
+                mut.unlock();
+                return;
+            }
+        }
+        mut.unlock();
+    }
+
+    void ObjCache::increaseAge()
+    {
+        mut.lock();
+        for (auto &&tage : objAge)
+        {
+            tage.second++;
+        }
+        mut.unlock();
+    }
+
+    void ObjCache::resetAge(const std::string &filename)
+    {
+        mut.lock();
+        auto iter = objAge.find(filename);
+        if (iter != objAge.end())
+        {
+            iter->second = 0;
+        }
+        mut.unlock();
+    }
+
+    ObjCache gObjCache(10);
 }
