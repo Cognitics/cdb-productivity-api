@@ -12,6 +12,7 @@
 #include <ogr/File.h>
 #include <flt/OpenFlight.h>
 #include <flt/TexturePalette.h>
+#include <flt/Header.h>
 
 #include <array>
 #include <cctype>
@@ -1137,7 +1138,7 @@ std::vector<std::pair<std::string, Tile>> CoverageTilesForTiles(const std::strin
     return result;
 }
 
-bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::string& filename, const std::string& models_path)
+bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::string& filename, const std::string& models_path, const std::string& textures_path)
 {
     if (!IsCDB(cdb))
         MakeCDB(cdb);
@@ -1221,19 +1222,19 @@ bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int l
     }
     if(!models_path.empty())
     {
-        InjectGTModels(cdb, features, models_path);
+        InjectGTModels(cdb, features, models_path, textures_path);
     }
     for(auto feature : features)
         delete feature;
     return true;
 }
 
-bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::vector<std::string>& filenames, const std::string& models_path)
+bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::vector<std::string>& filenames, const std::string& models_path, const std::string& textures_path)
 {
     bool result = true;
     for(auto fn : filenames)
     {
-        if(!InjectFeatures(cdb, dataset, cs1, cs2, lod, fn, models_path))
+        if(!InjectFeatures(cdb, dataset, cs1, cs2, lod, fn, models_path, textures_path))
             result = false;
     }
     return result;
@@ -1397,7 +1398,28 @@ std::map<std::string, std::pair<std::string, std::string>> FACCandFSCbyMODLforFe
     return result;
 }
 
-void InjectGTModels(const std::string& cdb, const std::vector<sfa::Feature*>& features, const std::string& source_model_path)
+std::string BytesFromFile(const std::string& filename)
+{
+    std::ifstream file(filename, std::ios::binary);
+    file.unsetf(std::ios::skipws);
+    file.seekg(0, std::ios::end);
+    auto len = file.tellg();
+    file.seekg(0, std::ios::beg);
+    std::string bytes;
+    bytes.reserve(len);
+    bytes.insert(bytes.begin(), std::istream_iterator<byte>(file), std::istream_iterator<byte>());
+    return bytes;
+}
+
+void FileFromBytes(const std::string& filename, const std::string& bytes)
+{
+    std::ofstream file(filename, std::ios::out | std::ios::binary);
+    file.write(&bytes[0], bytes.size());
+    file.close();
+}
+
+
+void InjectGTModels(const std::string& cdb, const std::vector<sfa::Feature*>& features, const std::string& source_model_path, const std::string& source_texture_path)
 {
     ccl::ObjLog log;
     auto fdd = FeatureDataDictionary();
@@ -1432,11 +1454,68 @@ void InjectGTModels(const std::string& cdb, const std::vector<sfa::Feature*>& fe
         }
         auto outpath = ccl::FileInfo(outfile).getDirName();
         ccl::makeDirectory(outpath);
-        if(ccl::copyFile(infile, outfile))
-            log << infile << " -> " << outfile << ": SUCCESS" << log.endl;
-        else
-            log << infile << " -> " << outfile << ": FAILED" << log.endl;
 
+        auto bytes = BytesFromFile(infile);
+        auto is = std::istringstream(bytes);
+        ccl::BindStream bs(is);
+        while(bs.pos() < bytes.size())
+        {
+            ccl::BigEndian<ccl::uint16_t> opcode;
+            ccl::BigEndian<ccl::uint16_t> length;
+            bs.bind(opcode);
+            bs.bind(length);
+            if(opcode == flt::Record::FLT_TEXTUREPALETTE)
+            {
+                std::string texture_filename;
+                auto pos = bs.pos();
+                bs.bind(texture_filename, 200);
+                bs.seek(pos);
+                texture_filename = texture_filename.c_str();
+                auto last = texture_filename.find_last_not_of(" \r\n");
+                if(last != std::string::npos)
+                    texture_filename = texture_filename.substr(0, last + 1);
+                auto texture_basename = ccl::FileInfo(texture_filename).getBaseName();
+
+                std::string wslod = "00";
+                if(ccl::FileInfo(texture_basename).getSuffix() == "rgb")
+                {
+                    auto wh = WidthHeightFromRGB(source_texture_path + "/" + texture_basename);
+                    int dim = std::max<int>(wh.first, wh.second);
+                    int exp = 1;
+                    while(std::pow(2, exp) < dim)
+                        ++exp;
+                    wslod = std::to_string(exp);
+                    if(wslod.size() < 2)
+                        wslod = "0" + wslod;
+                }
+                auto char1 = texture_basename.substr(0, 1);
+                auto char2 = texture_basename.substr(1, 1);
+                auto target_texture_path = "/501_GTModelTexture/" + char1 + "/" + char2 + "/" + ccl::FileInfo(texture_basename).getBaseName(true);
+
+                auto out_texture_basename = "/D501_S001_D001_W" + wslod + "_" + texture_basename;
+                texture_filename = "../../../.." + target_texture_path + "/" + out_texture_basename;
+                memset(&bytes[pos], 0, 200);
+                strncpy(&bytes[pos], texture_filename.c_str(), 200);
+
+                texture_filename = cdb + "/GTModel" + target_texture_path + "/" + out_texture_basename;
+                if(!ccl::fileExists(texture_filename))
+                {
+                    if(ccl::fileExists(source_texture_path + "/" + texture_basename))
+                    {
+                        auto outpath = ccl::FileInfo(texture_filename).getDirName();
+                        ccl::makeDirectory(outpath);
+                        log << "  " << source_texture_path << "/" << texture_basename << " -> " << texture_filename << log.endl;
+                        ccl::copyFile(source_texture_path + "/" + texture_basename, texture_filename);
+                    }
+                    else
+                    {
+                        log << "Missing source texture: " << texture_basename << log.endl;
+                    }
+                }
+            }
+            bs.seek(bs.pos() + length - 4);
+        }
+        FileFromBytes(outfile, bytes);
     }
 }
 
@@ -1510,6 +1589,27 @@ std::vector<sfa::Feature*> Features(const std::string& cdb, int dataset, int cs1
             result.push_back(feature);
     }
     return result;
+}
+
+std::pair<int, int> WidthHeightFromRGB(const std::string& filename)
+{
+    int width = 1;
+    int height = 1;
+    std::ifstream file(filename, std::ios::binary);
+    ccl::BindStream bs(file);
+    ccl::BigEndian<ccl::int16_t> magic;
+    bs.bind(magic);
+    if(magic == 474)
+    {
+        bs.seek(bs.pos() + 4);
+        ccl::BigEndian<ccl::uint16_t> w;
+        ccl::BigEndian<ccl::uint16_t> h;
+        bs.bind(w);
+        bs.bind(h);
+        width = w;
+        height = h;
+    }
+    return std::pair<int, int>(width, height);
 }
 
 }
