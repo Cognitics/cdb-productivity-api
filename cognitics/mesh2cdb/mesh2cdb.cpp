@@ -40,9 +40,11 @@ void showHelp()
 
 int main(int argc, char **argv)
 {
+
     cognitics::ArgumentParser args;
     args.AddOption("dry-run",0,"","Analyze data and dump a job list, without processing any jobs");
     args.AddOption("config",1,"<config.xml>","Specify configuration file.");
+    //args.AddOption("metadata", 1, "<metadata.xml>", "Specify a metadata.xml file. Assumes ENU srs, use as alternative to -config");
     //args.AddOption("lod", 1, "<LOD>", "Maximum LOD to create, range is -10 through 20 for CDB");
     args.AddOption("cdb", 1, "<output path>", "Use the specified path, ignoring the contents of the config file.");
     args.AddOption("help",0,"","Display help, including sample xml file");
@@ -61,6 +63,7 @@ int main(int argc, char **argv)
       
 
     std::string configXML;
+    std::string metadataXML;
     bool dryRun = false;
     
     if(args.Option("dry-run"))
@@ -71,13 +74,22 @@ int main(int argc, char **argv)
     {
         configXML = args.Parameters("config")[0];
     }
+    else if(args.Option("metadata"))
+    {
+        metadataXML = args.Parameters("metadata")[0];
+    }
     else
     {
         args.Usage("You must specify a configuration file with -config <file>.");
         return 1;
     }
+
     Mesh2CDBParams parms;
-    parms.parse(configXML);
+    if (configXML.length() > 0)
+    {
+        parms.parse(configXML);
+    }
+
     if (args.Option("cdb"))
     {
         parms.outputDirectory = args.Parameters("cdb")[0];
@@ -149,4 +161,5 @@ int main(int argc, char **argv)
     }
 
     return 0;
+
 }

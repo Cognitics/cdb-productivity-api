@@ -187,6 +187,8 @@ public:
 };
 typedef std::list<RenderJob> renderJobList_t;
 
+bool readMetadataXML(const std::string &sourceDir, ObjSrs &srs);
+
 class Obj2CDB
 {
     ccl::ObjLog log;
@@ -216,8 +218,7 @@ class Obj2CDB
 
     int getLODFromFilename(const std::string &filename);
     void collectHighestLODTiles();
-    void buildBSP();
-    bool readMetadataXMLxxx(const std::string &sourceDir);
+    void buildBSP();    
 public:
     Obj2CDB(const Mesh2CDBParams &_parms);
     ~Obj2CDB();

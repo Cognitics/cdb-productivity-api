@@ -258,7 +258,6 @@ void writeJP2(RenderJob &job, unsigned char *pixels, int width, int height)
     poBand->RasterIO(GF_Write, 0, 0, width, height,
         pixels + 2, width, height, GDT_Byte, 3, width * 3);
 
-
     GDALDataset *outDs = poJP2Driver->CreateCopy(job.cdbFilename.c_str(), poDstDS, 1, NULL, NULL, NULL);
     GDALClose((GDALDatasetH)outDs);
     /* Once we're done, close properly the dataset */
@@ -279,7 +278,7 @@ void FlipVertically(unsigned char *pixels, int width, int height, int depth)
             pixels[(i*row_len) + j] = copy[(ii*row_len) + j];
         }
     }
-    delete copy;
+    delete []copy;
 }
 
 
@@ -297,7 +296,7 @@ void FlipVertically(float *grid, int width, int height)
             grid[(i*row_len) + j] = copy[(ii*row_len) + j];
         }
     }
-    delete copy;
+    delete []copy;
 }
 
 bool replace(std::string& str, const std::string& from, const std::string& to)
@@ -480,12 +479,13 @@ void renderToFile(RenderJob &job)
         cognitics::QuickObj *qo = cognitics::gObjCache.get(file);
         if(!qo)
         {
+            logger << "Loading " << file << logger.endl;
             qo = new cognitics::QuickObj(file, job.srs, objFi.getDirName(), true);
             cognitics::gObjCache.store(qo);
         }
         if(qo->isValid())
         {
-            //logger << "Rendering " << file << logger.endl;
+            logger << "Rendering " << file << logger.endl;
             qo->glRender();
         }
         else
@@ -520,6 +520,8 @@ void renderToFile(RenderJob &job)
             grid[i] = -1 * (zNear + (grid[i] * (zFar - zNear)));
         }
     }
+    glDeleteTextures(1, &depth_texture);
+    glDeleteTextures(1, &renderedTexture);
     FlipVertically(grid, width, height);
     queueDEMJob(job, grid, width, height);
     queueJP2Job(job, pixels, width, height);

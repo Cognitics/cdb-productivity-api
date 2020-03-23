@@ -207,6 +207,9 @@ namespace cognitics {
 		uint32_t getOrLoadTextureID(const std::string &texname);
         uint32_t getOrLoadDDSTextureID(const std::string &texname);
 
+        bool parseOBJ(bool loadTextures);
+        bool parseLMAB(bool loadTextures);
+        QuickObj() {}
     public:
         QuickObj(const QuickObj &other);
         QuickObj &operator=(const QuickObj &other);
@@ -215,7 +218,11 @@ namespace cognitics {
         QuickObj(const std::string &objFilename, const ObjSrs &_srs,
                 const std::string &textureDirectory="", 
                 bool loadTextures=false);
-
+/*
+        QuickObj(const std::string &objFilename, const ObjSrs &_srs,
+            const std::string &textureDirectory = "",
+            bool loadTextures = false);
+*/
         void getBounds(float &minX, float &maxX,
                        float &minY, float &maxY,
                        float &minZ, float &maxZ);
@@ -227,8 +234,18 @@ namespace cognitics {
             const sfa::Point &_offset);
     };
 
+
+    /***
+     * Warning, this cache isn't thread safe. Nothing is done to control the lifetime
+     * of the objects in the cache. To make it thread-safe, a reference count should be used
+     * so objects are only removed from the cache inside a mutes, when the reference count is zero.
+     * For this to work, all code that uses a cached obj object must dereference the count,
+     * by calling a deref inside the cache object, so it can be protected with a mutex.
+     * Why haven't I done this yet? Because it isn't needed right now.
+     */
     class ObjCache
     {
+        ccl::ObjLog log;
         int max_objs;
         std::map<std::string, QuickObj *> objs;
         std::map<std::string, int> objAge;

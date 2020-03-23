@@ -80,38 +80,30 @@ namespace cognitics {
         return true;
     }
 
-    QuickObj::QuickObj(const std::string &objFilename,
-            const ObjSrs &srs,
-            const std::string &_textureDirectory, 
-            bool loadTextures) :
-                objFilename(objFilename),
-                textureDirectory(_textureDirectory),
-                minX(FLT_MAX),maxX(-FLT_MAX),minY(FLT_MAX),
-                maxY(-FLT_MAX),minZ(FLT_MAX),maxZ(-FLT_MAX),
-                _isValid(false)
+    bool QuickObj::parseOBJ(bool loadTextures)
     {
-        log.init("QuickObj",this);
+        log.init("QuickObj", this);
         ccl::FileInfo fi(objFilename);
         std::string objFilePath = fi.getDirName();
         //Get the file size
         auto fileSize = ccl::getFileSize(objFilename);
-        if(fileSize > (1024 * 1024 * 1024))
+        if (fileSize > (1024 * 1024 * 1024))
         {
-            log << "File size of " << fileSize <<  " for " << objFilename << " exceeds the max of 1gb" << log.endl;
-            return;
+            log << "File size of " << fileSize << " for " << objFilename << " exceeds the max of 1gb" << log.endl;
+            return false;
         }
         //Make a buffer for the text
-        char *fileContents = new char[fileSize+1];
+        char *fileContents = new char[fileSize + 1];
         //Open the file
-        FILE *f = fopen(objFilename.c_str(),"rb");
-        if(!f)
+        FILE *f = fopen(objFilename.c_str(), "rb");
+        if (!f)
         {
             delete[] fileContents;
             log << "Unable to open " << objFilename << ". error: " << strerror(errno) << log.endl;
-            return;
+            return false;
         }
         //Read the entire file
-        fread(fileContents,1,fileSize,f);
+        fread(fileContents, 1, fileSize, f);
         int pos = 0;
 
         //OBJ indexes start at 1, so we put a placeholder in 0
@@ -121,12 +113,12 @@ namespace cognitics {
         uvs.push_back(placeholder3);
         norms.push_back(placeholder3);
 
-        while(pos < fileSize)
+        while (pos < fileSize)
         {
             int lineStart = pos;
-            
+
             //line by line
-            while(fileContents[pos]!=0x0a && fileContents[pos]!=0x0d && fileContents[pos]!=0 && pos < fileSize)
+            while (fileContents[pos] != 0x0a && fileContents[pos] != 0x0d && fileContents[pos] != 0 && pos < fileSize)
             {
                 pos++;
             }
@@ -135,45 +127,51 @@ namespace cognitics {
 
             int lineEnd = pos;
             //Process between lineStart and lineEnd
-            char *tok = strtok(fileContents+lineStart," ");
-            if(strcmp(tok,"v")==0)
+            char *tok = strtok(fileContents + lineStart, " ");
+            if (strcmp(tok, "v") == 0)
             {
-                char *x = strtok(NULL," ");
-                if(!x)
+                char *x = strtok(NULL, " ");
+                if (!x)
                     continue;
-                char *y = strtok(NULL," ");
-                if(!y)
+                char *y = strtok(NULL, " ");
+                if (!y)
                     continue;
-                QuickVert v;                
-                
+                QuickVert v;
+
                 v.x = atof(x) + srs.offsetPt.X();
                 v.y = atof(y) + srs.offsetPt.Y();
-                char *z = strtok(NULL," ");
-                if(!z)
+                char *z = strtok(NULL, " ");
+                if (!z)
                     v.z = srs.offsetPt.Z();
                 else
                     v.z = atof(z) + srs.offsetPt.Z();
+
+                /*
+                double tmpv = v.x;
+                v.x = v.y;
+                v.y = tmpv;
+                */
                 /*if(v.x < (srs.offsetPt.X()/2))
                 {
                     printf("!!!");
                 }*/
-                minX = std::min<float>(minX,v.x);
-                minY = std::min<float>(minY,v.y);
-                minZ = std::min<float>(minZ,v.z);
+                minX = std::min<float>(minX, v.x);
+                minY = std::min<float>(minY, v.y);
+                minZ = std::min<float>(minZ, v.z);
 
-                maxX = std::max<float>(maxX,v.x);
-                maxY = std::max<float>(maxY,v.y);
-                maxZ = std::max<float>(maxZ,v.z);
+                maxX = std::max<float>(maxX, v.x);
+                maxY = std::max<float>(maxY, v.y);
+                maxZ = std::max<float>(maxZ, v.z);
 
                 verts.push_back(v);
             }
-            else if(strcmp(tok,"vt")==0)
+            else if (strcmp(tok, "vt") == 0)
             {
-                char *x = strtok(NULL," ");
-                if(!x)
+                char *x = strtok(NULL, " ");
+                if (!x)
                     continue;
-                char *y = strtok(NULL," ");
-                if(!y)
+                char *y = strtok(NULL, " ");
+                if (!y)
                     continue;
                 QuickVert vt;
                 vt.x = atof(x);
@@ -181,41 +179,41 @@ namespace cognitics {
                 vt.z = 0;
                 uvs.push_back(vt);
             }
-            else if(strcmp(tok,"vn")==0)
+            else if (strcmp(tok, "vn") == 0)
             {
-                char *x = strtok(NULL," ");
-                if(!x)
+                char *x = strtok(NULL, " ");
+                if (!x)
                     continue;
-                char *y = strtok(NULL," ");
-                if(!y)
+                char *y = strtok(NULL, " ");
+                if (!y)
                     continue;
                 QuickVert vn;
                 vn.x = atof(x);
                 vn.y = atof(y);
-                char *z = strtok(NULL," ");
-                if(!z)
+                char *z = strtok(NULL, " ");
+                if (!z)
                     vn.z = 0;
                 else
                     vn.z = atof(z);
                 norms.push_back(vn);
             }
-            else if(strcmp(tok,"f")==0)
+            else if (strcmp(tok, "f") == 0)
             {
-                tok = strtok(NULL," ");
-                while(tok)
+                tok = strtok(NULL, " ");
+                while (tok)
                 {
                     char *vp = tok;
                     char *vtp = NULL;
                     char *vnp = NULL;
-                    while(*tok != 0)
+                    while (*tok != 0)
                     {
-                        if(*tok=='/')
+                        if (*tok == '/')
                         {
                             //Terminate the previous pointer
-                            if(vtp==NULL)
-                                vtp = tok+1;
-                            else if(vnp==NULL)
-                                vnp = tok+1;
+                            if (vtp == NULL)
+                                vtp = tok + 1;
+                            else if (vnp == NULL)
+                                vnp = tok + 1;
                             else
                                 break;
                             *tok = 0;
@@ -227,32 +225,32 @@ namespace cognitics {
                     auto &lastMesh = subMeshes.back();
                     lastMesh.vertIdxs.push_back(vertId);
 
-                    if(vtp)
+                    if (vtp)
                     {
                         uint32_t uvId = atoi(vtp);
                         uvIdxs.push_back(uvId);
                         lastMesh.uvIdxs.push_back(uvId);
                     }
-                    if(vnp)
+                    if (vnp)
                     {
                         uint32_t normId = atoi(vnp);
                         normIdxs.push_back(normId);
                         lastMesh.normIdxs.push_back(normId);
                     }
-                    tok = strtok(NULL," ");
+                    tok = strtok(NULL, " ");
                 }
             }
-            else if(strcmp(tok,"mtllib")==0)
+            else if (strcmp(tok, "mtllib") == 0)
             {
-                char *materialFile = strtok(NULL," ");
+                char *materialFile = strtok(NULL, " ");
                 materialFilename = ccl::joinPaths(objFilePath, materialFile);
-                if(loadTextures)
+                if (loadTextures)
                     parseMtlFile(materialFilename);
             }
-            else if(strcmp(tok,"usemtl")==0)
+            else if (strcmp(tok, "usemtl") == 0)
             {
                 //Defines a new material from this point on
-                char *material = strtok(NULL," ");
+                char *material = strtok(NULL, " ");
                 materialName = std::string(material);
                 QuickSubMesh submesh;
                 submesh.materialName = materialName;
@@ -260,8 +258,8 @@ namespace cognitics {
                 auto lastMesh = subMeshes.back();
             }
             //Skip and remaining cr/lf
-            while((pos < fileSize) && 
-                  (fileContents[pos]==0x0a || fileContents[pos]==0x0d || fileContents[pos]==0))
+            while ((pos < fileSize) &&
+                (fileContents[pos] == 0x0a || fileContents[pos] == 0x0d || fileContents[pos] == 0))
             {
                 pos++;
             }
@@ -271,16 +269,16 @@ namespace cognitics {
         _isValid = true;
         delete[] fileContents;
         //Transform if needed. If there is no WKT, assume it's already in ENU
-        if(srs.srsWKT.size()>0 && srs.srsWKT != "ENU")
+        if (srs.srsWKT.size() > 0 && srs.srsWKT != "ENU")
         {
             OGRSpatialReference wgs;
             OGRCoordinateTransformation* coordTrans;
             wgs.SetFromUserInput("WGS84");
             OGRSpatialReference *file_srs = new OGRSpatialReference;
-            
+
             const char *prjstr = srs.srsWKT.c_str();
             OGRErr err;
-            if(prjstr[0]=='+')
+            if (prjstr[0] == '+')
             {
                 err = file_srs->importFromProj4(prjstr);
             }
@@ -288,11 +286,11 @@ namespace cognitics {
             {
                 err = file_srs->importFromWkt((char **)&prjstr);
             }
-             
+
             if (err != OGRERR_NONE)
             {
                 delete file_srs;
-                return;
+                return false;
             }
             coordTrans = OGRCreateCoordinateTransformation(file_srs, &wgs);
 
@@ -312,16 +310,50 @@ namespace cognitics {
             auto ltp_ellipsoid = new Cognitics::CoordinateSystems::EllipsoidTangentPlane(originLat, originLon);
 
             double local_x = 0, local_y = 0, local_z = 0;
-            
-            for(int i=1,ic=verts.size();i<ic;i++)
+
+            for (int i = 1, ic = verts.size(); i < ic; i++)
             {
                 QuickVert &vert = verts[i];
                 fileToENU(ltp_ellipsoid, coordTrans, vert.x, vert.y, vert.z);
             }
             fileToENU(ltp_ellipsoid, coordTrans, minX, minY, minZ);
             fileToENU(ltp_ellipsoid, coordTrans, maxX, maxY, maxZ);
-            return;
         }
+        return true;
+    }
+
+    bool QuickObj::parseLMAB(bool loadTextures)
+    {
+        //Not implemented yet because the lmab file has a number of meshes
+        //at different LODs, so it will require some restructuring to use.
+        //for now, convert the lmab to obj using the lmbundle2ogj app
+        return false;
+    }
+
+    QuickObj::QuickObj(const std::string &objFilename,
+            const ObjSrs &srs,
+            const std::string &_textureDirectory, 
+            bool loadTextures) :
+                objFilename(objFilename),
+                textureDirectory(_textureDirectory),
+                minX(FLT_MAX),maxX(-FLT_MAX),minY(FLT_MAX),
+                maxY(-FLT_MAX),minZ(FLT_MAX),maxZ(-FLT_MAX),
+                _isValid(false)
+    {
+        log.init("QuickObj",this);
+        ccl::FileInfo fi(objFilename);
+        std::string objFilePath = fi.getDirName();
+        if(ccl::stringCompareNoCase(fi.getSuffix(),"obj")==0)
+        {
+            parseOBJ(loadTextures);
+        }
+        else if (ccl::stringCompareNoCase(fi.getSuffix(), "lmab")==0)
+        {
+            parseLMAB(loadTextures);
+        }
+
+        return;
+        
     }
 
     void QuickObj::getBounds(float &minX, float &maxX,
@@ -590,9 +622,18 @@ namespace cognitics {
         
         for (auto&& submesh : subMeshes)
         {
-            GLuint texid = getOrLoadTextureID(materialMap[submesh.materialName].textureFile);
-            //std::cout << submesh.materialName << " tex=" << texid << " filename=" << materialMap[submesh.materialName].textureFile << "\n";
-            glBindTexture(GL_TEXTURE_2D, texid);
+            std::string texname = materialMap[submesh.materialName].textureFile;
+            if (texname.length() > 0)
+            {
+                GLuint texid = getOrLoadTextureID(texname);
+                if (texid == 0)
+                {
+                    
+                    log << "Invalid texture, unable to render texture in QuickObj::glRender()" << log.endl;
+                }
+                //std::cout << submesh.materialName << " tex=" << texid << " filename=" << materialMap[submesh.materialName].textureFile << "\n";
+                glBindTexture(GL_TEXTURE_2D, texid);
+            }
             glBegin(GL_TRIANGLES);
             if (submesh.vertIdxs.size() != submesh.uvIdxs.size())
             {
@@ -633,7 +674,7 @@ namespace cognitics {
         fp = fopen(texname.c_str(), "rb");
         if (fp == NULL)
         {
-            std::cout << "Unable to open " << texname << std::endl;
+            log << "Unable to open " << texname << log.endl;
             return 0;
         }
 
@@ -642,7 +683,7 @@ namespace cognitics {
         fread(filecode, 1, 4, fp);
         if (strncmp(filecode, "DDS ", 4) != 0)
         {
-            std::cout << "Not a dds file " << texname << std::endl;
+            log << "Not a dds file " << texname << log.endl;
             fclose(fp);
             return 0;
         }
@@ -677,7 +718,7 @@ namespace cognitics {
             format = GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
             break;
         default:
-            std::cout << "Unknown compression mode " << fourCC << std::endl;
+            log << "Unknown compression mode " << fourCC << log.endl;
             free(buffer);
             return 0;
         }
@@ -713,12 +754,24 @@ namespace cognitics {
         ccl::binary pixels;
         std::string filename;
         ip::ImageInfo info;
+        ~TexturePixels()
+        {
+            pixels.clear();//Probably not needed, but I'm trying to track down a leak.
+        }
     };
 
     typedef std::map<std::string, TexturePixels> texture_pixels_map_t;
 
     //Global texture cache:
 
+    /***
+     * Warning, this cache isn't thread safe. Nothing is done to control the lifetime
+     * of the texture in the cache. To make it thread-safe, a reference count should be used
+     * so texture are only removed from the cache inside a mutex, when the reference count is zero.
+     * For this to work, all code that uses a cached texture  must dereference the count,
+     * by calling a deref inside the cache object, so it can be protected with a mutex.
+     * Why haven't I done this yet? Because it isn't needed right now.
+     */
     class TextureCache
     {
         int max_textures;
@@ -843,6 +896,11 @@ namespace cognitics {
                 tpix.filename = texname;
                 gTextureCache.store(tpix);
             }
+            else
+            {
+                log << "Error, unable to read texture pixels for " << texname << log.endl;
+                return 0;
+            }
         }
         info = tpix.info;
         {
@@ -864,7 +922,7 @@ namespace cognitics {
             else if (info.depth == 4 && info.interleaved && info.dataType == ip::ImageInfo::UBYTE)
                 glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, info.width, info.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, p);
             else
-                std::cout << "Error, unknown texture format!\n";
+                log << "Error, unknown texture format!" << log.endl;
             //if(glGenerateMipmapfunc)
             //    glGenerateMipmapfunc(GL_TEXTURE_2D);
             glTexEnvf(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE);
@@ -992,6 +1050,8 @@ namespace cognitics {
     //store takes ownership of obj and will delete it
     void ObjCache::store(QuickObj *obj)
     {
+        if (!obj)
+            return;
         mut.lock();
         if (objs.size() > max_objs)
         {
@@ -1027,11 +1087,28 @@ namespace cognitics {
         {
             max_age = std::max<int>(age.second, max_age);
         }
-        for (auto && age : objAge)
+        //for (auto && age : objAge)
+        for(auto age_iter = objAge.begin(),end=objAge.end();age_iter!=end;age_iter++)
         {
+            auto &age = *age_iter;
             if (age.second == max_age)
             {
-                delete objs[age.first];
+                auto iter = objs.find(age.first);
+                if (iter != objs.end())
+                {
+                    QuickObj *old = iter->second;
+                    if (old)
+                    {
+                        log << "Erasing " << old->objFilename << "..." << log.endl;
+                        delete old;
+                    }
+                    else
+                    {
+                        log << old->objFilename << " doesn't have an object in the cache!" << log.endl;
+                    }
+                    objs.erase(iter);
+                    objAge.erase(age_iter);
+                }
                 mut.unlock();
                 return;
             }

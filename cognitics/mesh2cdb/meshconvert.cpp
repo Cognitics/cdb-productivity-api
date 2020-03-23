@@ -15,9 +15,10 @@
 #include "quickobj.h"
 
 using namespace rapidxml;
-bool Obj2CDB::readMetadataXMLxxx(const std::string &sourceDir)
+/*
+bool readMetadataXML(const std::string &sourceDir, ObjSrs &srs)
 {
-    /*
+   
     xml_document<> doc;
     xml_node<> * root_node;
     // Read the xml file into a vector
@@ -79,10 +80,10 @@ bool Obj2CDB::readMetadataXMLxxx(const std::string &sourceDir)
             }
         }
     }
-    */
+
     return true;
 }
-
+*/
 
 
 Obj2CDB::Obj2CDB(const Mesh2CDBParams &_parms) : parms(_parms)
@@ -387,7 +388,6 @@ renderJobList_t Obj2CDB::collectRenderJobs(cognitics::cdb::Dataset dataset, int 
             tileLocalRight,
             tileLocalTop);
         bspVisitor.visiting(&bsp);
-        scenegraph::Scene *parentScene = new scenegraph::Scene();
         for (auto&& geometry : bspVisitor.results)
         {
             std::string sourceOBJ = bestTileLOD[geometry].getFileName();
