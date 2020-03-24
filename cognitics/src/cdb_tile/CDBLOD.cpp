@@ -54,10 +54,14 @@ std::vector<Tile> generate_tiles(const CoordinatesRange &geographicBounds, Datas
 {
     std::vector<Tile> result;
 
-    int32_t isouth = (int32_t)floor(geographicBounds.low().latitude().value());
-    int32_t iwest = (int32_t)floor(geographicBounds.low().longitude().value());
-    int32_t inorth = (int32_t)ceil(geographicBounds.high().latitude().value());
-    int32_t ieast = (int32_t)ceil(geographicBounds.high().longitude().value());
+    double south = geographicBounds.low().latitude().value();
+    double north = geographicBounds.high().latitude().value();
+    double west = geographicBounds.low().longitude().value();
+    double east = geographicBounds.high().longitude().value();
+    int32_t isouth = (int32_t)floor(south);
+    int32_t iwest = (int32_t)floor(west);
+    int32_t inorth = (int32_t)ceil(north);
+    int32_t ieast = (int32_t)ceil(east);
 
     int lodRows = lod.rows();
     int lodCols = lod.cols();
@@ -69,22 +73,22 @@ std::vector<Tile> generate_tiles(const CoordinatesRange &geographicBounds, Datas
         double col_width = (double)ilon_step / lodCols;
         for (int ilon = iwest; ilon <= ieast; ilon += ilon_step)
         {
-            for (int32_t uref = 0; uref < lodRows; ++uref)
+            int usouth = (int)std::floor((south - ilat) / rowHeight);
+            usouth = std::max<int>(usouth, 0);
+            int unorth = (int)std::ceil((north - ilat) / rowHeight);
+            unorth = std::min<int>(unorth, lodRows);
+            for (int32_t uref = usouth; uref < unorth; ++uref)
             {
                 double tile_south = ilat + (rowHeight * uref);
-                if (tile_south >= geographicBounds.high().latitude().value())
-                    continue;
                 double tile_north = ilat + (rowHeight * (uref + 1));
-                if (tile_north <= geographicBounds.low().latitude().value())
-                    continue;
-                for (int32_t rref = 0; rref < lodCols; ++rref)
+                int uwest = (int)std::floor((west - ilon) / col_width);
+                uwest = std::max<int>(uwest, 0);
+                int ueast = (int)std::ceil((east - ilon) / col_width);
+                ueast = std::min<int>(ueast, lodCols);
+                for (int32_t rref = uwest; rref < ueast; ++rref)
                 {
                     double tile_west = ilon + (col_width * rref);
-                    if (tile_west >= geographicBounds.high().longitude().value())
-                        continue;
                     double tile_east = ilon + (col_width * (rref + 1));
-                    if (tile_east <= geographicBounds.low().longitude().value())
-                        continue;
                     CoordinatesRange tileBounds(tile_west, tile_east, tile_south, tile_north);
                     Tile tile(tileBounds, ds, lod.value(),uref,rref);
                     tile.postSpaceX = col_width / 1024;
