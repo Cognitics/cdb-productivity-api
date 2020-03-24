@@ -22,14 +22,14 @@ struct Component
 
 struct TileInfo
 {
-    int latitude;
-    int longitude;
-    int dataset;
-    int selector1;
-    int selector2;
-    int lod;
-    int uref;
-    int rref;
+    int latitude { 0 };
+    int longitude { 0 };
+    int dataset { 0 };
+    int selector1 { 0 };
+    int selector2 { 0 };
+    int lod { 0 };
+    int uref { 0 };
+    int rref { 0 };
 };
 
 struct RasterInfo
@@ -46,8 +46,17 @@ struct RasterInfo
     double East { 0 };
 };
 
+struct NSEW
+{
+    double north { 0 };
+    double south { 0 };
+    double east { 0 };
+    double west { 0 };
+};
+
 std::string DatasetName(int code);
 int DatasetCode(const std::string& name);
+std::string DatasetSubdirectory(int code);
 int ComponentSelector1Code(int dataset, const std::string& name);
 
 TileInfo TileInfoForTile(const Tile& tile);
@@ -130,6 +139,11 @@ std::string BytesFromFile(const std::string& filename);
 void FileFromBytes(const std::string& filename, const std::string& bytes);
 
 std::pair<int, int> WidthHeightFromRGB(const std::string& filename);
+
+std::vector<std::string> FilesInTiledDataset(const std::string& cdb, int dataset, const NSEW& nsew = { DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX });
+
+int LatitudeFromSubdirectory(const std::string& subdir);
+int LongitudeFromSubdirectory(const std::string& subdir);
 
 
 }

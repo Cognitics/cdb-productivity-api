@@ -101,6 +101,14 @@ int DatasetCode(const std::string& name)
     return 0;
 }
 
+std::string DatasetSubdirectory(int code)
+{
+    std::stringstream ss;
+    ss << std::setw(3) << std::setfill('0') << code;
+    ss << "_" << DatasetName(code);
+    return ss.str();
+}
+
 int ComponentSelector1Code(int dataset, const std::string& name)
 {
     if((dataset == 1) && (name == "ManMade")) return 1;
@@ -1611,6 +1619,74 @@ std::pair<int, int> WidthHeightFromRGB(const std::string& filename)
     }
     return std::pair<int, int>(width, height);
 }
+
+namespace
+{
+    void CollectFilesInTiledDataset(std::vector<std::string>& result, const std::filesystem::path& path, const NSEW& nsew = { DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX })
+    {
+        for(const auto& entry : std::filesystem::directory_iterator(path))
+        {
+            if(std::filesystem::is_directory(entry))
+            {
+                CollectFilesInTiledDataset(result, entry, nsew);
+                continue;
+            }
+            if(!std::filesystem::is_regular_file(entry))
+                continue;
+            // TODO: filter nsew
+            result.push_back(entry.path().string());
+        }
+    }
+}
+
+int LatitudeFromSubdirectory(const std::string& subdir)
+{
+    int ilatitude = std::stoi(subdir.substr(1));
+    if(subdir[0] == 'N')
+        return ilatitude;
+    if(subdir[0] == 'S')
+        return -ilatitude;
+    return INT_MAX;
+}
+
+int LongitudeFromSubdirectory(const std::string& subdir)
+{
+    int ilongitude = std::stoi(subdir.substr(1));
+    if(subdir[0] == 'E')
+        return ilongitude;
+    if(subdir[0] == 'W')
+        return -ilongitude;
+    return INT_MAX;
+}
+
+std::vector<std::string> FilesInTiledDataset(const std::string& cdb, int dataset, const NSEW& nsew)
+{
+    std::string dataset_subdirectory = DatasetSubdirectory(dataset);
+    auto result = std::vector<std::string>();
+    for(const auto& latitude_entry : std::filesystem::directory_iterator(cdb + "/Tiles"))
+    {
+        auto latitude_path = latitude_entry.path();
+        if(!std::filesystem::is_directory(latitude_path))
+            continue;
+        double latitude = LatitudeFromSubdirectory(latitude_path.filename().string());
+        if(latitude == INT_MAX)
+            continue;
+        // TODO: filter nsew
+        for(const auto& longitude_entry : std::filesystem::directory_iterator(latitude_path))
+        {
+            auto longitude_path = longitude_entry.path();
+            double longitude = LongitudeFromSubdirectory(longitude_path.filename().string());
+            if(longitude == INT_MAX)
+                continue;
+            // TODO: filter nsew
+            auto dataset_path = longitude_path / dataset_subdirectory;
+            CollectFilesInTiledDataset(result, dataset_path, nsew);
+        }
+    }
+    return result;
+}
+
+
 
 }
 }
