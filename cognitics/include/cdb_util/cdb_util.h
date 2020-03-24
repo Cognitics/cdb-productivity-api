@@ -145,6 +145,12 @@ std::vector<std::string> FilesInTiledDataset(const std::string& cdb, int dataset
 int LatitudeFromSubdirectory(const std::string& subdir);
 int LongitudeFromSubdirectory(const std::string& subdir);
 
+int DimensionsForLOD(int lod);
+int RowsForLOD(int lod);
+int ColumnsForLOD(int lod);
+int TileWidthAtLatitude(double latitude);
+
+std::vector<TileInfo> GenerateTileInfos(int lod, const NSEW& nsew);
 
 }
 }

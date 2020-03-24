@@ -1686,6 +1686,89 @@ std::vector<std::string> FilesInTiledDataset(const std::string& cdb, int dataset
     return result;
 }
 
+int DimensionsForLOD(int lod)
+{
+    return (int)pow(2, std::min<double>(lod + 10, 10));
+}
+
+int RowsForLOD(int lod)
+{
+    return std::max<int>(int(std::pow(2, lod)), 1);
+}
+
+int ColumnsForLOD(int lod)
+{
+    return std::max<int>(int(std::pow(2, lod)), 1);
+}
+
+int TileWidthAtLatitude(double latitude)
+{
+    int lat = (int)std::floor(latitude);
+    if (lat >= 90.0f)
+        return 0;
+    if (lat >= 89.0f)
+        return 12;
+    if (lat >= 80.0f)
+        return 6;
+    if (lat >= 75.0f)
+        return 4;
+    if (lat >= 70.0f)
+        return 3;
+    if (lat >= 50.0f)
+        return 2;
+    if (lat >= -50.0f)
+        return 1;
+    if (lat >= -70.0f)
+        return 2;
+    if (lat >= -75.0f)
+        return 3;
+    if (lat >= -80.0f)
+        return 4;
+    if (lat >= -89.0f)
+        return 6;
+    if (lat >= -90.0f)
+        return 12;
+    return 0;
+}
+
+std::vector<TileInfo> GenerateTileInfos(int lod, const NSEW& nsew)
+{
+    auto result = std::vector<TileInfo>();
+
+    int inorth = (int)std::ceil(nsew.north);
+    int isouth = (int)std::floor(nsew.south);
+    int ieast = (int)std::ceil(nsew.east);
+    int iwest = (int)std::floor(nsew.west);
+
+    int lod_rows = RowsForLOD(lod);
+    int lod_cols = ColumnsForLOD(lod);
+    double row_height = 1.0 / lod_rows;
+    for(int ilat = isouth; ilat <= inorth; ++ilat)
+    {
+        int ilon_step = TileWidthAtLatitude(ilat);
+        double col_width = (double)ilon_step / lod_cols;
+        for (int ilon = iwest; ilon <= ieast; ilon += ilon_step)
+        {
+            int usouth = (int)std::floor((nsew.south - ilat) / row_height);
+            usouth = std::max<int>(usouth, 0);
+            int unorth = (int)std::ceil((nsew.north - ilat) / row_height);
+            unorth = std::min<int>(unorth, lod_rows);
+            for (int uref = usouth; uref < unorth; ++uref)
+            {
+                int uwest = (int)std::floor((nsew.west - ilon) / col_width);
+                uwest = std::max<int>(uwest, 0);
+                int ueast = (int)std::ceil((nsew.east - ilon) / col_width);
+                ueast = std::min<int>(ueast, lod_cols);
+                for (int rref = uwest; rref < ueast; ++rref)
+                {
+                    result.emplace_back(TileInfo { ilat, ilon, 0, 0, 0, lod, uref, rref });
+                }
+            }
+        }
+    }
+    return result;
+}
+
 
 
 }
