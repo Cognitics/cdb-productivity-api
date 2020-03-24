@@ -41,6 +41,8 @@ public:
     std::string cdb;
     int max_lod { 0 };
     cognitics::cdb::TileInfo tile_info;
+    std::set<std::string>* existing_files { nullptr };
+    std::mutex* existing_files_mutex { nullptr };
     
     std::vector<TileJob*> children;
     std::vector<std::string> child_filenames;
@@ -59,11 +61,14 @@ public:
                 children.erase(child_it);
             auto child = dynamic_cast<TileJob*>(job);
             auto child_fn = cdb + "/Tiles/" + FullFilenameForTileInfo(child->tile_info);
-            if(ccl::fileExists(child_fn))
+            child_fn = std::filesystem::path(child_fn).string();
+            existing_files_mutex->lock();
+            if(existing_files->find(child_fn) != existing_files->end())
             {
                 child_filenames.push_back(child_fn);
                 child_filetimes.push_back(std::filesystem::last_write_time(child_fn));
             }
+            existing_files_mutex->unlock();
             children_mutex.unlock();
             if(children.size() > 0)
                 return (int)children.size();
@@ -72,7 +77,9 @@ public:
                 return 0;
 
             auto fn = cdb + "/Tiles/" + FullFilenameForTileInfo(tile_info);
-            if(ccl::fileExists(fn))
+            fn = std::filesystem::path(fn).string();
+            existing_files_mutex->lock();
+            if(existing_files->find(fn) != existing_files->end())
             {
                 auto file_ts = std::filesystem::last_write_time(fn);
                 auto child_filenames_tmp = std::vector<std::string>();
@@ -83,6 +90,7 @@ public:
                 }
                 child_filenames = child_filenames_tmp;
             }
+            existing_files_mutex->unlock();
 
             if(child_filenames.empty())
                 return 0;
@@ -127,11 +135,21 @@ public:
             {
                 printf("%s.tif\n", cognitics::cdb::FileNameForTileInfo(tile_info).c_str());
                 cognitics::cdb::BuildElevationTileFromSampler(cdb, sampler, tile_info);
+                auto fn = cdb + "/Tiles/" + FullFilenameForTileInfo(tile_info);
+                fn = std::filesystem::path(fn).string();
+                existing_files_mutex->lock();
+                existing_files->insert(fn);
+                existing_files_mutex->unlock();
             }
             if(tile_info.dataset == 4)
             {
                 printf("%s.jp2\n", cognitics::cdb::FileNameForTileInfo(tile_info).c_str());
                 cognitics::cdb::BuildImageryTileFromSampler(cdb, sampler, tile_info);
+                auto fn = cdb + "/Tiles/" + FullFilenameForTileInfo(tile_info);
+                fn = std::filesystem::path(fn).string();
+                existing_files_mutex->lock();
+                existing_files->insert(fn);
+                existing_files_mutex->unlock();
             }
             gdalsampler::CacheManager::getInstance()->Unload();
         }
@@ -166,6 +184,8 @@ public:
                 auto job = children.back();
                 children_mutex.unlock();
                 job->cdb = cdb;
+                job->existing_files = existing_files;
+                job->existing_files_mutex = existing_files_mutex;
                 job->max_lod = max_lod;
                 job->tile_info = cognitics::cdb::TileInfoForTile(tile);
                 manager->submitJob(job);
@@ -193,8 +213,20 @@ bool cdb_lod(cdb_lod_parameters& params)
     ccl::JobManager job_manager(params.workers);
     auto jobs = std::vector<TileJob*>();
 
+    auto existing_files = std::set<std::string>();
+    std::mutex existing_files_mutex;
+    if(params.elevation)
+    {
+        auto elevation_files = FilesInTiledDataset(params.cdb, 1);
+        existing_files.insert(elevation_files.begin(), elevation_files.end());
+    }
+    if(params.imagery)
+    {
+        auto imagery_files = FilesInTiledDataset(params.cdb, 4);
+        existing_files.insert(imagery_files.begin(), imagery_files.end());
+    }
 
-    auto geocells = cognitics::cdb::GeocellsForCdb(params.cdb);
+    auto geocells = GeocellsForCdb(params.cdb);
     for(auto geocell : geocells)
     {
         std::string geocell_path = params.cdb + "/Tiles/" + geocell.first + "/" + geocell.second;
@@ -206,12 +238,14 @@ bool cdb_lod(cdb_lod_parameters& params)
             lon *= -1;
         if(params.elevation)
         {
-            auto maxlod_elevation = cognitics::cdb::MaxLodForDatasetPath(geocell_path + "/001_Elevation");
+            auto maxlod_elevation = MaxLodForDatasetPath(geocell_path + "/001_Elevation");
             if(maxlod_elevation >= 0)
             {
                 jobs.push_back(new TileJob(&job_manager));
                 auto job = jobs.back();
                 job->cdb = params.cdb;
+                job->existing_files = &existing_files;
+                job->existing_files_mutex = &existing_files_mutex;
                 job->max_lod = maxlod_elevation;
                 memset(&job->tile_info, 0, sizeof(job->tile_info));
                 job->tile_info.latitude = lat;
@@ -225,12 +259,14 @@ bool cdb_lod(cdb_lod_parameters& params)
         }
         if(params.imagery)
         {
-            auto maxlod_imagery = cognitics::cdb::MaxLodForDatasetPath(geocell_path + "/004_Imagery");
+            auto maxlod_imagery = MaxLodForDatasetPath(geocell_path + "/004_Imagery");
             if(maxlod_imagery >= 0)
             {
                 jobs.push_back(new TileJob(&job_manager));
                 auto job = jobs.back();
                 job->cdb = params.cdb;
+                job->existing_files = &existing_files;
+                job->existing_files_mutex = &existing_files_mutex;
                 job->max_lod = maxlod_imagery;
                 memset(&job->tile_info, 0, sizeof(job->tile_info));
                 job->tile_info.latitude = lat;
