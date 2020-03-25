@@ -101,7 +101,12 @@ int usage_inject(const std::string& error = "")
     std::cout << "        Imagery 001 001\n";
     std::cout << "        Elevation 001 001\n";
     std::cout << "        GTFeature 001 001\n";
+    std::cout << "        GTFeature 001 003\n";
+    std::cout << "        GTFeature 001 005\n";
     std::cout << "        GTFeature 002 001\n";
+    std::cout << "        GTFeature 002 003\n";
+    std::cout << "        GTFeature 002 005\n";
+    std::cout << "        GTFeature 003 001\n";
     std::cout << "        GeoPolitical 001 001\n";
     std::cout << "        GeoPolitical 001 003\n";
     std::cout << "        GeoPolitical 001 005\n";
@@ -325,7 +330,17 @@ int main_inject(size_t arg_start)
     }
     else if((dataset == 101) && (cs1 == 1) && (cs2 == 1))    // GTFeature, Man-made, point features
         return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 101) && (cs1 == 1) && (cs2 == 3))    // GTFeature, Man-made, lineal features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 101) && (cs1 == 1) && (cs2 == 5))    // GTFeature, Man-made, polygon features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 101) && (cs1 == 2) && (cs2 == 1))    // GTFeature, Tree, point features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 101) && (cs1 == 2) && (cs2 == 3))    // GTFeature, Tree, lineal features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 101) && (cs1 == 2) && (cs2 == 5))    // GTFeature, Tree, polygon features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 101) && (cs1 == 3) && (cs2 == 1))    // GTFeature, Moving Model location, point features
         return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 1) && (cs2 == 1))    // GeoPoliticalGTFeature, Boundary, point features
         return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
