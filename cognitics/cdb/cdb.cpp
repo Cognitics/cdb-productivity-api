@@ -4,47 +4,13 @@
 #include <cdb_util/cdb_lod.h>
 #include <cdb_util/cdb_sample.h>
 
+#include <ccl/gdal.h>
 #include <ccl/LogStream.h>
 #include <ccl/ObjLog.h>
 
 #include <fstream>
 #include <cstdlib>
 #include <chrono>
-
-void initializeGDAL(int argc, char **argv)
-{
-#ifndef WIN32
-    char *gdal_data_var = getenv("GDAL_DATA");
-    if (gdal_data_var == NULL)
-    {
-        putenv("GDAL_DATA=/usr/local/share/gdal");
-    }
-    char *gdal_plugins_var = getenv("GDAL_DRIVER_PATH");
-    if (gdal_plugins_var == NULL)
-    {
-        putenv("GDAL_DRIVER_PATH=/usr/local/bin/gdalplugins");
-    }
-#else
-    size_t requiredSize;
-    getenv_s(&requiredSize, NULL, 0, "GDAL_DATA");
-    if (requiredSize == 0)
-    {
-        ccl::FileInfo fi(argv[0]);
-        int bufSize = 1024;
-        char *envBuffer = new char[bufSize];
-        std::string dataDir = ccl::joinPaths(fi.getDirName(), "gdal-data");
-        //std::cout << "GDAL_DATA=" << dataDir << "\n";
-        //std::cout << "argv[0]=" << argv[0] << "\n";
-        sprintf_s(envBuffer, bufSize, "GDAL_DATA=%s", dataDir.c_str());
-        _putenv(envBuffer);
-        std::string driverDir = ccl::joinPaths(fi.getDirName(), "gdalplugins");
-        char *pluginsEnvBuffer = new char[bufSize];
-        sprintf_s(pluginsEnvBuffer, bufSize, "GDAL_DRIVER_PATH=%s", driverDir.c_str());
-        _putenv(pluginsEnvBuffer);
-    }
-#endif
-    GDALAllRegister();
-}
 
 namespace
 {
@@ -100,8 +66,24 @@ int usage_inject(const std::string& error = "")
     std::cout << "    Supported Components (dataset cs1 cs2):\n";
     std::cout << "        Imagery 001 001\n";
     std::cout << "        Elevation 001 001\n";
+    //std::cout << "        GSFeature 001 001\n";
+    //std::cout << "        GSFeature 001 003\n";
+    //std::cout << "        GSFeature 001 005\n";
+    //std::cout << "        GSFeature 002 001\n";
+    //std::cout << "        GSFeature 002 003\n";
+    //std::cout << "        GSFeature 002 005\n";
+    //std::cout << "        GSFeature 003 001\n";
+    //std::cout << "        GSFeature 004 001\n";
+    //std::cout << "        GSFeature 004 003\n";
+    //std::cout << "        GSFeature 004 005\n";
+    //std::cout << "        GSFeature 005 001\n";
     std::cout << "        GTFeature 001 001\n";
+    std::cout << "        GTFeature 001 003\n";
+    std::cout << "        GTFeature 001 005\n";
     std::cout << "        GTFeature 002 001\n";
+    std::cout << "        GTFeature 002 003\n";
+    std::cout << "        GTFeature 002 005\n";
+    std::cout << "        GTFeature 003 001\n";
     std::cout << "        GeoPolitical 001 001\n";
     std::cout << "        GeoPolitical 001 003\n";
     std::cout << "        GeoPolitical 001 005\n";
@@ -325,7 +307,17 @@ int main_inject(size_t arg_start)
     }
     else if((dataset == 101) && (cs1 == 1) && (cs2 == 1))    // GTFeature, Man-made, point features
         return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 101) && (cs1 == 1) && (cs2 == 3))    // GTFeature, Man-made, lineal features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 101) && (cs1 == 1) && (cs2 == 5))    // GTFeature, Man-made, polygon features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 101) && (cs1 == 2) && (cs2 == 1))    // GTFeature, Tree, point features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 101) && (cs1 == 2) && (cs2 == 3))    // GTFeature, Tree, lineal features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 101) && (cs1 == 2) && (cs2 == 5))    // GTFeature, Tree, polygon features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 101) && (cs1 == 3) && (cs2 == 1))    // GTFeature, Moving Model location, point features
         return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 1) && (cs2 == 1))    // GeoPoliticalGTFeature, Boundary, point features
         return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -843,7 +835,7 @@ int main_validate(size_t arg_start)
 
 int main(int argc, char** argv)
 {
-    initializeGDAL(argc, argv);
+    cognitics::gdal::init(argv[0]);
 
     std::ofstream logfile;
     int result { EXIT_FAILURE };
