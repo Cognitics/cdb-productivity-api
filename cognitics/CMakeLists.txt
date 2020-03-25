@@ -52,7 +52,7 @@ endif(UNIX)
 
 if(WIN32)
     set(CMAKE_CXX_FLAGS_DEBUG "/MP /Od /EHsc /RTC1 /MDd /W3 /nologo /c /Zi /TP /errorReport:prompt -DCOG_DEBUG -DDEBUG=1")
-    set(CMAKE_CXX_FLAGS_RELEASE "/MP /O2 /FD /EHsc /MD /W3 /nologo /c /Zi /TP /errorReport:prompt -DCOG_RELEASE -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE "/DEBUG /MP /O2 /FD /EHsc /MD /W3 /nologo /c /Zi /TP /errorReport:prompt -DCOG_RELEASE -DNDEBUG")
 endif(WIN32)
 
 message("THIRD_PARTY_DIR: ${THIRD_PARTY_DIR}")
@@ -971,6 +971,9 @@ source_group("Source Files\\ogr" REGULAR_EXPRESSION "src/ogr/.*$")
 link_libraries(cogcore)
 
 
+set (LM2OBJ_SOURCES ./lmbundle2obj/lmbundle2obj.cpp)
+
+add_executable(lmbundle2obj ${LM2OBJ_SOURCES})
 
 SET(OBJ_EXT_SOURCES ./obj-extract/obj-extract.cpp
                     ./obj-extract/obj-extract.h)
@@ -1167,6 +1170,8 @@ if(COG_BUILD_GL_TOOLS)
 
     add_executable(mesh2cdb
         mesh2cdb/quickobj.cpp
+		mesh2cdb/quickobj.h
+		mesh2cdb/quickobj_lmb.cpp
         mesh2cdb/mesh2cdb.cpp
         mesh2cdb/mesh2cdb.h
         mesh2cdb/meshconvert.cpp

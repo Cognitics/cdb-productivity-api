@@ -4,6 +4,7 @@
 #include <ccl/LogStream.h>
 #include <ccl/ObjLog.h>
 #include <ccl/ArgumentParser.h>
+#include <cdb_util/cdb_util.h>
 
 #include <cstdlib>
 #include <fstream>
@@ -12,7 +13,7 @@
 int main(int argc, char** argv)
 {
     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
-
+    initializeGDALEnvironmentVariables(argv[0]);
     auto args = cognitics::ArgumentParser();
     args.AddOption("logfile", 1, "<filename>", "filename for log output");
     args.AddOption("workers", 1, "<N>", "number of worker threads (default 8)");

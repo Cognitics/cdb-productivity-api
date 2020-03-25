@@ -4,6 +4,7 @@
 #include <ccl/LogStream.h>
 #include <ccl/Timer.h>
 #include <ccl/FileInfo.h>
+#include <cdb_util/cdb_util.h>
 #include <tg/TerrainGenerator.h>
 #include <tg/GltfTerrainGenerator.h>
 #include <tg/ObjTerrainGenerator.h>
@@ -55,7 +56,7 @@ int main(int argc, char **argv)
 {
     logger.init("main");
     logger << ccl::LINFO;
-
+    initializeGDALEnvironmentVariables(argv[0]);
     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
 
     ccl::Timer execTimer;

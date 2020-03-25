@@ -9,6 +9,8 @@
 
 #include <vector>
 
+void initializeGDALEnvironmentVariables(char *argv0);
+
 namespace cognitics {
 namespace cdb {
 

@@ -21,7 +21,7 @@ void writeMtlFile(const std::string& textureName, const std::string& outputPath)
     outfile << "d 1" << std::endl;
     outfile << "Ns 0" << std::endl;
     outfile << "illum 1" << std::endl;
-    outfile << "map_Kd " << textureName << std::endl;
+    outfile << "map_Kd " << textureBase << ".dds.jpg" << std::endl;
     outfile.close();
 }
 
@@ -32,7 +32,8 @@ void writeOBJ(const std::string& objFileName,
               const std::vector<face_vec_t>& faces)
 {
     ccl::FileInfo fi(mtfFile);
-    const std::string textureID = fi.getBaseName(true);
+    std::string textureID = fi.getBaseName(true);
+    
 
     std::ofstream outfile(objFileName.c_str());
     outfile << "mtllib " << mtfFile << std::endl;
@@ -95,8 +96,11 @@ void convert(FILE* f, const std::string& texturePath, std::string outputPath)
     writeMtlFile(texname, outputPath);
 
     //Copy dds file
-    ccl::copyFile(ccl::joinPaths(texturePath, texname), ccl::joinPaths(outputPath, texname));
-    std::cout << "Copying texture: " << texname << std::endl;
+    std::string texbase(texname);
+    texbase = texbase.substr(0, texbase.length() - 3);
+    texbase += "dds.jpg";
+    ccl::copyFile(ccl::joinPaths(texturePath, texbase), ccl::joinPaths(outputPath, texbase));
+    std::cout << "Copying texture: " << texbase << std::endl;
 
     //Read vert count
     unsigned short num_verts = 0;
@@ -113,7 +117,7 @@ void convert(FILE* f, const std::string& texturePath, std::string outputPath)
         fread(&z, 4, 1, f);
 
         //Flip z and y, since the ENU projection expects Z to be up
-        verts.push_back(sfa::Point(z, x, y));
+        verts.push_back(sfa::Point(x, z, y));
     }
 
     //Read UVs
@@ -143,7 +147,8 @@ void convert(FILE* f, const std::string& texturePath, std::string outputPath)
         }
         faces.push_back(face);
     }
-
+    int b_read = ftell(f);
+    std::cout << "Read position: " << b_read << "\n";
     std::string textureBase = textureFileInfo.getBaseName(true);
     std::string mtlPath = textureBase + ".mtl";
     std::cout << "Creating : " << objPath << std::endl;

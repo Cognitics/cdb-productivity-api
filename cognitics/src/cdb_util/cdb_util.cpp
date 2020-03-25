@@ -29,6 +29,34 @@ namespace std { namespace filesystem = std::experimental::filesystem; }
 #include <filesystem>
 #endif
 
+void initializeGDALEnvironmentVariables(char *argv0)
+{
+#ifndef WIN32
+    char *gdal_data_var = getenv("GDAL_DATA");
+    if (gdal_data_var == NULL)
+    {
+        putenv("GDAL_DATA=/usr/local/share/gdal");
+    }
+    char *gdal_plugins_var = getenv("GDAL_DRIVER_PATH");
+    if (gdal_plugins_var == NULL)
+    {
+        putenv("GDAL_DRIVER_PATH=/usr/local/bin/gdalplugins");
+    }
+#else
+    size_t requiredSize;
+    getenv_s(&requiredSize, NULL, 0, "GDAL_DATA");
+    if (requiredSize == 0)
+    {
+        ccl::FileInfo fi(argv0);
+        int bufSize = 1024;
+        char *envBuffer = new char[bufSize];
+        std::string dataDir = ccl::joinPaths(fi.getDirName(), "gdal-data");
+        sprintf_s(envBuffer, bufSize, "GDAL_DATA=%s", dataDir.c_str());
+        _putenv(envBuffer);
+    }
+#endif
+}
+
 namespace cognitics {
 namespace cdb {
 
