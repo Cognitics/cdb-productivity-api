@@ -1443,7 +1443,7 @@ std::string BytesFromFile(const std::string& filename)
     file.seekg(0, std::ios::beg);
     std::string bytes;
     bytes.reserve(len);
-    bytes.insert(bytes.begin(), std::istream_iterator<byte>(file), std::istream_iterator<byte>());
+    bytes.insert(bytes.begin(), std::istream_iterator<char>(file), std::istream_iterator<char>());
     return bytes;
 }
 
