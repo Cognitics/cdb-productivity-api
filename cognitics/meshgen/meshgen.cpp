@@ -12,6 +12,7 @@
 #include <tg/FbxTerrainGenerator.h>
 #include "elev/SimpleDEMReader.h"
 #include "ws/WebServices.h"
+#include <ccl/gdal.h>
 #include <fstream>
 
 
@@ -56,7 +57,7 @@ int main(int argc, char **argv)
 {
     logger.init("main");
     logger << ccl::LINFO;
-    initializeGDALEnvironmentVariables(argv[0]);
+    cognitics::gdal::init(argv[0]);
     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
 
     ccl::Timer execTimer;

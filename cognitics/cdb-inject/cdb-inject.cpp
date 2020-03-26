@@ -7,6 +7,7 @@
 #include <ccl/ObjLog.h>
 #include <ccl/LogStream.h>
 #include <ccl/ArgumentParser.h>
+#include <ccl/gdal.h>
 
 #include <iostream>
 #include <fstream>
@@ -22,18 +23,11 @@ namespace std { namespace filesystem = std::experimental::filesystem; }
 #include <filesystem>
 #endif
 
-void initializeGDAL(int argc, char **argv)
-{
-    initializeGDALEnvironmentVariables(argv[0]);
-    GDALAllRegister();
-}
-
 
 int main(int argc, char** argv)
 {
     std::ios_base::sync_with_stdio(false);
-
-    initializeGDAL(argc, argv);
+    cognitics::gdal::init(argv[0]);
 
     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
 

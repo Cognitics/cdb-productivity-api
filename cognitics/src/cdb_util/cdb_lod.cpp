@@ -24,179 +24,54 @@ namespace std { namespace filesystem = std::experimental::filesystem; }
 namespace
 {
 
-std::string FullFilenameForTileInfo(const cognitics::cdb::TileInfo& tile_info)
-{
-    auto child_path = cognitics::cdb::FilePathForTileInfo(tile_info);
-    auto child_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
-    auto child_extension = ".tif";
-    if(tile_info.dataset == 4)
-        child_extension = ".jp2";
-    auto child_fn = ccl::joinPaths(child_path, child_filename + child_extension);
-    return child_fn;
-}
-
 class TileJob : public ccl::Job
 {
 public:
-    std::string cdb;
-    int max_lod { 0 };
-    cognitics::cdb::TileInfo tile_info;
-    std::set<std::string>* existing_files { nullptr };
-    std::mutex* existing_files_mutex { nullptr };
-    
-    std::vector<TileJob*> children;
-    std::vector<std::string> child_filenames;
-    std::vector<std::filesystem::file_time_type> child_filetimes;
-    std::mutex children_mutex;
-
     TileJob(ccl::JobManager* manager, ccl::Job *owner = NULL) : Job(manager, owner) { }
 
-    virtual int onChildFinished(Job *job, int result)
+    ccl::ObjLog log;
+    std::string cdb;
+    std::string filename;
+    std::vector<std::string> child_filenames;
+
+    virtual int execute(void)
     {
+        auto stem = std::filesystem::path(filename).stem().string();
+        log << "    " << stem << log.endl;
         try
         {
-            children_mutex.lock();
-            auto child_it = std::find(children.begin(), children.end(), job);
-            if(child_it != children.end())
-                children.erase(child_it);
-            auto child = dynamic_cast<TileJob*>(job);
-            auto child_fn = cdb + "/Tiles/" + FullFilenameForTileInfo(child->tile_info);
-            child_fn = std::filesystem::path(child_fn).string();
-            existing_files_mutex->lock();
-            if(existing_files->find(child_fn) != existing_files->end())
+            auto errcode = std::error_code();
+            auto filetime = std::filesystem::last_write_time(filename, errcode);
+            if(!errcode)
             {
-                child_filenames.push_back(child_fn);
-                child_filetimes.push_back(std::filesystem::last_write_time(child_fn));
-            }
-            existing_files_mutex->unlock();
-            children_mutex.unlock();
-            if(children.size() > 0)
-                return (int)children.size();
-
-            if(child_filenames.empty())
-                return 0;
-
-            auto fn = cdb + "/Tiles/" + FullFilenameForTileInfo(tile_info);
-            fn = std::filesystem::path(fn).string();
-            existing_files_mutex->lock();
-            if(existing_files->find(fn) != existing_files->end())
-            {
-                auto file_ts = std::filesystem::last_write_time(fn);
-                auto child_filenames_tmp = std::vector<std::string>();
-                for(size_t i = 0, c = child_filenames.size(); i < c; ++i)
+                auto filtered_children = std::vector<std::string>();
+                for (auto child_filename : child_filenames)
                 {
-                    if(child_filetimes[i] > file_ts)
-                        child_filenames_tmp.push_back(child_filenames[i]);
+                    auto child_filetime = std::filesystem::last_write_time(child_filename);
+                    if(child_filetime > filetime)
+                        filtered_children.push_back(child_filename);
                 }
-                child_filenames = child_filenames_tmp;
+                child_filenames = filtered_children;
             }
-            existing_files_mutex->unlock();
-
             if(child_filenames.empty())
                 return 0;
-
-            auto sampler_filenames = child_filenames;
-            auto raster_info = cognitics::cdb::RasterInfoFromTileInfo(tile_info);
-            raster_info.West += raster_info.PixelSizeX / 3;
-            raster_info.East -= raster_info.PixelSizeX / 3;
-            raster_info.South += std::abs(raster_info.PixelSizeY / 3);
-            raster_info.North -= std::abs(raster_info.PixelSizeY / 3);
-            auto coords = cognitics::cdb::CoordinatesRange(raster_info.West, raster_info.East, raster_info.South, raster_info.North);
-            auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)tile_info.dataset), tile_info.lod - 1);
-            auto coverage_tiles = cognitics::cdb::CoverageTilesForTiles(cdb, tiles);
-            auto filtered_tiles = std::vector<std::pair<std::string, cognitics::cdb::Tile>>();
-            for (auto ctile : coverage_tiles)
-            {
-                auto ctile_info = cognitics::cdb::TileInfoForTile(ctile.second);
-                auto ctile_filename = cognitics::cdb::FileNameForTileInfo(ctile_info);
-                if(ctile_filename == cognitics::cdb::FileNameForTileInfo(tile_info))
-                    continue;
-                filtered_tiles.push_back(ctile);
-            }
-            for (auto ctile : filtered_tiles)
-            {
-                auto cdb = ctile.first;
-                auto tile = ctile.second;
-                auto tile_info = cognitics::cdb::TileInfoForTile(tile);
-                auto tile_filepath = cognitics::cdb::FilePathForTileInfo(tile_info);
-                auto tile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
-                auto filename = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename;
-                if (tile_info.dataset == 1)
-                    filename += ".tif";
-                if (tile_info.dataset == 4)
-                    filename += ".jp2";
-                if (std::find(sampler_filenames.begin(), sampler_filenames.end(), filename) == sampler_filenames.end())
-                    sampler_filenames.push_back(filename);
-            }
             GDALRasterSampler sampler;
-            for(auto filename : sampler_filenames)
-                sampler.AddFile(filename);
+            for (auto child_filename : child_filenames)
+                sampler.AddFile(child_filename);
+            auto tile_info = cognitics::cdb::TileInfoForFileName(stem);
             if(tile_info.dataset == 1)
-            {
-                printf("%s.tif\n", cognitics::cdb::FileNameForTileInfo(tile_info).c_str());
                 cognitics::cdb::BuildElevationTileFromSampler(cdb, sampler, tile_info);
-                auto fn = cdb + "/Tiles/" + FullFilenameForTileInfo(tile_info);
-                fn = std::filesystem::path(fn).string();
-                existing_files_mutex->lock();
-                existing_files->insert(fn);
-                existing_files_mutex->unlock();
-            }
             if(tile_info.dataset == 4)
-            {
-                printf("%s.jp2\n", cognitics::cdb::FileNameForTileInfo(tile_info).c_str());
                 cognitics::cdb::BuildImageryTileFromSampler(cdb, sampler, tile_info);
-                auto fn = cdb + "/Tiles/" + FullFilenameForTileInfo(tile_info);
-                fn = std::filesystem::path(fn).string();
-                existing_files_mutex->lock();
-                existing_files->insert(fn);
-                existing_files_mutex->unlock();
-            }
             gdalsampler::CacheManager::getInstance()->Unload();
         }
         catch(std::exception& e)
         {
-            std::cout << "EXCEPTION: " << cognitics::cdb::FileNameForTileInfo(tile_info) << " onChildFinished(): " << e.what() << "\n";
+            log << "      EXCEPTION: " << e.what() << log.endl;
         }
         return 0;
     }
 
-    virtual int execute(void)
-    {
-        try
-        {
-            if(tile_info.lod >= max_lod)
-                return 0;
-
-            //auto indent = std::string((tile_info.lod + 10) * 2, ' ');
-            //std::cout << indent << cognitics::cdb::FileNameForTileInfo(tile_info).c_str() << "\n";
-
-            auto raster_info = cognitics::cdb::RasterInfoFromTileInfo(tile_info);
-            raster_info.West += raster_info.PixelSizeX / 3;
-            raster_info.East -= raster_info.PixelSizeX / 3;
-            raster_info.South += std::abs(raster_info.PixelSizeY / 3);
-            raster_info.North -= std::abs(raster_info.PixelSizeY / 3);
-            auto coords = cognitics::cdb::CoordinatesRange(raster_info.West, raster_info.East, raster_info.South, raster_info.North);
-            auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset(tile_info.dataset), tile_info.lod + 1);
-            for(auto tile : tiles)
-            {
-                children_mutex.lock();
-                children.push_back(new TileJob(manager, this));
-                auto job = children.back();
-                children_mutex.unlock();
-                job->cdb = cdb;
-                job->existing_files = existing_files;
-                job->existing_files_mutex = existing_files_mutex;
-                job->max_lod = max_lod;
-                job->tile_info = cognitics::cdb::TileInfoForTile(tile);
-                manager->submitJob(job);
-            }
-        }
-        catch(std::exception& e)
-        {
-            std::cout << "EXCEPTION: " << cognitics::cdb::FileNameForTileInfo(tile_info) << " execute(): " << e.what() << "\n";
-        }
-        return (int)children.size();
-    }
 };
 
 
@@ -206,82 +81,104 @@ public:
 namespace cognitics {
 namespace cdb {
 
-bool cdb_lod(cdb_lod_parameters& params)
+bool cdb_lod(const std::string& cdb, int workers)
 {
-    auto ts_start = std::chrono::steady_clock::now();
+    bool result = true;
+    if(!cdb_lod(cdb, 1, workers))
+        result = false;
+    if(!cdb_lod(cdb, 4, workers))
+        result = false;
+    return result;
+}
 
-    ccl::JobManager job_manager(params.workers);
-    auto jobs = std::vector<TileJob*>();
+bool cdb_lod(const std::string& cdb, int dataset, int workers)
+{
+    ccl::ObjLog log;
 
-    auto existing_files = std::set<std::string>();
-    std::mutex existing_files_mutex;
-    if(params.elevation)
-    {
-        auto elevation_files = FilesInTiledDataset(params.cdb, 1);
-        existing_files.insert(elevation_files.begin(), elevation_files.end());
-    }
-    if(params.imagery)
-    {
-        auto imagery_files = FilesInTiledDataset(params.cdb, 4);
-        existing_files.insert(imagery_files.begin(), imagery_files.end());
-    }
-
-    auto geocells = GeocellsForCdb(params.cdb);
+    auto geocells = GeocellsForCdb(cdb);
     for(auto geocell : geocells)
     {
-        std::string geocell_path = params.cdb + "/Tiles/" + geocell.first + "/" + geocell.second;
-        int lat = std::stoi(geocell.first.substr(1));
-        if(geocell.first[0] == 'S')
-            lat *= -1;
-        int lon = std::stoi(geocell.second.substr(1));
-        if(geocell.second[0] == 'W')
-            lon *= -1;
-        if(params.elevation)
+        std::string geocell_path = cdb + "/Tiles/" + geocell.first + "/" + geocell.second;
+        int lat = LatitudeFromSubdirectory(geocell.first);
+        int lon = LongitudeFromSubdirectory(geocell.second);
+        auto dataset_path = geocell_path + "/" + DatasetSubdirectory(dataset);
+        auto max_lod = MaxLodForDatasetPath(dataset_path);
+        for(int target_lod = max_lod; target_lod > -10; --target_lod)
         {
-            auto maxlod_elevation = MaxLodForDatasetPath(geocell_path + "/001_Elevation");
-            if(maxlod_elevation >= 0)
+            ccl::JobManager job_manager(workers);
+
+            auto lod_path = dataset_path + "/" + SubdirectoryForLOD(target_lod);
+            auto parent_path = dataset_path + "/" + SubdirectoryForLOD(target_lod - 1);
+            log << parent_path << log.endl;
+
+            auto lod_files = std::vector<std::string>();
             {
+                auto tmp_files = std::vector<std::string>();
+                for(const auto& entry : std::filesystem::recursive_directory_iterator(lod_path))
+                {
+                    if(std::filesystem::is_regular_file(entry))
+                        tmp_files.push_back(entry.path().string());
+                }
+                for(auto tmp_file : tmp_files)
+                {
+                    try
+                    {
+                        auto ti = TileInfoForFileName(std::filesystem::path(tmp_file).stem().string());
+                        if((ti.latitude == lat) && (ti.longitude == lon) && (ti.lod == target_lod))
+                            lod_files.push_back(tmp_file);
+                    }
+                    catch(std::exception &)
+                    {
+                    }
+                }
+            }
+
+            auto parent_files = std::vector<std::string>();
+            {
+                for(const auto& entry : std::filesystem::recursive_directory_iterator(parent_path))
+                {
+                    if(std::filesystem::is_regular_file(entry))
+                        parent_files.push_back(entry.path().string());
+                }
+            }
+
+            auto lod_files_by_parent = std::map<std::string, std::vector<std::string>>();
+
+            for(auto lod_file : lod_files)
+            {
+                auto tile_info = TileInfoForFileName(std::filesystem::path(lod_file).stem().string());
+                auto parent_info = tile_info;
+                parent_info.lod -= 1;
+                parent_info.uref /= 2;
+                parent_info.rref /= 2;
+                auto parent_file = cdb + "/Tiles/" + FilePathForTileInfo(parent_info) + "/" + FileNameForTileInfo(parent_info);
+                parent_file = std::filesystem::path(parent_file).string();
+                if (tile_info.dataset == 1)
+                    parent_file += ".tif";
+                if (tile_info.dataset == 4)
+                    parent_file += ".jp2";
+                lod_files_by_parent[parent_file].push_back(lod_file);
+            }
+
+            auto jobs = std::vector<TileJob*>();
+
+            for(const auto& entry : lod_files_by_parent)
+            {
+                auto parent_file = entry.first;
+                auto child_files = entry.second;
                 jobs.push_back(new TileJob(&job_manager));
                 auto job = jobs.back();
-                job->cdb = params.cdb;
-                job->existing_files = &existing_files;
-                job->existing_files_mutex = &existing_files_mutex;
-                job->max_lod = maxlod_elevation;
-                memset(&job->tile_info, 0, sizeof(job->tile_info));
-                job->tile_info.latitude = lat;
-                job->tile_info.longitude = lon;
-                job->tile_info.lod = -10;
-                job->tile_info.dataset = 1;
-                job->tile_info.selector1 = 1;
-                job->tile_info.selector2 = 1;
+                job->cdb = cdb;
+                job->filename = parent_file;
+                job->child_filenames = child_files;
                 job_manager.submitJob(job);
             }
-        }
-        if(params.imagery)
-        {
-            auto maxlod_imagery = MaxLodForDatasetPath(geocell_path + "/004_Imagery");
-            if(maxlod_imagery >= 0)
-            {
-                jobs.push_back(new TileJob(&job_manager));
-                auto job = jobs.back();
-                job->cdb = params.cdb;
-                job->existing_files = &existing_files;
-                job->existing_files_mutex = &existing_files_mutex;
-                job->max_lod = maxlod_imagery;
-                memset(&job->tile_info, 0, sizeof(job->tile_info));
-                job->tile_info.latitude = lat;
-                job->tile_info.longitude = lon;
-                job->tile_info.lod = -10;
-                job->tile_info.dataset = 4;
-                job->tile_info.selector1 = 1;
-                job->tile_info.selector2 = 1;
-                job_manager.submitJob(job);
-            }
+
+            job_manager.waitForCompletion();
+            for(auto job : jobs)
+                delete job;
         }
     }
-    job_manager.waitForCompletion();
-    for(auto job : jobs)
-        delete job;
 
     return true;
 }

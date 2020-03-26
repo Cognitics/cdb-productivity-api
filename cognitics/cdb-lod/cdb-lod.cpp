@@ -6,6 +6,8 @@
 #include <ccl/ArgumentParser.h>
 #include <cdb_util/cdb_util.h>
 
+#include <ccl/gdal.h>
+
 #include <cstdlib>
 #include <fstream>
 #include <chrono>
@@ -13,7 +15,7 @@
 int main(int argc, char** argv)
 {
     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
-    initializeGDALEnvironmentVariables(argv[0]);
+    cognitics::gdal::init(argv[0]);
     auto args = cognitics::ArgumentParser();
     args.AddOption("logfile", 1, "<filename>", "filename for log output");
     args.AddOption("workers", 1, "<N>", "number of worker threads (default 8)");
@@ -29,22 +31,22 @@ int main(int argc, char** argv)
         ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG, logfile)));
     }
 
-    auto params = cognitics::cdb::cdb_lod_parameters();
-    params.cdb = args.Arguments().at(0);
+    auto cdb = args.Arguments().at(0);
+    int workers = 8;
     if(args.Option("workers"))
-        params.workers = std::stoi(args.Parameters("workers").at(0));
+        workers = std::stoi(args.Parameters("workers").at(0));
 
     ccl::ObjLog log;
     log << args.Report() << log.endl;
 
     auto ts_start = std::chrono::steady_clock::now();
-    bool result = cognitics::cdb::cdb_lod(params);
+    cognitics::cdb::cdb_lod(cdb, workers);
     auto ts_stop = std::chrono::steady_clock::now();
 
     log << log.endl;
     log << "cdb-lod runtime: " << std::chrono::duration<double>(ts_stop - ts_start).count() << "s" << log.endl;
     
-    return result ? EXIT_SUCCESS : EXIT_FAILURE;
+    return EXIT_SUCCESS;
 }
 
 

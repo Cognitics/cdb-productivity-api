@@ -406,20 +406,13 @@ int main_lod(size_t arg_start)
             continue;
         }
     }
-    auto params = cognitics::cdb::cdb_lod_parameters();
-    params.cdb = cdb;
-    params.workers = workers;
-    params.elevation = false;
-    params.imagery = false;
     if((dataset == 1) && (cs1 == 1) && (cs2 == 1))  // Elevation, PrimaryTerrainElevation
     {
-        params.elevation = true;
-        return cognitics::cdb::cdb_lod(params) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return cognitics::cdb::cdb_lod(cdb, 1, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
     else if((dataset == 4) && (cs1 == 1) && (cs2 == 1))  // Imagery, YearlyVstiRepresentation
     {
-        params.imagery = true;
-        return cognitics::cdb::cdb_lod(params) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return cognitics::cdb::cdb_lod(cdb, 4, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
     else
         return usage_lod("Unsupported Component: " + cognitics::cdb::DatasetName(dataset) + " " + std::to_string(cs1) + " " + std::to_string(cs2));
