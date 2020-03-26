@@ -13,6 +13,7 @@
 #include "cdb_tile/CoordinatesRange.h"
 #include "cdb_tile/Tile.h"
 #include <cdb_util/cdb_util.h>
+#include <ccl/gdal.h>
 #include <cstdlib>
 
 #pragma warning ( push )
@@ -106,7 +107,8 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    initializeGDALEnvironmentVariables(argv[0]);
+    cognitics::gdal::init(argv[0]);
+
     logger.init("main");
     logger << ccl::LINFO;
     GDALAllRegister();
