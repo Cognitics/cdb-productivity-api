@@ -29,34 +29,6 @@ namespace std { namespace filesystem = std::experimental::filesystem; }
 #include <filesystem>
 #endif
 
-void initializeGDALEnvironmentVariables(char *argv0)
-{
-#ifndef WIN32
-    char *gdal_data_var = getenv("GDAL_DATA");
-    if (gdal_data_var == NULL)
-    {
-        putenv("GDAL_DATA=/usr/local/share/gdal");
-    }
-    char *gdal_plugins_var = getenv("GDAL_DRIVER_PATH");
-    if (gdal_plugins_var == NULL)
-    {
-        putenv("GDAL_DRIVER_PATH=/usr/local/bin/gdalplugins");
-    }
-#else
-    size_t requiredSize;
-    getenv_s(&requiredSize, NULL, 0, "GDAL_DATA");
-    if (requiredSize == 0)
-    {
-        ccl::FileInfo fi(argv0);
-        int bufSize = 1024;
-        char *envBuffer = new char[bufSize];
-        std::string dataDir = ccl::joinPaths(fi.getDirName(), "gdal-data");
-        sprintf_s(envBuffer, bufSize, "GDAL_DATA=%s", dataDir.c_str());
-        _putenv(envBuffer);
-    }
-#endif
-}
-
 namespace cognitics {
 namespace cdb {
 
@@ -1667,6 +1639,15 @@ namespace
     }
 }
 
+std::string SubdirectoryForLOD(int lod)
+{
+    if(lod >= 10)
+        return "L" + std::to_string(lod);
+    if(lod >= 0)
+        return "L0" + std::to_string(lod);
+    return "LC";
+}
+
 int LatitudeFromSubdirectory(const std::string& subdir)
 {
     int ilatitude = std::stoi(subdir.substr(1));
@@ -1687,7 +1668,7 @@ int LongitudeFromSubdirectory(const std::string& subdir)
     return INT_MAX;
 }
 
-std::vector<std::string> FilesInTiledDataset(const std::string& cdb, int dataset, const NSEW& nsew)
+std::vector<std::string> FilesInTiledDataset(const std::string& cdb, int dataset)//, const NSEW& nsew)
 {
     std::string dataset_subdirectory = DatasetSubdirectory(dataset);
     auto result = std::vector<std::string>();
@@ -1708,7 +1689,7 @@ std::vector<std::string> FilesInTiledDataset(const std::string& cdb, int dataset
                 continue;
             // TODO: filter nsew
             auto dataset_path = longitude_path / dataset_subdirectory;
-            CollectFilesInTiledDataset(result, dataset_path, nsew);
+            CollectFilesInTiledDataset(result, dataset_path);//, nsew);
         }
     }
     return result;

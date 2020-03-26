@@ -9,8 +9,6 @@
 
 #include <vector>
 
-void initializeGDALEnvironmentVariables(char *argv0);
-
 namespace cognitics {
 namespace cdb {
 
@@ -142,7 +140,9 @@ void FileFromBytes(const std::string& filename, const std::string& bytes);
 
 std::pair<int, int> WidthHeightFromRGB(const std::string& filename);
 
-std::vector<std::string> FilesInTiledDataset(const std::string& cdb, int dataset, const NSEW& nsew = { DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX });
+std::vector<std::string> FilesInTiledDataset(const std::string& cdb, int dataset);//, const NSEW& nsew = { DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX });
+
+std::string SubdirectoryForLOD(int lod);
 
 int LatitudeFromSubdirectory(const std::string& subdir);
 int LongitudeFromSubdirectory(const std::string& subdir);

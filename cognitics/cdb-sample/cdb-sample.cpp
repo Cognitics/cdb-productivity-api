@@ -4,6 +4,7 @@
 #include <ccl/LogStream.h>
 #include <ccl/ObjLog.h>
 #include <ccl/ArgumentParser.h>
+#include <ccl/gdal.h>
 #include <cdb_util/cdb_util.h>
 #include <cstdlib>
 #include <fstream>
@@ -11,9 +12,9 @@
 
 int main(int argc, char** argv)
 {
-
     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
-    initializeGDALEnvironmentVariables(argv[0]);
+    cognitics::gdal::init(argv[0]);
+
     auto args = cognitics::ArgumentParser();
     args.AddOption("logfile", 1, "<filename>", "filename for log output");
     args.AddOption("bounds", 4, "<south> <west> <north> <east>", "bounds for area of interest");
