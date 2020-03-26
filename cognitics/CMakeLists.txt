@@ -1173,7 +1173,7 @@ if(COG_BUILD_GL_TOOLS)
     add_executable(mesh2cdb
         mesh2cdb/quickobj.cpp
 		mesh2cdb/quickobj.h
-		mesh2cdb/quickobj_lmb.cpp
+#		mesh2cdb/quickobj_lmb.cpp
         mesh2cdb/mesh2cdb.cpp
         mesh2cdb/mesh2cdb.h
         mesh2cdb/meshconvert.cpp
