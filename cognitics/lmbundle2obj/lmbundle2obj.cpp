@@ -181,8 +181,7 @@ int main(int argc, char** argv)
         std::cout << "Warning: No metadata.xml exists in input path.\n";
     }
 
-    FILE* f = NULL;
-    fopen_s(&f, input_lmab.c_str(), "rb");
+    FILE* f = fopen(input_lmab.c_str(), "rb");
     if (!f)
     {
         std::cout << "Can't open the file.\n";
