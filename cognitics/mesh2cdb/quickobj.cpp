@@ -1099,7 +1099,7 @@ namespace cognitics {
                     QuickObj *old = iter->second;
                     if (old)
                     {
-                        log << "Erasing " << old->objFilename << "..." << log.endl;
+                        //log << "Erasing " << old->objFilename << "..." << log.endl;
                         delete old;
                     }
                     else
@@ -1137,5 +1137,5 @@ namespace cognitics {
         mut.unlock();
     }
 
-    ObjCache gObjCache(10);
+    ObjCache gObjCache(50);
 }

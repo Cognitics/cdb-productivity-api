@@ -5,6 +5,9 @@
 #include <ccl/ObjLog.h>
 #include <ccl/LogStream.h>
 #include <ccl/Timer.h>
+#include <cdb_util/cdb_lod.h>
+#include <chrono>
+
 #include "scenegraphobj/scenegraphobj.h"
 //#include "ip/pngwrapper.h"
 #include <scenegraph/ExtentsVisitor.h>
@@ -360,6 +363,14 @@ bool writeDEM(RenderJob &job, float *grid, int width, int height)
     return true;
 }
 
+struct objinfo_compare
+{
+    inline bool operator() (const ObjFileInfo& a, const ObjFileInfo& b)
+    {
+        return (a.lod < b.lod);
+    }
+};
+
 
 #define QUICK_OBJ
 void renderToFile(RenderJob &job)
@@ -473,14 +484,16 @@ void renderToFile(RenderJob &job)
 
     glPushMatrix();
 #ifdef QUICK_OBJ
-    for(auto&& file : job.objFiles)
+    logger << "Sorting for " << job.cdbFilename << logger.endl;
+    std::sort(job.objFiles.begin(), job.objFiles.end(), objinfo_compare());
+    for(auto&& ofi : job.objFiles)
     {
-        ccl::FileInfo objFi(file);
+        std::string file = ofi.fi.getFileName();
         cognitics::QuickObj *qo = cognitics::gObjCache.get(file);
         if(!qo)
         {
             logger << "Loading " << file << logger.endl;
-            qo = new cognitics::QuickObj(file, job.srs, objFi.getDirName(), true);
+            qo = new cognitics::QuickObj(file, job.srs, ofi.fi.getDirName(), true);
             cognitics::gObjCache.store(qo);
         }
         if(qo->isValid())
@@ -711,35 +724,19 @@ void finishBuild()
     logger << "Waiting for compression of JP2 files to complete..." << logger.endl;
     jobManager.waitForCompletion();
     logger << "============================" << logger.endl;
-    logger << "\nBuilding Imagery LODs" << logger.endl;    
-    std::string cdbImageryOpenString = "CDB:" + rootCDBOutput + ":Imagery_Yearly";
-    auto poDataset = (GDALDataset *)GDALOpen(cdbImageryOpenString.c_str(), GA_Update);
-    if (poDataset == NULL)
-    {
-        logger << ccl::LERR << "Unable to open " << cdbImageryOpenString << logger.endl;
-        return;
-    }
-    if (poDataset->BuildOverviews("average", 0, NULL, 0, NULL, GDALProgressObserver, NULL) != CE_None)
-    {
-        logger << "Imagery LOD Build failed." << logger.endl;
-        const char *gdalErrMsg = CPLGetLastErrorMsg();
-        logger << gdalErrMsg << logger.endl;
-    }
-    logger << "\n============================" << logger.endl;
-    logger << "Building Elevation LODs" << logger.endl;
-    std::string cdbElevationOpenString = "CDB:" + rootCDBOutput + ":Elevation_PrimaryTerrainElevation";
-    auto poElevDataset = (GDALDataset *)GDALOpen(cdbElevationOpenString.c_str(), GA_Update);
-    if (poElevDataset == NULL)
-    {
-        logger << ccl::LERR << "Unable to open " << poElevDataset << logger.endl;
-        return;
-    }
-    if (poElevDataset->BuildOverviews("average", 0, NULL, 0, NULL, GDALProgressObserver, NULL) != CE_None)
-    {
-        logger << "Elevation LOD Build failed." << logger.endl;
-        const char *gdalErrMsg = CPLGetLastErrorMsg();
-        logger << gdalErrMsg << logger.endl;
-    }
+    logger << "\nBuilding Imagery LODs" << logger.endl;
+
+    int workers = 8;
+
+    ccl::ObjLog log;
+
+    auto ts_start = std::chrono::steady_clock::now();
+    cognitics::cdb::cdb_lod(rootCDBOutput, workers);
+    auto ts_stop = std::chrono::steady_clock::now();
+
+    log << log.endl;
+    log << "cdb-lod runtime: " << std::chrono::duration<double>(ts_stop - ts_start).count() << "s" << log.endl;
+
 
     logger << "Build completed!" << logger.endl;
 }

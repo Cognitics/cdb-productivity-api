@@ -12,6 +12,13 @@
 #include <fstream>
 #include "rapidxml/rapidxml.hpp"
 
+class ObjFileInfo
+{
+public:
+    int lod;
+    ccl::FileInfo fi;
+};
+
 
 class Mesh2CDBParams
 {
@@ -28,7 +35,7 @@ public:
         texturePath = other.texturePath;
         objPath = other.objPath;
         searchObjSubdirectories = other.searchObjSubdirectories;
-        objFiles = other.objFiles;
+        //objFiles = other.objFiles;
         maxLOD = other.maxLOD;
         highestLODOnly = other.highestLODOnly;
     }
@@ -40,7 +47,7 @@ public:
     std::string texturePath;//If empty, the current directory
     std::string objPath;//Must be set
     bool searchObjSubdirectories{};//If true, recurse objPath subdirectories. True by default.
-    std::list<std::string> objFiles;//todo: this isn't used by anything yet.
+    //std::list<std::string> objFiles;//todo: this isn't used by anything yet.
     int maxLOD{};//defaults to 1
     bool highestLODOnly;
     bool isValid()
@@ -132,8 +139,8 @@ public:
                 source_obj_node; source_obj_node = source_obj_node->next_sibling())
             {
                 const auto obj_file = source_obj_node->first_attribute("file");
-                if (obj_file)
-                    objFiles.emplace_back(obj_file->value());
+                //if (obj_file)
+                //    objFiles.emplace_back(obj_file->value());
             }
         }
     }
@@ -149,7 +156,7 @@ public:
     double enuMaxY;
     
     cognitics::cdb::Tile cdbTile;
-    std::vector<std::string> objFiles;
+    std::vector<ObjFileInfo> objFiles;
     ObjSrs srs;
 
     std::string ToString()
@@ -169,7 +176,7 @@ public:
         for(auto &&inputFilename : objFiles)
         {
             ss << "\t<InputFile>";
-            ss << inputFilename;
+            ss << inputFilename.fi.getFileName();
             ss << "</InputFile>\n";
         }
         ss << srs.ToString();
@@ -210,10 +217,10 @@ class Obj2CDB
     double dbMaxZElev;
     Mesh2CDBParams parms;
 
-    std::vector<ccl::FileInfo> objFiles;
+    std::vector<ObjFileInfo> objFiles;
     sfa::BSP bsp;
     std::map<sfa::Geometry *, sfa::LineString *> envelopes;
-    std::map<sfa::Geometry *, ccl::FileInfo> bestTileLOD;
+    std::map<sfa::Geometry *, ObjFileInfo> bestTileLOD;
     Cognitics::CoordinateSystems::EllipsoidTangentPlane *ltp_ellipsoid;
 
     int getLODFromFilename(const std::string &filename);

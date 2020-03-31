@@ -160,7 +160,17 @@ Obj2CDB::Obj2CDB(const Mesh2CDBParams &_parms) : parms(_parms)
     }
     else
     {
-        objFiles = ccl::FileInfo::getAllFiles(parms.objPath, "*.*", parms.searchObjSubdirectories);
+        auto allFiles = ccl::FileInfo::getAllFiles(parms.objPath, "*.*", parms.searchObjSubdirectories);
+        for(auto &&fi : allFiles)
+        {
+            if(ccl::stringEndsWith(fi.getFileName(),".obj",false))
+            {
+                ObjFileInfo ofi;
+                ofi.fi = fi;
+                ofi.lod = getLODFromFilename(fi.getFileName());;
+                objFiles.push_back(ofi);
+            }
+        }
     }
     buildBSP();
 }
@@ -193,10 +203,10 @@ void Obj2CDB::buildBSP()
 {
     int loop = 0;
     //objFiles
-    for (auto&& fi : objFiles)
+    for (auto&& ofi : objFiles)
     {
         //if(fi.getFileName())
-        if(!ccl::stringEndsWith(fi.getFileName(),".obj",false))
+        if(!ccl::stringEndsWith(ofi.fi.getFileName(),".obj",false))
         {
             continue;
         }
@@ -214,10 +224,10 @@ void Obj2CDB::buildBSP()
         srs.geoOrigin = parms.origin;
         srs.srsWKT = parms.wkt;
         srs.offsetPt = parms.offset;
-        cognitics::QuickObj qo(fi.getFileName(),srs);
+        cognitics::QuickObj qo(ofi.fi.getFileName(),srs);
         if(!qo.isValid())
         {
-            log << "Unable to read " << fi.getFileName() << log.endl;
+            log << "Unable to read " << ofi.fi.getFileName() << log.endl;
             continue;
         }
         qo.getBounds(left,right,bottom,top,minZ,maxZ);
@@ -247,7 +257,7 @@ void Obj2CDB::buildBSP()
             transform_visitor.visit(scene);
         }
 #endif
-        log << fi.getBaseName() << " : " << left << " <-> " << right << " | " << top << " ^ " << bottom << log.endl;
+        log << ofi.fi.getBaseName() << " : " << left << " <-> " << right << " | " << top << " ^ " << bottom << log.endl;
         dbLeft = std::min<double>(left, dbLeft);
         dbRight = std::max<double>(right, dbRight);
         dbBottom = std::min<double>(bottom, dbBottom);
@@ -264,7 +274,7 @@ void Obj2CDB::buildBSP()
         ring->addPoint(sfa::Point(left, bottom));
         aoi_poly->addRing(ring);
         //Keep track of the geometry and its associated file
-        bestTileLOD[aoi_poly] = fi;
+        bestTileLOD[aoi_poly] = ofi;
         bsp.addGeometry(aoi_poly);
         //delete scene;
     }
@@ -301,6 +311,7 @@ void Obj2CDB::collectHighestLODTiles()
         {
             int lod = getLODFromFilename(fi.getFileName());
             //log << fi.getFileName() << " is LOD " << lod << log.endl;
+            
             if (highestTileLODNum.find(fi.getDirName()) == highestTileLODNum.end())
             {
                 highestTileLODNum[fi.getDirName()] = lod;
@@ -314,11 +325,15 @@ void Obj2CDB::collectHighestLODTiles()
                     highestTileLODFilename[fi.getDirName()] = fi.getFileName();
                 }
             }
+            
         }
     }
     for (auto&& fileLODPair : highestTileLODFilename)
     {
-        objFiles.push_back(fileLODPair.second);
+        ObjFileInfo ofi;
+        ofi.fi = fileLODPair.second;
+        ofi.lod = highestTileLODNum[fileLODPair.first];
+        objFiles.push_back(ofi);
         //"OBJ count limit enabled!!!!"
         //if (objFiles.size() > 10)
          //   break;
@@ -390,9 +405,9 @@ renderJobList_t Obj2CDB::collectRenderJobs(cognitics::cdb::Dataset dataset, int 
         bspVisitor.visiting(&bsp);
         for (auto&& geometry : bspVisitor.results)
         {
-            std::string sourceOBJ = bestTileLOD[geometry].getFileName();
+            std::string sourceOBJ = bestTileLOD[geometry].fi.getFileName();
             log << "\t\tUsing " << sourceOBJ << " as source file." << log.endl;
-            renderJob.objFiles.push_back(sourceOBJ);
+            renderJob.objFiles.push_back(bestTileLOD[geometry]);
         }
         if (!renderJob.objFiles.empty())
         {
