@@ -27,8 +27,31 @@ DEALINGS IN THE SOFTWARE.
 */
 #pragma once
 
-#include "OpenFlight.h"
-
+#include "flt/OpenFlight.h"
+#include <flt/OpenFlight.h>
+#include <flt/Header.h>
+#include <flt/ColorPalette.h>
+#include <flt/MaterialPalette.h>
+#include <flt/TexturePalette.h>
+#include <flt/LightPoint.h>
+#include <flt/LightSourcePalette.h>
+#include <flt/PushLevel.h>
+#include <flt/PopLevel.h>
+#include <flt/Group.h>
+#include <flt/Object.h>
+#include <flt/LongID.h>
+#include <flt/Comment.h>
+#include <flt/LevelOfDetail.h>
+#include <flt/VertexPalette.h>
+#include <flt/VertexWithColor.h>
+#include <flt/VertexWithColorUV.h>
+#include <flt/VertexWithColorNormalUV.h>
+#include <flt/VertexWithColorNormal.h>
+#include <flt/Face.h>
+#include <flt/VertexList.h>
+#include <flt/ExternalReference.h>
+#include <flt/Matrix.h>
+#include <flt/GeneralMatrix.h>
 //! \namespace flt Cognitics OpenFlight Library
 namespace flt { }
 

@@ -34,6 +34,8 @@ DEALINGS IN THE SOFTWARE.
 #pragma warning ( pop )
 
 #include "CoordinateSystems/EllipsoidTangentPlane.h"
+#include <flt/flt.h>
+
 
 class ObjSrs
 {
@@ -173,6 +175,7 @@ namespace cognitics {
     */
     class QuickObj
     {
+    public:
         ccl::ObjLog log;
         float minX;
         float maxX;
@@ -210,7 +213,7 @@ namespace cognitics {
         bool parseOBJ(bool loadTextures);
         bool parseLMAB(bool loadTextures);
         QuickObj() {}
-    public:
+    
         QuickObj(const QuickObj &other);
         QuickObj &operator=(const QuickObj &other);
         std::string objFilename;
@@ -263,4 +266,22 @@ namespace cognitics {
     };
 
     extern ObjCache gObjCache;
+
+
+    class QuickObj2Flt
+    {
+        ccl::ObjLog log;
+        QuickObj2Flt();
+        flt::OpenFlight *fltFile;
+        flt::RecordList records;
+        flt::Header *header;
+        QuickObj *obj;
+
+        bool buildMat(Material &mat);
+        bool buildMesh(QuickObj &obj);
+        bool buildSubmesh(QuickSubMesh &submesh);
+
+    public:
+        bool convert(QuickObj *obj, const std::string &outputFltFilename);
+    };
 }

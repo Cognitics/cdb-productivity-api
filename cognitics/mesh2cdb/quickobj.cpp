@@ -1138,4 +1138,150 @@ namespace cognitics {
     }
 
     ObjCache gObjCache(50);
-}
+
+    QuickObj2Flt::QuickObj2Flt()
+    {
+        fltFile = NULL;
+        header = NULL;
+        obj = NULL;
+    }
+
+    bool QuickObj2Flt::buildMat(Material &mat)
+    {
+
+        return true;
+    }
+
+    bool QuickObj2Flt::buildMesh(QuickObj &obj)
+    {
+
+        return true;
+    }
+
+    bool QuickObj2Flt::buildSubmesh(QuickSubMesh &submesh)
+    {
+        for(size_t i=0,ic=submesh.vertIdxs.size();i<ic;i++)
+        {
+            flt::Face *faceRecord = new flt::Face;
+            header->nextFaceNodeID = header->nextFaceNodeID + 1;
+            std::stringstream ss;
+            ss << "p" << i;
+            faceRecord->id = ss.str();
+            flt::VertexList *vertexListRecord = new flt::VertexList;
+            faceRecord->drawType = 1;
+
+            vertexListRecord->offsets.push_back(submesh.vertIdxs[i]);
+
+            records.push_back(new flt::PushLevel);
+            records.push_back(vertexListRecord);
+            records.push_back(new flt::PopLevel);
+        }
+        return true;
+    }
+
+
+    ccl::uint32_t getUInt32FromColor(double r, double g, double b, double a)
+    {
+        return ((unsigned char)(a * 0xFF) << 24)
+            | ((unsigned char)(b * 0xFF) << 16)
+            | ((unsigned char)(g * 0xFF) << 8)
+            | (unsigned char)(r * 0xFF);
+    }
+
+    bool QuickObj2Flt::convert(QuickObj *obj, const std::string &outputFltFilename)
+    {
+        this->obj = obj;
+        fltFile = flt::OpenFlight::create(outputFltFilename, 1640);;
+        if (!fltFile)
+        {
+            log << "Error: Can't create " << outputFltFilename << log.endl;
+            return false;
+        }
+        header = new flt::Header;        
+        
+        header->originLatitude = obj->srs.geoOrigin.Y();;
+        header->originLongitude = obj->srs.geoOrigin.X();;
+
+        //TODO: need to calculate from transform
+        header->southwestLatitude = 0;
+        header->southwestLongitude = 0;
+
+        header->northeastLatitude = 0;
+        header->northeastLongitude = 0;
+
+        header->flags[0] = true;    // ??
+        records.push_back(header);
+
+        //TODO: add colors
+        flt::ColorPalette *colorPalette = new flt::ColorPalette;
+        //TODO: Do something
+        records.push_back(colorPalette);
+
+        //TODO: add materials
+        flt::MaterialPalette *materialPalette = new flt::MaterialPalette;
+        //TODO: Do something
+        records.push_back(materialPalette);
+
+        obj->norms;
+
+        flt::RecordList vertexList;
+        bool have_norms = false;
+        if (obj->norms.size() == obj->verts.size())
+        {
+            have_norms = true;
+        }
+        bool have_uvs = false;
+        if (obj->uvs.size() == obj->verts.size())
+        {
+            have_uvs = true;
+        }
+        //for (auto &&vert : obj->verts)
+        for(size_t i=0,ic=obj->verts.size();i<ic;i++)
+        {
+            flt::VertexWithColorNormalUV *vertexRecord = new flt::VertexWithColorNormalUV;
+            vertexRecord->x = obj->verts[i].x;
+            vertexRecord->y = obj->verts[i].y;
+            vertexRecord->z = obj->verts[i].z;
+            if (have_norms)
+            {
+                vertexRecord->i = obj->norms[i].x;
+                vertexRecord->j = obj->norms[i].y;
+                vertexRecord->k = obj->norms[i].z;
+            }
+            if (have_uvs)
+            {
+                vertexRecord->u = obj->uvs[i].x;
+                vertexRecord->v = obj->uvs[i].y;
+            }
+            vertexRecord->flags[2] = true;    // no color
+            vertexRecord->flags[3] = true;    // packed color
+            vertexRecord->packedColor = getUInt32FromColor(1.0,1.0,1.0,1.0);
+            vertexRecord->colorIndex = -1;
+            records.push_back(vertexRecord);
+        }
+
+        //Are these needed?
+        //vertexPalette = new flt::VertexPalette;
+        //vertexPalette->vertexPaletteLength = int(8 + (vertexVector.size() * vertexSize) + (vertexVectorM.size() * (vertexSize - 8)));
+        //records.push_back(vertexPalette);
+
+        for (auto &&submesh : obj->subMeshes)
+        {
+            records.push_back(new flt::PushLevel);
+            buildSubmesh(submesh);
+            records.push_back(new flt::PopLevel);
+        }
+
+        if (!fltFile->addRecords(records))
+        {
+            log << "Error: Unable to add flt records." << log.endl;
+            return false;
+        }
+        flt::OpenFlight::destroy(fltFile);
+        return true;
+    }
+
+
+
+    };
+
