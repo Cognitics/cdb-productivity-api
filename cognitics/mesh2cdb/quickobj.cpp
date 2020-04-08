@@ -1160,7 +1160,8 @@ namespace cognitics {
 
     bool QuickObj2Flt::buildSubmesh(QuickSubMesh &submesh)
     {
-        for(size_t i=0,ic=submesh.vertIdxs.size();i<ic;i++)
+		//Assume that faces are always triangles...
+        for(size_t i=0,ic=submesh.vertIdxs.size();i<ic;i+=3)
         {
             flt::Face *faceRecord = new flt::Face;
             header->nextFaceNodeID = header->nextFaceNodeID + 1;
@@ -1168,9 +1169,25 @@ namespace cognitics {
             ss << "p" << i;
             faceRecord->id = ss.str();
             flt::VertexList *vertexListRecord = new flt::VertexList;
-            faceRecord->drawType = 1;
 
-            vertexListRecord->offsets.push_back(submesh.vertIdxs[i]);
+			int index = submesh.vertIdxs[i];
+			vertexListRecord->offsets.push_back(int(8 + (index * 64)));
+
+			index = submesh.vertIdxs[i+1];
+			vertexListRecord->offsets.push_back(int(8 + (index * 64)));
+
+			index = submesh.vertIdxs[i+2];
+			vertexListRecord->offsets.push_back(int(8 + (index * 64)));
+
+            faceRecord->drawType = 1;
+			faceRecord->materialIndex = matIDMap[submesh.materialName];
+			faceRecord->texturePatternIndex = texIDMap[submesh.materialName];
+
+
+			faceRecord->drawType = 1;//both sides
+			faceRecord->lightMode = 3;
+
+			records.push_back(faceRecord);
 
             records.push_back(new flt::PushLevel);
             records.push_back(vertexListRecord);
@@ -1191,14 +1208,14 @@ namespace cognitics {
     bool QuickObj2Flt::convert(QuickObj *obj, const std::string &outputFltFilename)
     {
         this->obj = obj;
-        fltFile = flt::OpenFlight::create(outputFltFilename, 1640);;
+        fltFile = flt::OpenFlight::create(outputFltFilename, 1600);
         if (!fltFile)
         {
             log << "Error: Can't create " << outputFltFilename << log.endl;
             return false;
         }
         header = new flt::Header;        
-        
+		header->projectionType = 0;//flat earth
         header->originLatitude = obj->srs.geoOrigin.Y();;
         header->originLongitude = obj->srs.geoOrigin.X();;
 
@@ -1217,12 +1234,56 @@ namespace cognitics {
         //TODO: Do something
         records.push_back(colorPalette);
 
-        //TODO: add materials
-        flt::MaterialPalette *materialPalette = new flt::MaterialPalette;
-        //TODO: Do something
-        records.push_back(materialPalette);
+        //add materials
+		
+		int currentMatId = 0;
+		for (auto&& matPair : obj->materialMap)
+		{
+			matPair.second.textureFile;
+			Material &mat = matPair.second;
+			matIDMap[matPair.first] = currentMatId;
+			flt::MaterialPalette *materialPalette = new flt::MaterialPalette;
+			materialPalette->index = int(currentMatId++);
+			materialPalette->ambientRed = mat.ambient.r;
+			materialPalette->ambientGreen = mat.ambient.g;
+			materialPalette->ambientBlue = mat.ambient.b;
+			materialPalette->diffuseRed = mat.diffuse.r;
+			materialPalette->diffuseGreen = mat.diffuse.g;
+			materialPalette->diffuseBlue = mat.diffuse.b;
+			materialPalette->specularRed = mat.specular.r;
+			materialPalette->specularGreen = mat.specular.g;
+			materialPalette->specularBlue = mat.specular.b;
+			materialPalette->emissiveRed = mat.emission.r;
+			materialPalette->emissiveGreen = mat.emission.g;
+			materialPalette->emissiveBlue = mat.emission.b;
+			materialPalette->alpha = mat.diffuse.a;
+			materialPalette->shininess = 0;
+			records.push_back(materialPalette);
 
-        obj->norms;
+		}
+
+		int currentTexId = 0;
+		for (auto&& matPair : obj->materialMap)
+		{
+			flt::TexturePalette *texturePalette = new flt::TexturePalette;
+			texturePalette->textureIndex = currentTexId++;
+			texturePalette->fileName = matPair.first;
+			records.push_back(texturePalette);
+		}
+		
+		flt::LightSourcePalette *lightSourcePalette;
+		lightSourcePalette = new flt::LightSourcePalette;
+		lightSourcePalette->index = 1;
+		lightSourcePalette->ambientAlpha = 1.0f;
+		lightSourcePalette->diffuseRed = 1.0f;
+		lightSourcePalette->diffuseGreen = 1.0f;
+		lightSourcePalette->diffuseBlue = 1.0f;
+		lightSourcePalette->diffuseAlpha = 1.0f;
+		lightSourcePalette->specularRed = 1.0f;
+		lightSourcePalette->specularGreen = 1.0f;
+		lightSourcePalette->specularBlue = 1.0f;
+		lightSourcePalette->specularAlpha = 1.0f;
+		records.push_back(lightSourcePalette);
 
         flt::RecordList vertexList;
         bool have_norms = false;
@@ -1261,22 +1322,34 @@ namespace cognitics {
         }
 
         //Are these needed?
-        //vertexPalette = new flt::VertexPalette;
-        //vertexPalette->vertexPaletteLength = int(8 + (vertexVector.size() * vertexSize) + (vertexVectorM.size() * (vertexSize - 8)));
-        //records.push_back(vertexPalette);
+		const int vertexSize = 64;
+		flt::VertexPalette *vertexPalette = new flt::VertexPalette;
+        vertexPalette->vertexPaletteLength = int(8 + (obj->verts.size() * vertexSize));
+        records.push_back(vertexPalette);
+
+		records.push_back(new flt::PushLevel);
+
+//BuildScene Start
+		flt::Record *container = NULL;
+		flt::Group *groupRecord = new flt::Group;
+		groupRecord->id = "root";
+		container = groupRecord;
+		header->nextGroupNodeID = header->nextGroupNodeID + 1;
+		records.push_back(container);
+		records.push_back(new flt::PushLevel);//container
 
         for (auto &&submesh : obj->subMeshes)
-        {
-            records.push_back(new flt::PushLevel);
-            buildSubmesh(submesh);
-            records.push_back(new flt::PopLevel);
+        {            
+            buildSubmesh(submesh);            
         }
-
+//BuildScene End
+		records.push_back(new flt::PopLevel);//container
         if (!fltFile->addRecords(records))
         {
             log << "Error: Unable to add flt records." << log.endl;
             return false;
         }
+		
         flt::OpenFlight::destroy(fltFile);
         return true;
     }

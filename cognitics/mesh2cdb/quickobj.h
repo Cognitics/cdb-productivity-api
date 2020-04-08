@@ -271,17 +271,21 @@ namespace cognitics {
     class QuickObj2Flt
     {
         ccl::ObjLog log;
-        QuickObj2Flt();
+        
         flt::OpenFlight *fltFile;
         flt::RecordList records;
         flt::Header *header;
         QuickObj *obj;
+
+		std::map<std::string, int> matIDMap;
+		std::map<std::string, int> texIDMap;
 
         bool buildMat(Material &mat);
         bool buildMesh(QuickObj &obj);
         bool buildSubmesh(QuickSubMesh &submesh);
 
     public:
+		QuickObj2Flt();
         bool convert(QuickObj *obj, const std::string &outputFltFilename);
     };
 }
