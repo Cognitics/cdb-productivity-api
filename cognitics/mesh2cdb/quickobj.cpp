@@ -1266,6 +1266,7 @@ namespace cognitics {
 		for (auto&& matPair : obj->materialMap)
 		{
 			flt::TexturePalette *texturePalette = new flt::TexturePalette;
+			texIDMap[matPair.first] = currentTexId;
 			texturePalette->textureIndex = currentTexId++;
 			texturePalette->fileName = matPair.first;
 			records.push_back(texturePalette);
