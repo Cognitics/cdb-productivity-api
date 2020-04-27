@@ -176,6 +176,7 @@ set(COGCORE_HEADERS
     ./include/scenegraph/LineString.h
     ./include/scenegraph/Scene.h
     ./include/scenegraph/GroupingVisitor.h
+    ./include/scenegraph/IntegrateExternalsVisitor.h
     ./include/scenegraph/Material.h
     ./include/scenegraph/DrapeVisitor.h
     ./include/scenegraph/CoordinateTransformVisitor.h
@@ -508,6 +509,25 @@ set(COGCORE_HEADERS
 
 	./include/civetweb/civetweb.h
 	./include/civetweb/CivetServer.h
+
+    ./include/ModelKit/Attachment.h
+    ./include/ModelKit/AttachmentPoint.h
+    ./include/ModelKit/AvoidArea.h
+    ./include/ModelKit/AvoidClipper.h
+    ./include/ModelKit/Connection.h
+    ./include/ModelKit/CrossSection.h
+    ./include/ModelKit/Edge.h
+    ./include/ModelKit/Face.h
+    ./include/ModelKit/FlightToCSM.h
+    ./include/ModelKit/Material.h
+    ./include/ModelKit/ModelGenerator.h
+    ./include/ModelKit/ModelInstance.h
+    ./include/ModelKit/ModelKit.h
+    ./include/ModelKit/Reference.h
+    ./include/ModelKit/RGBA.h
+    ./include/ModelKit/SceneData.h
+    ./include/ModelKit/TextureReference.h
+    ./include/ModelKit/TunnelFeatureGenerator.h
 )
 
 ################################################################################
@@ -620,6 +640,7 @@ set(COGCORE_SOURCES
     ./src/scenegraph/Visitor.cpp
     ./src/scenegraph/Scene.cpp
     ./src/scenegraph/GroupingVisitor.cpp
+    ./src/scenegraph/IntegrateExternalsVisitor.cpp
     ./src/scenegraph/buildSceneFromFeature.cpp
     ./src/scenegraph/MappedTexture.cpp
     ./src/scenegraph/SGLineString.cpp
@@ -901,6 +922,23 @@ set(COGCORE_SOURCES
 	./src/civetweb/md5.inl
 	./src/civetweb/sha1.inl
 	./src/civetweb/timer.inl
+    
+    ./src/ModelKit/Attachment.cpp
+    ./src/ModelKit/AttachmentPoint.cpp
+    ./src/ModelKit/AvoidArea.cpp
+    ./src/ModelKit/AvoidClipper.cpp
+    ./src/ModelKit/Connection.cpp
+    ./src/ModelKit/CrossSection.cpp
+    ./src/ModelKit/Edge.cpp
+    ./src/ModelKit/Face.cpp
+    ./src/ModelKit/FlightToCSM.cpp
+    ./src/ModelKit/Material.cpp
+    ./src/ModelKit/ModelGenerator.cpp
+    ./src/ModelKit/ModelInstance.cpp
+    ./src/ModelKit/ModelKit.cpp
+    ./src/ModelKit/Reference.cpp
+    ./src/ModelKit/TextureReference.cpp
+    ./src/ModelKit/TunnelFeatureGenerator.cpp
 )
 
 ################################################################################
