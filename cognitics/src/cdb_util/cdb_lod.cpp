@@ -55,10 +55,36 @@ public:
             }
             if(child_filenames.empty())
                 return 0;
+
+            auto tile_info = cognitics::cdb::TileInfoForFileName(stem);
+            double tile_north, tile_south, tile_east, tile_west;
+            std::tie(tile_north, tile_south, tile_east, tile_west) = cognitics::cdb::NSEWBoundsForTileInfo(tile_info);
+            auto coords = cognitics::cdb::CoordinatesRange(tile_west, tile_east, tile_south, tile_north);
+            auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)tile_info.dataset), tile_info.lod - 1);
+            auto coverage_tiles = cognitics::cdb::CoverageTilesForTiles(cdb, tiles);
+            auto coverage_filenames = std::vector<std::string>();
+            for (auto ctile : coverage_tiles)
+            {
+                auto cdb = ctile.first;
+                auto tile = ctile.second;
+                auto tile_info = cognitics::cdb::TileInfoForTile(tile);
+                auto tile_filepath = cognitics::cdb::FilePathForTileInfo(tile_info);
+                auto tile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
+                auto filename = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename;
+                if (tile_info.dataset == 1)
+                    filename += ".tif";
+                if (tile_info.dataset == 4)
+                    filename += ".jp2";
+                if (std::find(coverage_filenames.begin(), coverage_filenames.end(), filename) == coverage_filenames.end())
+                    coverage_filenames.push_back(filename);
+            }
+
+
             GDALRasterSampler sampler;
+            for (auto coverage_filename : coverage_filenames)
+                sampler.AddFile(coverage_filename);
             for (auto child_filename : child_filenames)
                 sampler.AddFile(child_filename);
-            auto tile_info = cognitics::cdb::TileInfoForFileName(stem);
             if(tile_info.dataset == 1)
                 cognitics::cdb::BuildElevationTileFromSampler(cdb, sampler, tile_info);
             if(tile_info.dataset == 4)
