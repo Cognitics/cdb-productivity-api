@@ -441,8 +441,18 @@ std::vector<std::string> GSModelReferencesForTile(const std::string& cdb, const 
 
     auto attrvec = AttributesForDBF(dbf);
     auto attrmap = AttributesByCNAM(attrvec);
-    if(attrmap.empty())
-        return result;
+    if(!attrmap.empty())
+    {
+        for (auto feature : features)
+        {
+            auto cnam = feature->attributes.getAttributeAsString("CNAM");
+            if(attrmap.find(cnam) == attrmap.end())
+                continue;
+            auto attr = attrmap[cnam];
+            for(auto key : attr.getKeys())
+                feature->attributes.setAttribute(key, attr.getAttributeAsVariant(key));
+        }
+    }
 
     auto zip_tile = tileinfo;
     zip_tile.dataset = 300;
@@ -454,14 +464,11 @@ std::vector<std::string> GSModelReferencesForTile(const std::string& cdb, const 
 
     for (auto feature : features)
     {
-        auto cnam = feature->attributes.getAttributeAsString("CNAM");
-        if(attrmap.find(cnam) == attrmap.end())
-            continue;
-        auto facc = attrmap[cnam].getAttributeAsString("FACC");
-        auto fsc = attrmap[cnam].getAttributeAsString("FSC");
+        auto facc = feature->attributes.getAttributeAsString("FACC");
+        auto fsc = feature->attributes.getAttributeAsString("FSC");
         while (fsc.size() < 3)
             fsc = "0" + fsc;
-        auto modl = attrmap[cnam].getAttributeAsString("MODL");
+        auto modl = feature->attributes.getAttributeAsString("MODL");
         auto model_filename = zip + "/" + zip_filename + "_" + facc + "_" + fsc + "_" + modl + ".flt";
         result.push_back(model_filename);
     }
@@ -487,21 +494,28 @@ std::vector<std::string> GTModelReferencesForTile(const std::string& cdb, const 
 
     auto attrvec = AttributesForDBF(dbf);
     auto attrmap = AttributesByCNAM(attrvec);
-    if(attrmap.empty())
-        return result;
+    if(!attrmap.empty())
+    {
+        for (auto feature : features)
+        {
+            auto cnam = feature->attributes.getAttributeAsString("CNAM");
+            if(attrmap.find(cnam) == attrmap.end())
+                continue;
+            auto attr = attrmap[cnam];
+            for(auto key : attr.getKeys())
+                feature->attributes.setAttribute(key, attr.getAttributeAsVariant(key));
+        }
+    }
 
     auto fdd = FeatureDataDictionary();
 
     for (auto feature : features)
     {
-        auto cnam = feature->attributes.getAttributeAsString("CNAM");
-        if(attrmap.find(cnam) == attrmap.end())
-            continue;
-        auto facc = attrmap[cnam].getAttributeAsString("FACC");
-        auto fsc = attrmap[cnam].getAttributeAsString("FSC");
+        auto facc = feature->attributes.getAttributeAsString("FACC");
+        auto fsc = feature->attributes.getAttributeAsString("FSC");
         while (fsc.size() < 3)
             fsc = "0" + fsc;
-        auto modl = attrmap[cnam].getAttributeAsString("MODL");
+        auto modl = feature->attributes.getAttributeAsString("MODL");
         auto model_filename = cdb + "/GTModel/500_GTModelGeometry/" + fdd.Subdirectory(facc) + "/D500_S001_T001_" + facc + "_" + fsc + "_" + modl + ".flt";
         result.push_back(model_filename);
     }
@@ -1181,6 +1195,8 @@ bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int l
     for(auto tile : tiles)
     {
         auto tile_info = TileInfoForTile(tile);
+        tile_info.selector1 = cs1;
+        tile_info.selector2 = cs2;
         double tile_north, tile_south, tile_east, tile_west;
         std::tie(tile_north, tile_south, tile_east, tile_west) = NSEWBoundsForTileInfo(tile_info);
         auto tile_features = std::vector<sfa::Feature*>();
@@ -1352,7 +1368,7 @@ void ReportMissingGTFeatureData(const std::string& cdb, std::tuple<double, doubl
         auto tile_models = GTModelReferencesForTile(cdb, tile, nsew);
         if(tile_models.empty())
             continue;
-        log << "GT TILE: " << FileNameForTileInfo(tile) << " (" << tile_models.size() << " model references)" << log.endl;
+        //log << "GT TILE: " << FileNameForTileInfo(tile) << " (" << tile_models.size() << " model references)" << log.endl;
         model_filenames.insert(model_filenames.end(), tile_models.begin(), tile_models.end());
     }
 
