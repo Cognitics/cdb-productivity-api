@@ -91,7 +91,7 @@ bool TextureExists(const std::string& filename);
 
 RasterInfo ReadRasterInfo(const std::string& filename);
 bool WriteBytesToJP2(const std::string& filename, const RasterInfo& rasterinfo, const std::vector<unsigned char>& bytes);
-bool WriteFloatsToTIF(const std::string& filename, const RasterInfo& rasterinfo, const std::vector<float>& floats);
+bool WriteFloatsToTIF(const std::string& filename, const RasterInfo& rasterinfo, const std::vector<float>& floats, bool pixel_is_point = true);
 RasterInfo RasterInfoFromTileInfo(const TileInfo& tileinfo);
 std::vector<unsigned char> FlippedVertically(const std::vector<unsigned char>& bytes, size_t width, size_t height, size_t depth);
 std::vector<float> FlippedVertically(const std::vector<float>& bytes, size_t width, size_t height, size_t depth);
@@ -153,6 +153,8 @@ int ColumnsForLOD(int lod);
 int TileWidthAtLatitude(double latitude);
 
 std::vector<TileInfo> GenerateTileInfos(int lod, const NSEW& nsew);
+
+void BuildMinMaxElevation(const std::string& cdb, int lod_offset = 4);
 
 }
 }

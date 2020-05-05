@@ -795,7 +795,7 @@ void WriteFloatsToText(const std::string& filename, const RasterInfo& rasterinfo
     f.close();
 }
 
-bool WriteFloatsToTIF(const std::string& filename, const RasterInfo& rasterinfo, const std::vector<float>& floats)
+bool WriteFloatsToTIF(const std::string& filename, const RasterInfo& rasterinfo, const std::vector<float>& floats, bool pixel_is_point)
 {
     auto tif_driver = GetGDALDriverManager()->GetDriverByName("GTiff");
     if(tif_driver == NULL)
@@ -803,9 +803,13 @@ bool WriteFloatsToTIF(const std::string& filename, const RasterInfo& rasterinfo,
 
     double geotransform[6] = { rasterinfo.OriginX - (0.5 * rasterinfo.PixelSizeX), rasterinfo.PixelSizeX, 0.0, rasterinfo.OriginY + (0.5 * rasterinfo.PixelSizeY), 0.0, rasterinfo.PixelSizeY };
 
+    ccl::makeDirectory(ccl::FileInfo(filename).getDirName());
     auto tif_ds = tif_driver->Create(filename.c_str(), rasterinfo.Width, rasterinfo.Height, 1, GDT_Float32, nullptr);
     tif_ds->SetGeoTransform(geotransform);
-    tif_ds->SetMetadataItem("AREA_OR_POINT", "POINT");
+    if(pixel_is_point)
+        tif_ds->SetMetadataItem("AREA_OR_POINT", "POINT");
+    else
+        tif_ds->SetMetadataItem("AREA_OR_POINT", "AREA");
 
     OGRSpatialReference oSRS;
     oSRS.SetWellKnownGeogCS("WGS84");
@@ -1219,6 +1223,8 @@ bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int l
         }
         if(tile_features.empty())
             continue;
+        if(!models_path.empty())
+            InjectGTModels(cdb, tile_features, models_path, textures_path);
         auto tile_filepath = FilePathForTileInfo(tile_info);
         auto tile_filename = FileNameForTileInfo(tile_info);
         auto tile_fn = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename + ".shp";
@@ -1243,10 +1249,6 @@ bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int l
             }
         }
         file.close();
-    }
-    if(!models_path.empty())
-    {
-        InjectGTModels(cdb, features, models_path, textures_path);
     }
     for(auto feature : features)
         delete feature;
@@ -1461,8 +1463,13 @@ void InjectGTModels(const std::string& cdb, const std::vector<sfa::Feature*>& fe
         while (fsc.size() < 3)
             fsc = "0" + fsc;
         auto modl = feature->attributes.getAttributeAsString("MODL");
-        auto infile = source_model_path + "/" + modl + ".flt";
-        auto outfile = cdb + "/GTModel/500_GTModelGeometry/" + fdd.Subdirectory(facc) + "/D500_S001_T001_" + facc + "_" + fsc + "_" + modl + ".flt";
+        auto modl_base = ccl::FileInfo(modl).getBaseName(true);
+        modl = modl_base + ".flt";
+        auto infile = source_model_path + "/" + modl;
+        auto relpath = "/GTModel/500_GTModelGeometry/" + fdd.Subdirectory(facc) + "/D500_S001_T001_" + facc + "_" + fsc + "_" + modl;
+        auto outfile = cdb + relpath;
+        auto reffile = "../../../../../.." + relpath;
+        feature->attributes.setAttribute("MODL", reffile);
         source_by_target[outfile] = infile;
     }
     for(auto entry : source_by_target)
@@ -1794,6 +1801,86 @@ std::vector<TileInfo> GenerateTileInfos(int lod, const NSEW& nsew)
     return result;
 }
 
+void BuildMinMaxElevation(const std::string& cdb, int lod_offset)
+{
+    auto elevation_filenames = FileNamesForTiledDataset(cdb, 1);
+    auto elevation_tileinfos = TileInfoForFileNames(elevation_filenames);
+    auto minmax_tiles = std::vector<Tile>();
+    for(auto elevation_tileinfo : elevation_tileinfos)
+    {
+        auto nsew = NSEWBoundsForTileInfo(elevation_tileinfo);
+        auto coords = CoordinatesRange(std::get<3>(nsew), std::get<2>(nsew), std::get<1>(nsew), std::get<0>(nsew));
+        auto tiles = generate_tiles(coords, Dataset((uint16_t)2), elevation_tileinfo.lod - lod_offset);
+        minmax_tiles.insert(minmax_tiles.end(), tiles.begin(), tiles.end());
+    }
+    std::sort(minmax_tiles.begin(), minmax_tiles.end());
+    minmax_tiles.erase(std::unique(minmax_tiles.begin(), minmax_tiles.end()), minmax_tiles.end());
+    std::reverse(minmax_tiles.begin(), minmax_tiles.end());
+    for(auto tile : minmax_tiles)
+    {
+        auto tile_info = TileInfoForTile(tile);
+        int dim = TileDimensionForLod(tile_info.lod);
+        auto min_floats = std::vector<float>(dim * dim);
+        auto max_floats = std::vector<float>(dim * dim);
+        {
+            auto elevation_tile_info = tile_info;
+            elevation_tile_info.dataset = 1;
+            elevation_tile_info.selector1 = 1;
+            elevation_tile_info.selector2 = 1;
+            auto elevation_tif_filepath = FilePathForTileInfo(elevation_tile_info);
+            auto elevation_tif_filename = FileNameForTileInfo(elevation_tile_info);
+            auto elevation_tif = cdb + "/Tiles/" + elevation_tif_filepath + "/" + elevation_tif_filename + ".tif";
+            auto elevation_floats = FloatsFromTIF(elevation_tif);
+            for(int row = 0; row < dim; ++row)
+            {
+                for(int col = 0; col < dim; ++col)
+                {
+                    // note that this doesn't follow the spec exactly
+                    // - we should reference the adjacent tiles to the north/east
+                    // - we should upsample from lower LODs if available for the north/east
+                    // - coarser LODs in the minmax dataset should be taken from the higher LOD minmax rather than the associated elevation layer
+                    int index = (row * dim) + col;
+                    float sw = elevation_floats[index + 0];
+                    float se = (col + 1 < dim) ? elevation_floats[index + 1] : sw;
+                    float nw = (row + 1 < dim) ? elevation_floats[index + dim] : sw;
+                    float ne = sw;
+                    if(row + 1 < dim)
+                        ne = se;
+                    if(col + 1 < dim)
+                        ne = nw;
+                    if((row + 1 < dim) && (col + 1 < dim))
+                        elevation_floats[index + dim + 1];
+                    float min_value = std::min<float>(sw, se);
+                    min_value = std::min<float>(min_value, nw);
+                    min_value = std::min<float>(min_value, ne);
+                    min_floats[index] = min_value;
+                    float max_value = std::max<float>(sw, se);
+                    max_value = std::max<float>(max_value, nw);
+                    max_value = std::max<float>(max_value, ne);
+                    max_floats[index] = max_value;
+                }
+            }
+        }
+        tile_info.dataset = 2;
+        tile_info.selector1 = 1;
+        {
+            tile_info.selector2 = 1;
+            auto tif_filepath = FilePathForTileInfo(tile_info);
+            auto tif_filename = FileNameForTileInfo(tile_info);
+            auto tif = cdb + "/Tiles/" + tif_filepath + "/" + tif_filename + ".tif";
+            auto raster_info = RasterInfoFromTileInfo(tile_info);
+            WriteFloatsToTIF(tif, raster_info, min_floats, false);
+        }
+        {
+            tile_info.selector2 = 2;
+            auto tif_filepath = FilePathForTileInfo(tile_info);
+            auto tif_filename = FileNameForTileInfo(tile_info);
+            auto tif = cdb + "/Tiles/" + tif_filepath + "/" + tif_filename + ".tif";
+            auto raster_info = RasterInfoFromTileInfo(tile_info);
+            WriteFloatsToTIF(tif, raster_info, max_floats, false);
+        }
+    }
+}
 
 
 }
