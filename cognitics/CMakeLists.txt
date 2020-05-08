@@ -52,7 +52,7 @@ endif(UNIX)
 
 if(WIN32)
     set(CMAKE_CXX_FLAGS_DEBUG "/MP /Od /EHsc /RTC1 /MDd /W3 /nologo /c /Zi /TP /errorReport:prompt -DCOG_DEBUG -DDEBUG=1")
-    set(CMAKE_CXX_FLAGS_RELEASE "/DEBUG /MP /O2 /FD /EHsc /MD /W3 /nologo /c /Zi /TP /errorReport:prompt -DCOG_RELEASE -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_RELEASE "/MP /O2 /FD /EHsc /MD /W3 /nologo /c /Zi /TP /errorReport:prompt -DCOG_RELEASE -DNDEBUG")
 endif(WIN32)
 
 message("THIRD_PARTY_DIR: ${THIRD_PARTY_DIR}")
@@ -109,7 +109,6 @@ set(COGCORE_HEADERS
     ./include/ccl/config.h
     ./include/ccl/miniz.h
     ./include/ccl/ArgumentParser.h
-    ./include/ccl/gdal.h
     ./include/cad/AttributeDictionary.h
     ./include/scenegraphobj/scenegraphobj.h
     ./include/sfa_file_factory/sfa_file_factory.h
@@ -176,7 +175,6 @@ set(COGCORE_HEADERS
     ./include/scenegraph/LineString.h
     ./include/scenegraph/Scene.h
     ./include/scenegraph/GroupingVisitor.h
-    ./include/scenegraph/IntegrateExternalsVisitor.h
     ./include/scenegraph/Material.h
     ./include/scenegraph/DrapeVisitor.h
     ./include/scenegraph/CoordinateTransformVisitor.h
@@ -509,25 +507,6 @@ set(COGCORE_HEADERS
 
 	./include/civetweb/civetweb.h
 	./include/civetweb/CivetServer.h
-
-    ./include/ModelKit/Attachment.h
-    ./include/ModelKit/AttachmentPoint.h
-    ./include/ModelKit/AvoidArea.h
-    ./include/ModelKit/AvoidClipper.h
-    ./include/ModelKit/Connection.h
-    ./include/ModelKit/CrossSection.h
-    ./include/ModelKit/Edge.h
-    ./include/ModelKit/Face.h
-    ./include/ModelKit/FlightToCSM.h
-    ./include/ModelKit/Material.h
-    ./include/ModelKit/ModelGenerator.h
-    ./include/ModelKit/ModelInstance.h
-    ./include/ModelKit/ModelKit.h
-    ./include/ModelKit/Reference.h
-    ./include/ModelKit/RGBA.h
-    ./include/ModelKit/SceneData.h
-    ./include/ModelKit/TextureReference.h
-    ./include/ModelKit/TunnelFeatureGenerator.h
 )
 
 ################################################################################
@@ -580,7 +559,6 @@ set(COGCORE_SOURCES
     ./src/ccl/ProgressObserver.cpp
     ./src/ccl/miniz.c
     ./src/ccl/ArgumentParser.cpp
-    ./src/ccl/gdal.cpp
     ./src/sfa_file_factory/sfa_file_factory.cpp
     ./src/gltf/GltfJson.cpp
     ./src/gltf/GltfInfo.cpp
@@ -640,7 +618,6 @@ set(COGCORE_SOURCES
     ./src/scenegraph/Visitor.cpp
     ./src/scenegraph/Scene.cpp
     ./src/scenegraph/GroupingVisitor.cpp
-    ./src/scenegraph/IntegrateExternalsVisitor.cpp
     ./src/scenegraph/buildSceneFromFeature.cpp
     ./src/scenegraph/MappedTexture.cpp
     ./src/scenegraph/SGLineString.cpp
@@ -922,23 +899,6 @@ set(COGCORE_SOURCES
 	./src/civetweb/md5.inl
 	./src/civetweb/sha1.inl
 	./src/civetweb/timer.inl
-    
-    ./src/ModelKit/Attachment.cpp
-    ./src/ModelKit/AttachmentPoint.cpp
-    ./src/ModelKit/AvoidArea.cpp
-    ./src/ModelKit/AvoidClipper.cpp
-    ./src/ModelKit/Connection.cpp
-    ./src/ModelKit/CrossSection.cpp
-    ./src/ModelKit/Edge.cpp
-    ./src/ModelKit/Face.cpp
-    ./src/ModelKit/FlightToCSM.cpp
-    ./src/ModelKit/Material.cpp
-    ./src/ModelKit/ModelGenerator.cpp
-    ./src/ModelKit/ModelInstance.cpp
-    ./src/ModelKit/ModelKit.cpp
-    ./src/ModelKit/Reference.cpp
-    ./src/ModelKit/TextureReference.cpp
-    ./src/ModelKit/TunnelFeatureGenerator.cpp
 )
 
 ################################################################################
@@ -1011,36 +971,77 @@ source_group("Source Files\\ogr" REGULAR_EXPRESSION "src/ogr/.*$")
 link_libraries(cogcore)
 
 
-set (LM2OBJ_SOURCES ./lmbundle2obj/lmbundle2obj.cpp)
+SET(OBJ_EXT_SOURCES ./obj-preprocess/obj-preprocess.cpp
+                    ./obj-preprocess/obj-preprocess.h
+		    ./obj-preprocess/quickobj.cpp
+		    ./obj-preprocess/quickobj.h
+		    ./obj-preprocess/meshrender.cpp
+		    ./obj-preprocess/MeshRender.h)
 
-add_executable(lmbundle2obj ${LM2OBJ_SOURCES})
+add_executable(obj-preprocess ${OBJ_EXT_SOURCES})
+target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
+target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/lpng154/lib/libpng15.lib")
+target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")			
+target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/fbxsdk/lib/vs2015/x64/${CMAKE_BUILD_TYPE}/libfbxsdk.lib")
+target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/glew/release/lib/glew32.lib")
+target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/glut/lib/freeglut.lib")
+
+if(FALSE) #WIN32)
+    set(CMAKE_DEBUG_POSTFIX "d")
+    target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
+    target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+    target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+    target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+
+    target_link_libraries(obj-preprocess
+        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgd.lib"
+        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osg.lib")
+
+    target_link_libraries(obj-preprocess
+        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgGAd.lib"
+        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgGA.lib")
+
+    target_link_libraries(obj-preprocess
+        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgDBd.lib"
+        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgDB.lib")
+
+    target_link_libraries(obj-preprocess
+        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib//osgUtild.lib"
+        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgUtil.lib")
+
+    target_link_libraries(obj-preprocess
+        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib//OpenThreadsd.lib"
+        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/OpenThreads.lib")
+
+endif(WIN32)
+
 
 SET(OBJ_EXT_SOURCES ./obj-extract/obj-extract.cpp
-                    ./obj-extract/obj-extract.h)
+                    ./obj-extract/obj-extract.h
+		    ./obj-extract/quickobj.cpp
+		    ./obj-extract/quickobj.h)
 
 add_executable(obj-extract ${OBJ_EXT_SOURCES})
-if(WIN32)
-    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
-    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
-    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
-    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
-endif(WIN32)
-if(UNIX)
-    target_link_libraries(obj-extract ${CMAKE_DL_LIBS})
-    target_link_libraries(obj-extract "pthread")
-    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
-    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
-    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
-    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
-endif(UNIX)
+target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
+target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/lpng154/lib/libpng15.lib")
+target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")			
+target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/fbxsdk/lib/vs2015/x64/${CMAKE_BUILD_TYPE}/libfbxsdk.lib")
+target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glew/release/lib/glew32.lib")
+target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glut/lib/freeglut.lib")
 
-if(WIN32)
+if(FALSE) #WIN32)
     set(CMAKE_DEBUG_POSTFIX "d")
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
-if(FALSE)
+
     target_link_libraries(obj-extract 
         debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgd.lib"
         optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osg.lib")
@@ -1060,7 +1061,7 @@ if(FALSE)
     target_link_libraries(obj-extract 
         debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib//OpenThreadsd.lib"
         optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/OpenThreads.lib")
-endif(FALSE)
+
 endif(WIN32)
 
 
@@ -1210,8 +1211,6 @@ if(COG_BUILD_GL_TOOLS)
 
     add_executable(mesh2cdb
         mesh2cdb/quickobj.cpp
-		mesh2cdb/quickobj.h
-#		mesh2cdb/quickobj_lmb.cpp
         mesh2cdb/mesh2cdb.cpp
         mesh2cdb/mesh2cdb.h
         mesh2cdb/meshconvert.cpp

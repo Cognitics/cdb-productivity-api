@@ -10,6 +10,7 @@
 #include "CoordinateSystems/EllipsoidTangentPlane.h"
 #include "scenegraph/Visitor.h" 
 
+
 // Transform all points in a scene using the specified math transform
 class ENUTransformVisitor : public scenegraph::Visitor
 {
