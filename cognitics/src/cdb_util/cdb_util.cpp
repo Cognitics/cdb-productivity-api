@@ -516,7 +516,9 @@ std::vector<std::string> GTModelReferencesForTile(const std::string& cdb, const 
         while (fsc.size() < 3)
             fsc = "0" + fsc;
         auto modl = feature->attributes.getAttributeAsString("MODL");
-        auto model_filename = cdb + "/GTModel/500_GTModelGeometry/" + fdd.Subdirectory(facc) + "/D500_S001_T001_" + facc + "_" + fsc + "_" + modl + ".flt";
+        auto modl_base = ccl::FileInfo(modl).getBaseName(true);
+        modl = modl_base + ".flt";
+        auto model_filename = cdb + "/GTModel/500_GTModelGeometry/" + fdd.Subdirectory(facc) + "/D500_S001_T001_" + facc + "_" + fsc + "_" + modl;
         result.push_back(model_filename);
     }
 
@@ -1464,13 +1466,11 @@ void InjectGTModels(const std::string& cdb, const std::vector<sfa::Feature*>& fe
             fsc = "0" + fsc;
         auto modl = feature->attributes.getAttributeAsString("MODL");
         auto modl_base = ccl::FileInfo(modl).getBaseName(true);
-        modl = modl_base + ".flt";
         auto infile = source_model_path + "/" + modl;
         auto relpath = "/GTModel/500_GTModelGeometry/" + fdd.Subdirectory(facc) + "/D500_S001_T001_" + facc + "_" + fsc + "_" + modl;
         auto outfile = cdb + relpath;
-        auto reffile = "../../../../../.." + relpath;
-        feature->attributes.setAttribute("MODL", reffile);
         source_by_target[outfile] = infile;
+        feature->attributes.setAttribute("MODL", modl_base);
     }
     for(auto entry : source_by_target)
     {
