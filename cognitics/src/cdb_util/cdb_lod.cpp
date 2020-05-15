@@ -139,8 +139,9 @@ bool cdb_lod(const std::string& cdb, int dataset, int workers)
 
             auto lod_files = std::vector<std::string>();
             {
+                std::error_code ec;
                 auto tmp_files = std::vector<std::string>();
-                for(const auto& entry : std::filesystem::recursive_directory_iterator(lod_path))
+                for(const auto& entry : std::filesystem::recursive_directory_iterator(lod_path,ec))
                 {
                     if(std::filesystem::is_regular_file(entry))
                         tmp_files.push_back(entry.path().string());
@@ -161,7 +162,8 @@ bool cdb_lod(const std::string& cdb, int dataset, int workers)
 
             auto parent_files = std::vector<std::string>();
             {
-                for(const auto& entry : std::filesystem::recursive_directory_iterator(parent_path))
+                std::error_code ec;
+                for(const auto& entry : std::filesystem::recursive_directory_iterator(parent_path, ec))
                 {
                     if(std::filesystem::is_regular_file(entry))
                         parent_files.push_back(entry.path().string());

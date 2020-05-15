@@ -27,11 +27,15 @@ DEALINGS IN THE SOFTWARE.
 #include "ModelKit/Connection.h"
 #include "ModelKit/Material.h"
 #include "ModelKit/AvoidArea.h"
-#if (_MSC_VER >= 1700)
+
+//#if (_MSC_VER >= 1700)
 #include <memory>
-#else
-#include <boost/tr1/memory.hpp>
-#endif
+//#else
+//#include <boost/memory.hpp>
+//#endif
+
+
+
 
 namespace modelkit
 {
@@ -136,7 +140,7 @@ namespace modelkit
 
 	};
 
-	typedef std::tr1::shared_ptr<CrossSection> CrossSectionSP;
+	typedef std::shared_ptr<CrossSection> CrossSectionSP;
 
 
 }
