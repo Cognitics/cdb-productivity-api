@@ -1018,6 +1018,21 @@ if(FALSE) #WIN32)
 
 endif(WIN32)
 
+SET(OBJ_EXT_SOURCES ./obj-enu/obj-enu.cpp
+                    ./obj-enu/obj-enu.h
+		    ./obj-enu/quickobj.cpp
+		    ./obj-enu/quickobj.h)
+
+add_executable(obj-enu ${OBJ_EXT_SOURCES})
+target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
+target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/lpng154/lib/libpng15.lib")
+target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")			
+target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/fbxsdk/lib/vs2015/x64/${CMAKE_BUILD_TYPE}/libfbxsdk.lib")
+target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/glew/release/lib/glew32.lib")
+target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/glut/lib/freeglut.lib")
 
 SET(OBJ_EXT_SOURCES ./obj-extract/obj-extract.cpp
                     ./obj-extract/obj-extract.h

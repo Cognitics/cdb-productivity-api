@@ -222,15 +222,15 @@ int main(int argc, char **argv)
     }
 	putenv("GDAL_DATA=./gdal-data");
 
-	std::string visitor_center_location = "C:/Users/mkrentz/Development/cdb_mesh/cdb-productivity-api/cognitics/build/data/";
+	std::string visitor_center_location = "C:\\Users\\mkrentz\\Development\\3DStuffs\\models\\fort_story\\final\\";
 	// C:\Users\mkrentz\Development\cdb_mesh\cdb-productivity-api\cognitics\build\data
 
 	auto building_polygons = geometryListFromPolygonJson(visitor_center_location + "Polygons.json");
-	auto mesh_offsets = readOffsetXYZ(visitor_center_location + "Mesh_offset.xyz");
-	auto prj_str = visitor_center_location + "Mesh_wkt.prj";
+	auto mesh_offsets = readOffsetXYZ(visitor_center_location + "output.xyz");
+	auto prj_str = visitor_center_location + "output.prj";
 
 	auto to_print = fileToWKT(prj_str);
-	const auto file_str = visitor_center_location + "NGA Visitor Center.obj";
+	const auto file_str = visitor_center_location + "output.obj";
 	const auto texture_dir = visitor_center_location;
 
 	ObjSrs mesh_srs;
