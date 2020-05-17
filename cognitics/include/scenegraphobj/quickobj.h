@@ -232,6 +232,15 @@ namespace cognitics {
         bool glRender();
         bool isValid() { return _isValid;}
 
+
+		// MIKEY ADDED
+		bool exportObj(const std::string &filename);
+
+		void QuickObj::flattenVert(uint32_t index, float up_val);
+
+		void addSubMesh(const QuickSubMesh &submesh);
+		// END MIKEY ADDED
+
         bool transform(Cognitics::CoordinateSystems::EllipsoidTangentPlane *_etp,
             OGRCoordinateTransformation *_coordTrans,
             const sfa::Point &_offset);

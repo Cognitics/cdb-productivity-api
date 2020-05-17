@@ -3,7 +3,7 @@
 #include <windows.h>
 #endif
 
-#include "quickobj.h"
+#include "scenegraphobj/quickobj.h"
 #include <stdio.h>
 #include <string.h>
 #include <float.h>
@@ -13,6 +13,7 @@
 #include <fstream>
 #include <GL/glew.h>
 #include <GL/gl.h>
+#include <GL/freeglut.h>
 #include <ip/jpgwrapper.h>
 
 #include <errno.h>
@@ -1355,7 +1356,91 @@ namespace cognitics {
         return true;
     }
 
+	bool QuickObj::exportObj(const std::string &filename)
+	{
+		std::string out_name = filename.c_str();
+		out_name += ".obj";
+		std::ofstream out(out_name);
 
+		out << "# Produced by Cognitics\n";
+		std::time_t now = std::time(0);
+		std::string now_str = std::ctime(&now);
+		out << "# " + now_str;
+		out << "# " + std::to_string(this->verts.size()) + " vertices, " + std::to_string(this->vertIdxs.size()) + " faces\n";
+		out << "\nmtllib " + this->materialFilename + "\n\n";
+		if (this->verts.size() > 0)
+		{
+			for (cognitics::QuickVert &vertex : this->verts)
+			{
+				if (vertex.x != 0.000000 && vertex.y != 0.000000) {
+					out << "v " + std::to_string(vertex.x) + " " + std::to_string(vertex.y) + " " + std::to_string(vertex.z) + "\n";
+				}
+			}
+		}
+		if (this->uvs.size() > 0)
+		{
+			for (cognitics::QuickVert &uv : this->uvs)
+			{
+				if (uv.x != 0.000000) {
+					std::string w = uv.z == 0 ? "" : " " + std::to_string(uv.z);
+					out << "vt " + std::to_string(uv.x) + " " + std::to_string(uv.y) + w + "\n";
+				}
+			}
+		}
+		if (this->norms.size() > 0)
+		{
+			for (cognitics::QuickVert &norm : this->norms)
+			{
+				if (norm.x != 0.000000) {
+					out << "vn " + std::to_string(norm.x) + " " + std::to_string(norm.y) + " " + std::to_string(norm.z) + "\n";
+				}
+			}
+		}
+
+		for (cognitics::QuickSubMesh &subMesh : this->subMeshes)
+		{
+			if (subMesh.vertIdxs.size() < 1)
+			{
+				continue;
+			}
+			out << "\n";
+			out << "usemtl " + subMesh.materialName + "\n";
+			out << "\n";
+			for (int i = 0; i < subMesh.vertIdxs.size(); i += 3)
+			{
+				std::string vert_idx = std::to_string(subMesh.vertIdxs.at(i));
+				std::string uv_idx = i < subMesh.uvIdxs.size() ? "/" + std::to_string(subMesh.uvIdxs.at(i)) : "";
+				std::string norm_idx = i < subMesh.normIdxs.size() ? "/" + std::to_string(subMesh.normIdxs.at(i)) + " " : " ";
+
+				std::string vert_idx_one = std::to_string(subMesh.vertIdxs.at(i + 1));
+				std::string uv_idx_one = i + 1 < subMesh.uvIdxs.size() ? "/" + std::to_string(subMesh.uvIdxs.at(i + 1)) : "";
+				std::string norm_idx_one = i + 1 < subMesh.normIdxs.size() ? "/" + std::to_string(subMesh.normIdxs.at(i + 1)) + " " : " ";
+
+				std::string vert_idx_two = std::to_string(subMesh.vertIdxs.at(i + 2));
+				std::string uv_idx_two = i + 2 < subMesh.uvIdxs.size() ? "/" + std::to_string(subMesh.uvIdxs.at(i + 2)) : "";
+				std::string norm_idx_two = i + 2 < subMesh.normIdxs.size() ? "/" + std::to_string(subMesh.normIdxs.at(i + 2)) + "\n" : "\n";
+
+                //Ignore degenerate faces (triangles with no volume, because they share a vert).
+                if((vert_idx == vert_idx_one ) || (vert_idx == vert_idx_two) || (vert_idx_two == vert_idx_one))
+                {
+                    continue;
+                }
+			    out << "f " + vert_idx + uv_idx + norm_idx + vert_idx_one + uv_idx_one + norm_idx_one + vert_idx_two + uv_idx_two + norm_idx_two;
+			}
+		}
+		out.close();
+		return true;
+	}
+
+	void QuickObj::addSubMesh(const QuickSubMesh &submesh)
+	{
+		subMeshes.push_back(submesh);
+	}
+
+	void QuickObj::flattenVert(uint32_t index, float up_val)
+	{
+		verts[index].z = up_val;
+	}
 
     };
 

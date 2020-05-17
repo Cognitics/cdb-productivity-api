@@ -112,6 +112,7 @@ set(COGCORE_HEADERS
     ./include/ccl/gdal.h
     ./include/cad/AttributeDictionary.h
     ./include/scenegraphobj/scenegraphobj.h
+    ./include/scenegraphobj/quickobj.h
     ./include/sfa_file_factory/sfa_file_factory.h
     ./include/gltf/GltfData.h
     ./include/gltf/Tileset.h
@@ -881,6 +882,7 @@ set(COGCORE_SOURCES
     ./src/scenegraphfbx/buildFbxFromScene.cpp
     ./src/scenegraphobj/buildObjFromScene.cpp
     ./src/scenegraphobj/buildSceneFromOBJ.cpp
+    ./src/scenegraphobj/quickobj.cpp
     ./src/b64/base64.cpp    
     ./meshgen/ws/WebServices.cpp
     ./include/sqlite/sqlite3.c
@@ -1012,6 +1014,10 @@ link_libraries(cogcore)
 
 
 set (LM2OBJ_SOURCES ./lmbundle2obj/lmbundle2obj.cpp)
+SET(OBJ_EXT_SOURCES ./obj-preprocess/obj-preprocess.cpp
+                    ./obj-preprocess/obj-preprocess.h
+		    ./obj-preprocess/meshrender.cpp
+		    ./obj-preprocess/MeshRender.h)
 
 add_executable(lmbundle2obj ${LM2OBJ_SOURCES})
 
@@ -1209,7 +1215,6 @@ if(COG_BUILD_GL_TOOLS)
     endif(UNIX)
 
     add_executable(mesh2cdb
-        mesh2cdb/quickobj.cpp
 		mesh2cdb/quickobj.h
 #		mesh2cdb/quickobj_lmb.cpp
         mesh2cdb/mesh2cdb.cpp
@@ -1255,7 +1260,6 @@ if(COG_BUILD_GL_TOOLS)
     endif(UNIX)
 
     add_executable(mesh2cdb-rest
-        mesh2cdb/quickobj.cpp
         mesh2cdb/mesh2cdb-rest.cpp
         mesh2cdb/mesh2cdb.h
         mesh2cdb/meshconvert.cpp

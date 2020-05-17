@@ -7,7 +7,7 @@
 #include "ccl/ObjLog.h"
 #include "cdb_tile/Tile.h"
 #include "CoordinateSystems/EllipsoidTangentPlane.h"
-#include "quickobj.h"
+#include "scenegraphobj/quickobj.h"
 #include <iostream>
 #include <fstream>
 #include "rapidxml/rapidxml.hpp"
