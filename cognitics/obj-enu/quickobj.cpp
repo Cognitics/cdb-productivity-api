@@ -1406,6 +1406,7 @@ namespace cognitics {
 				}
 			}
 		}
+		/*
 		if (this->norms.size() > 0)
 		{
 			for (cognitics::QuickVert &norm : this->norms)
@@ -1415,6 +1416,7 @@ namespace cognitics {
 				}
 			}
 		}
+		*/
 
 		for (cognitics::QuickSubMesh &subMesh : this->subMeshes)
 		{
@@ -1429,15 +1431,18 @@ namespace cognitics {
 			{
 				std::string vert_idx = std::to_string(subMesh.vertIdxs.at(i));
 				std::string uv_idx = i < subMesh.uvIdxs.size() ? "/" + std::to_string(subMesh.uvIdxs.at(i)) : "";
-				std::string norm_idx = i < subMesh.normIdxs.size() ? "/" + std::to_string(subMesh.normIdxs.at(i)) + " " : " ";
+				// std::string norm_idx = i < subMesh.normIdxs.size() ? "/" + std::to_string(subMesh.normIdxs.at(i)) + " " : " ";
+				std::string norm_idx = " ";
 
 				std::string vert_idx_one = std::to_string(subMesh.vertIdxs.at(i + 1));
 				std::string uv_idx_one = i + 1 < subMesh.uvIdxs.size() ? "/" + std::to_string(subMesh.uvIdxs.at(i + 1)) : "";
-				std::string norm_idx_one = i + 1 < subMesh.normIdxs.size() ? "/" + std::to_string(subMesh.normIdxs.at(i + 1)) + " " : " ";
+				// std::string norm_idx_one = i + 1 < subMesh.normIdxs.size() ? "/" + std::to_string(subMesh.normIdxs.at(i + 1)) + " " : " ";
+				std::string norm_idx_one = " ";
 
 				std::string vert_idx_two = std::to_string(subMesh.vertIdxs.at(i + 2));
 				std::string uv_idx_two = i + 2 < subMesh.uvIdxs.size() ? "/" + std::to_string(subMesh.uvIdxs.at(i + 2)) : "";
-				std::string norm_idx_two = i + 2 < subMesh.normIdxs.size() ? "/" + std::to_string(subMesh.normIdxs.at(i + 2)) + "\n" : "\n";
+				// std::string norm_idx_two = i + 2 < subMesh.normIdxs.size() ? "/" + std::to_string(subMesh.normIdxs.at(i + 2)) + "\n" : "\n";
+				std::string norm_idx_two = "\n";
 				if ((vert_idx == vert_idx_one) || (vert_idx == vert_idx_two) || (vert_idx_two == vert_idx_one))
 				{
 					continue;
