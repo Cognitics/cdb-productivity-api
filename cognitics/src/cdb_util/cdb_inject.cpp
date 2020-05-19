@@ -184,7 +184,10 @@ bool cdb_inject(cdb_inject_parameters& params)
             auto jp2_files = ccl::FileInfo::getAllFiles(imagery_param, "*.jp2");
             std::transform(jp2_files.begin(), jp2_files.end(), std::back_inserter(imagery_filenames), [](const ccl::FileInfo& fi) { return fi.getFileName(); });
         }
-        imagery_filenames.push_back(imagery_param);
+        else
+        {
+            imagery_filenames.push_back(imagery_param);
+        }
     }
     bool imagery_enabled = !imagery_filenames.empty();
 
@@ -201,7 +204,10 @@ bool cdb_inject(cdb_inject_parameters& params)
             auto tif_files = ccl::FileInfo::getAllFiles(elevation_param, "*.tif");
             std::transform(tif_files.begin(), tif_files.end(), std::back_inserter(elevation_filenames), [](const ccl::FileInfo& fi) { return fi.getFileName(); });
         }
-        elevation_filenames.push_back(elevation_param);
+        else
+        {
+            elevation_filenames.push_back(elevation_param);
+        }
     }
     bool elevation_enabled = !elevation_filenames.empty();
 
