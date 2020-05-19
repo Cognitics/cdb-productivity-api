@@ -30,6 +30,54 @@ struct TileInfo
     int lod { 0 };
     int uref { 0 };
     int rref { 0 };
+    bool operator==(const TileInfo& rhs) const
+    {
+        return (latitude == rhs.latitude)
+            && (longitude == rhs.longitude)
+            && (dataset == rhs.dataset)
+            && (selector1 == rhs.selector1)
+            && (selector2 == rhs.selector2)
+            && (lod == rhs.lod)
+            && (uref == rhs.uref)
+            && (rref == rhs.rref) ;
+    }
+    bool operator!=(const TileInfo& rhs) const { return !(*this == rhs); } 
+    bool operator<(const TileInfo& rhs) const
+    {
+        if(latitude < rhs.latitude)
+            return true;
+        if(latitude > rhs.latitude)
+            return false;
+        if(longitude < rhs.longitude)
+            return true;
+        if(longitude > rhs.longitude)
+            return false;
+        if(dataset < rhs.dataset)
+            return true;
+        if(dataset > rhs.dataset)
+            return false;
+        if(selector1 < rhs.selector1)
+            return true;
+        if(selector1 > rhs.selector1)
+            return false;
+        if(selector2 < rhs.selector2)
+            return true;
+        if(selector2 > rhs.selector2)
+            return false;
+        if(lod < rhs.lod)
+            return true;
+        if(lod > rhs.lod)
+            return false;
+        if(uref < rhs.uref)
+            return true;
+        if(uref > rhs.uref)
+            return false;
+        if(rref < rhs.rref)
+            return true;
+        if(rref > rhs.rref)
+            return false;
+        return false;
+    }
 };
 
 struct RasterInfo

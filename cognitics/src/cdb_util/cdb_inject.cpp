@@ -214,7 +214,7 @@ bool cdb_inject(cdb_inject_parameters& params)
     auto raster_info_by_filename = std::map<std::string, cognitics::cdb::RasterInfo>();
 
     auto imagery_tiles = std::vector<cognitics::cdb::Tile>();
-    auto imagery_tileinfos = std::vector<cognitics::cdb::TileInfo>();
+    auto imagery_tileinfos = std::set<cognitics::cdb::TileInfo>();
     if (imagery_enabled)
     {
         log << ccl::LINFO << "Gathering information on " << imagery_filenames.size() << " imagery file(s)..." << log.endl;
@@ -235,15 +235,19 @@ bool cdb_inject(cdb_inject_parameters& params)
             auto raster_tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)0), target_lod);
             imagery_tiles.insert(imagery_tiles.end(), raster_tiles.begin(), raster_tiles.end());
         }
-        std::sort(imagery_tiles.begin(), imagery_tiles.end());
-        imagery_tiles.erase(std::unique(imagery_tiles.begin(), imagery_tiles.end()), imagery_tiles.end());
-        log << "Identified " << imagery_tiles.size() << " imagery tiles to generate." << log.endl;
-        std::transform(imagery_tiles.begin(), imagery_tiles.end(), std::back_inserter(imagery_tileinfos), [](const cognitics::cdb::Tile& tile) { return cognitics::cdb::TileInfoForTile(tile); });
-        std::for_each(imagery_tileinfos.begin(), imagery_tileinfos.end(), [](cognitics::cdb::TileInfo& ti) { ti.dataset = 4; });
+        for(auto& tile : imagery_tiles)
+        {
+            auto ti = cognitics::cdb::TileInfoForTile(tile);
+            ti.dataset = 4;
+            ti.selector1 = params.cs1;
+            ti.selector2 = params.cs2;
+            imagery_tileinfos.insert(ti);
+        }
+        log << "Identified " << imagery_tileinfos.size() << " imagery tiles to generate." << log.endl;
     }
 
     auto elevation_tiles = std::vector<cognitics::cdb::Tile>();
-    auto elevation_tileinfos = std::vector<cognitics::cdb::TileInfo>();
+    auto elevation_tileinfos = std::set<cognitics::cdb::TileInfo>();
     if (elevation_enabled)
     {
         log << ccl::LINFO << "Gathering information on " << elevation_filenames.size() << " elevation file(s)..." << log.endl;
@@ -263,11 +267,15 @@ bool cdb_inject(cdb_inject_parameters& params)
             auto raster_tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)0), target_lod);
             elevation_tiles.insert(elevation_tiles.end(), raster_tiles.begin(), raster_tiles.end());
         }
-        std::sort(elevation_tiles.begin(), elevation_tiles.end());
-        elevation_tiles.erase(std::unique(elevation_tiles.begin(), elevation_tiles.end()), elevation_tiles.end());
+        for(auto& tile : elevation_tiles)
+        {
+            auto ti = cognitics::cdb::TileInfoForTile(tile);
+            ti.dataset = 1;
+            ti.selector1 = params.cs1;
+            ti.selector2 = params.cs2;
+            elevation_tileinfos.insert(ti);
+        }
         log << "Identified " << elevation_tiles.size() << " elevation tiles to generate." << log.endl;
-        std::transform(elevation_tiles.begin(), elevation_tiles.end(), std::back_inserter(elevation_tileinfos), [](const cognitics::cdb::Tile& tile) { return cognitics::cdb::TileInfoForTile(tile); });
-        std::for_each(elevation_tileinfos.begin(), elevation_tileinfos.end(), [](cognitics::cdb::TileInfo& ti) { ti.dataset = 1; });
     }
 
     if (params.dry_run || params.count_tiles)

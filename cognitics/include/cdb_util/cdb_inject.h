@@ -23,6 +23,8 @@ struct cdb_inject_parameters
     bool build_overviews { false };
     bool count_tiles { false };
     bool dry_run { false };
+    int cs1 = 1;
+    int cs2 = 1;
 };
 
 bool cdb_inject(cdb_inject_parameters& params);
