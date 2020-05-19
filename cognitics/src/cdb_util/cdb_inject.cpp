@@ -110,16 +110,24 @@ public:
     int execute(void)
     {
         ccl::ObjLog log;
-        log << "Processing " << cognitics::cdb::FileNameForTileInfo(tileinfo) << log.endl;
-        if (isElevation)
+        auto fn = cognitics::cdb::FileNameForTileInfo(tileinfo);
+        log << "Processing " << fn << log.endl;
+        try
         {
-            cognitics::cdb::BuildElevationTileFromSampler(cdb, sampler, tileinfo);
+            if (isElevation)
+            {
+                cognitics::cdb::BuildElevationTileFromSampler(cdb, sampler, tileinfo);
+            }
+            else
+            {
+                cognitics::cdb::BuildImageryTileFromSampler(cdb, sampler, tileinfo);
+            }
+            reporter.reportCompletedJob("");
         }
-        else
+        catch(std::exception e)
         {
-            cognitics::cdb::BuildImageryTileFromSampler(cdb, sampler, tileinfo);
+            log << fn << " EXCEPTION: " << e.what() << log.endl;
         }
-        reporter.reportCompletedJob("");
 
         //log << "Finished " << cognitics::cdb::FileNameForTileInfo(tileinfo) << log.endl;
 
