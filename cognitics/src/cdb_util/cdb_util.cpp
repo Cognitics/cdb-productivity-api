@@ -120,7 +120,17 @@ int LodForPixelSize(double pixel_size)
 {
     for(int i = -10; i <= 23; ++i)
     {
-        double lod_pixel_size = (1.0 / 1024) / std::pow(2, i);
+        double lod_pixel_size = 0;
+        if(i<0)
+        {
+            int abspow = std::pow(2, abs(i));
+            lod_pixel_size = (1.0 / 1024) / (1/abspow);
+        }
+        else
+        {
+            lod_pixel_size = (1.0 / 1024) / std::pow(2, i);
+        }
+        
         if(lod_pixel_size < pixel_size)
             return i;
     }
@@ -648,6 +658,29 @@ RasterInfo ReadRasterInfo(const std::string& filename)
     double x_max = -DBL_MAX;
     double y_min = DBL_MAX;
     double y_max = -DBL_MAX;
+
+    int row_arr[2] = {0,info.Height-1};
+    int col_arr[2] = {0,info.Width-1};
+
+/*
+    // Every post in the first and last row, 1
+    for(int row = 0; row < 2; ++row)
+    {
+        for(int col = 0; col < 2; ++col)
+        {
+            //Xgeo = GT(0) + Xpixel * GT(1) + Yline * GT(2)
+            //Ygeo = GT(3) + Xpixel * GT(4) + Yline * GT(5)
+            auto x = geotransform[0] + (geotransform[1] * col_arr[col]) + (geotransform[2] * row_arr[row]);
+            auto y = geotransform[3] + (geotransform[4] * col_arr[col]) + (geotransform[5] * row_arr[row]);
+            x_min = std::min<double>(x_min, x);
+            x_max = std::max<double>(x_max, x);
+            y_min = std::min<double>(y_min, y);
+            y_max = std::max<double>(y_max, y);
+        }
+    }
+*/
+    /*
+
     for(int row = 0; row < info.Height; ++row)
     {
         for(int col = 0; col < info.Width; ++col)
@@ -662,7 +695,30 @@ RasterInfo ReadRasterInfo(const std::string& filename)
             y_max = std::max<double>(y_max, y);
         }
     }
-    
+    */
+
+    for(int row = 0; row < info.Height; ++row)
+    {
+        bool only_first_and_last_col = false;
+        if((row!=0) && (row != (info.Height-1)))
+            only_first_and_last_col = true;
+
+        for(int col = 0; col < info.Width; ++col)
+        {
+            if(only_first_and_last_col && (col!=0) && (col!=(info.Width-1)))
+                continue;
+            
+            //Xgeo = GT(0) + Xpixel * GT(1) + Yline * GT(2)
+            //Ygeo = GT(3) + Xpixel * GT(4) + Yline * GT(5)
+            auto x = geotransform[0] + (geotransform[1] * col) + (geotransform[2] * row);
+            auto y = geotransform[3] + (geotransform[4] * col) + (geotransform[5] * row);
+            x_min = std::min<double>(x_min, x);
+            x_max = std::max<double>(x_max, x);
+            y_min = std::min<double>(y_min, y);
+            y_max = std::max<double>(y_max, y);
+        }
+    }
+
     if(y_max < y_min)
         std::swap(y_max, y_min);
     if(x_max < x_min)
@@ -683,6 +739,12 @@ RasterInfo ReadRasterInfo(const std::string& filename)
         transform->Transform(1, &se_e, &se_s);
         transform->Transform(1, &nw_w, &nw_n);
         transform->Transform(1, &ne_e, &ne_n);
+
+        transform->Transform(1, &info.OriginX, &info.OriginY);
+
+        info.PixelSizeX = fabs((nw_w - sw_w))/info.Width;
+        info.PixelSizeY = fabs((nw_n - sw_s))/info.Height;
+
         OGRCoordinateTransformation::DestroyCT(transform);
     }
 

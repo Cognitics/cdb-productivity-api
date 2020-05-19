@@ -214,6 +214,7 @@ bool cdb_inject(cdb_inject_parameters& params)
         log << ccl::LINFO << "Gathering information on " << imagery_filenames.size() << " imagery file(s)..." << log.endl;
         for (auto filename : imagery_filenames)
         {
+            log << ccl::LINFO << "Reading metadata for " << filename << log.endl;
             auto raster_info = cognitics::cdb::ReadRasterInfo(filename);
             raster_info_by_filename[filename] = raster_info;
             auto pixel_size = std::min<double>(std::abs(raster_info.PixelSizeX), std::abs(raster_info.PixelSizeY));
