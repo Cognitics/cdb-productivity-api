@@ -979,12 +979,12 @@ bool BuildElevationTileFromSampler(const std::string& cdb, GDALRasterSampler& sa
     if(std::filesystem::exists(outfilename))
     {
         floats = FloatsFromTIF(outfilename);
-        floats = FlippedVertically(floats, dim, dim, 1);
+        if(floats.size() == dim * dim)
+            floats = FlippedVertically(floats, dim, dim, 1);
     }
     if(floats.empty())
     {
-        auto dimension = TileDimensionForLod(tileinfo.lod);
-        floats.resize(dimension * dimension);
+        floats.resize(dim * dim);
         std::fill(floats.begin(), floats.end(), -32767.0f);
     }
 
