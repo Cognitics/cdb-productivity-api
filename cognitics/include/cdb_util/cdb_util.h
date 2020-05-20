@@ -113,6 +113,9 @@ int TileDimensionForLod(int lod);
 double PixelSizeForLod(int lod);
 double MinimumPixelSizeForLod(int lod, double latitude);
 
+
+TileInfo ParentTileInfo(const TileInfo& tileinfo);
+
 std::vector<std::string> FileNamesForTiledDataset(const std::string& cdb, int dataset);
 
 std::vector<TileInfo> FeatureTileInfoForTiledDataset(const std::string& cdb, int dataset, std::tuple<double, double, double, double> nsew = std::make_tuple(DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX) );
@@ -168,6 +171,7 @@ std::string PreviousIncrementalRootDirectory(const std::string& cdb);
 std::vector<std::string> VersionChainForCDB(const std::string& cdb);
 
 std::vector<std::pair<std::string, Tile>> CoverageTilesForTiles(const std::string& cdb, const std::vector<Tile>& source_tiles);
+std::vector<std::pair<std::string, TileInfo>> CoverageTileInfosForTileInfo(const std::string& cdb, const TileInfo& source_tileinfo);
 
 bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::string& filename, const std::string& models_path = "", const std::string& textures_path = "");
 bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::vector<std::string>& filenames, const std::string& models_path = "", const std::string& textures_path = "");

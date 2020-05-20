@@ -157,6 +157,15 @@ double MinimumPixelSizeForLod(int lod, double latitude)
     return std::min<double>(lat_spacing, lon_spacing);
 }
 
+TileInfo ParentTileInfo(const TileInfo& tileinfo)
+{
+    auto result = tileinfo;
+    --result.lod;
+    result.uref = std::floor(result.uref / 2);
+    result.rref = std::floor(result.rref / 2);
+    return result;
+}
+
 std::vector<std::string> FileNamesForTiledDataset(const std::string& cdb, int dataset)
 {
     auto result = std::vector<std::string>();
@@ -942,7 +951,8 @@ bool BuildImageryTileFromSampler(const std::string& cdb, GDALRasterSampler& samp
     if (std::filesystem::exists(outfilename))
     {
         bytes = BytesFromJP2(outfilename);
-        bytes = FlippedVertically(bytes, dim, dim, 3);
+        if(bytes.size() == dim * dim * 3)
+            bytes = FlippedVertically(bytes, dim, dim, 3);
     }
 
     if(bytes.empty())
@@ -1224,6 +1234,47 @@ std::vector<std::pair<std::string, Tile>> CoverageTilesForTiles(const std::strin
             }
         }
         tiles = parent_tiles;
+    }
+    return result;
+}
+
+std::vector<std::pair<std::string, TileInfo>> CoverageTileInfosForTileInfo(const std::string& cdb, const TileInfo& source_tileinfo)
+{
+    auto cdblist = VersionChainForCDB(cdb);
+    auto result = std::vector<std::pair<std::string, TileInfo>>();
+    auto tileinfos = std::vector<TileInfo>();
+    tileinfos.push_back(source_tileinfo);
+    while(!tileinfos.empty())
+    {
+        auto parent_tileinfos = std::vector<TileInfo>();
+        for(auto tileinfo : tileinfos)
+        {
+            auto tile_filepath = FilePathForTileInfo(tileinfo);
+            auto tile_filename = FileNameForTileInfo(tileinfo);
+            bool found = false;
+            for(auto local_cdb : cdblist)
+            {
+                auto filename = local_cdb + "/Tiles/" + tile_filepath + "/" + tile_filename;
+                if(tileinfo.dataset == 1)
+                    filename += ".tif";
+                if(tileinfo.dataset == 4)
+                    filename += ".jp2";
+                if(std::filesystem::exists(filename))
+                {
+                    result.emplace_back(local_cdb, tileinfo);
+                    found = true;
+                    break;
+                }
+            }
+            if(found)
+                continue;
+            if(tileinfo.lod - 1 < -10)
+                continue;
+            auto parent_ti = ParentTileInfo(tileinfo);
+            if(std::find(parent_tileinfos.begin(), parent_tileinfos.end(), parent_ti) == parent_tileinfos.end())
+                parent_tileinfos.push_back(parent_ti);
+        }
+        tileinfos = parent_tileinfos;
     }
     return result;
 }

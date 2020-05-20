@@ -333,16 +333,12 @@ bool cdb_inject(cdb_inject_parameters& params)
         GDALRasterSampler sampler;
         for(auto ti : imagery_tileinfos)
         {
-            double tile_north, tile_south, tile_east, tile_west;
-            std::tie(tile_north, tile_south, tile_east, tile_west) = cognitics::cdb::NSEWBoundsForTileInfo(ti);
-            auto coords = cognitics::cdb::CoordinatesRange(tile_west, tile_east, tile_south, tile_north);
-            auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)ti.dataset), ti.lod - 1);
-            auto coverage_tiles = cognitics::cdb::CoverageTilesForTiles(params.cdb, tiles);
-            for(auto ctile : coverage_tiles)
+            auto parent_ti = cognitics::cdb::ParentTileInfo(ti);
+            auto coverage_tileinfos = cognitics::cdb::CoverageTileInfosForTileInfo(params.cdb, parent_ti);
+            for(auto ctile : coverage_tileinfos)
             {
                 auto cdb = ctile.first;
-                auto tile = ctile.second;
-                auto tile_info = cognitics::cdb::TileInfoForTile(tile);
+                auto tile_info = ctile.second;
                 auto tile_filepath = cognitics::cdb::FilePathForTileInfo(tile_info);
                 auto tile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
                 auto filename = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename;
