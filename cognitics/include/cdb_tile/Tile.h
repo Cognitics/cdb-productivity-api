@@ -52,10 +52,14 @@ public:
     }
 
     Tile(const Tile& rhs) = default;
-    bool operator==(const Tile& rhs) { return (lod == rhs.lod) && (uref == rhs.uref) && (rref == rhs.rref) && (cs1 == rhs.cs1) && (cs2 == rhs.cs2); }
+    bool operator==(const Tile& rhs) { return (coordinates == rhs.coordinates) && (lod == rhs.lod) && (uref == rhs.uref) && (rref == rhs.rref) && (cs1 == rhs.cs1) && (cs2 == rhs.cs2); }
     bool operator!=(const Tile& rhs) { return !(*this == rhs); } 
     bool operator<(const Tile& rhs)
     {
+        if(coordinates < rhs.coordinates)
+            return true;
+        if(coordinates > rhs.coordinates)
+            return false;
         if(lod < rhs.lod)
             return true;
         if(lod > rhs.lod)

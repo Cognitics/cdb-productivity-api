@@ -120,7 +120,17 @@ int LodForPixelSize(double pixel_size)
 {
     for(int i = -10; i <= 23; ++i)
     {
-        double lod_pixel_size = (1.0 / 1024) / std::pow(2, i);
+        double lod_pixel_size = 0;
+        if(i<0)
+        {
+            int abspow = std::pow(2, abs(i));
+            lod_pixel_size = (1.0 / 1024) / (1/abspow);
+        }
+        else
+        {
+            lod_pixel_size = (1.0 / 1024) / std::pow(2, i);
+        }
+        
         if(lod_pixel_size < pixel_size)
             return i;
     }
@@ -145,6 +155,15 @@ double MinimumPixelSizeForLod(int lod, double latitude)
     auto tile_width = (int)get_tile_width(latitude);
     auto lon_spacing = (double)tile_width / div;
     return std::min<double>(lat_spacing, lon_spacing);
+}
+
+TileInfo ParentTileInfo(const TileInfo& tileinfo)
+{
+    auto result = tileinfo;
+    --result.lod;
+    result.uref = std::floor(result.uref / 2);
+    result.rref = std::floor(result.rref / 2);
+    return result;
 }
 
 std::vector<std::string> FileNamesForTiledDataset(const std::string& cdb, int dataset)
@@ -648,6 +667,29 @@ RasterInfo ReadRasterInfo(const std::string& filename)
     double x_max = -DBL_MAX;
     double y_min = DBL_MAX;
     double y_max = -DBL_MAX;
+
+    int row_arr[2] = {0,info.Height-1};
+    int col_arr[2] = {0,info.Width-1};
+
+/*
+    // Every post in the first and last row, 1
+    for(int row = 0; row < 2; ++row)
+    {
+        for(int col = 0; col < 2; ++col)
+        {
+            //Xgeo = GT(0) + Xpixel * GT(1) + Yline * GT(2)
+            //Ygeo = GT(3) + Xpixel * GT(4) + Yline * GT(5)
+            auto x = geotransform[0] + (geotransform[1] * col_arr[col]) + (geotransform[2] * row_arr[row]);
+            auto y = geotransform[3] + (geotransform[4] * col_arr[col]) + (geotransform[5] * row_arr[row]);
+            x_min = std::min<double>(x_min, x);
+            x_max = std::max<double>(x_max, x);
+            y_min = std::min<double>(y_min, y);
+            y_max = std::max<double>(y_max, y);
+        }
+    }
+*/
+    /*
+
     for(int row = 0; row < info.Height; ++row)
     {
         for(int col = 0; col < info.Width; ++col)
@@ -662,7 +704,30 @@ RasterInfo ReadRasterInfo(const std::string& filename)
             y_max = std::max<double>(y_max, y);
         }
     }
-    
+    */
+
+    for(int row = 0; row < info.Height; ++row)
+    {
+        bool only_first_and_last_col = false;
+        if((row!=0) && (row != (info.Height-1)))
+            only_first_and_last_col = true;
+
+        for(int col = 0; col < info.Width; ++col)
+        {
+            if(only_first_and_last_col && (col!=0) && (col!=(info.Width-1)))
+                continue;
+            
+            //Xgeo = GT(0) + Xpixel * GT(1) + Yline * GT(2)
+            //Ygeo = GT(3) + Xpixel * GT(4) + Yline * GT(5)
+            auto x = geotransform[0] + (geotransform[1] * col) + (geotransform[2] * row);
+            auto y = geotransform[3] + (geotransform[4] * col) + (geotransform[5] * row);
+            x_min = std::min<double>(x_min, x);
+            x_max = std::max<double>(x_max, x);
+            y_min = std::min<double>(y_min, y);
+            y_max = std::max<double>(y_max, y);
+        }
+    }
+
     if(y_max < y_min)
         std::swap(y_max, y_min);
     if(x_max < x_min)
@@ -683,6 +748,12 @@ RasterInfo ReadRasterInfo(const std::string& filename)
         transform->Transform(1, &se_e, &se_s);
         transform->Transform(1, &nw_w, &nw_n);
         transform->Transform(1, &ne_e, &ne_n);
+
+        transform->Transform(1, &info.OriginX, &info.OriginY);
+
+        info.PixelSizeX = fabs((nw_w - sw_w))/info.Width;
+        info.PixelSizeY = fabs((nw_n - sw_s))/info.Height;
+
         OGRCoordinateTransformation::DestroyCT(transform);
     }
 
@@ -880,7 +951,8 @@ bool BuildImageryTileFromSampler(const std::string& cdb, GDALRasterSampler& samp
     if (std::filesystem::exists(outfilename))
     {
         bytes = BytesFromJP2(outfilename);
-        bytes = FlippedVertically(bytes, dim, dim, 3);
+        if(bytes.size() == dim * dim * 3)
+            bytes = FlippedVertically(bytes, dim, dim, 3);
     }
 
     if(bytes.empty())
@@ -907,12 +979,12 @@ bool BuildElevationTileFromSampler(const std::string& cdb, GDALRasterSampler& sa
     if(std::filesystem::exists(outfilename))
     {
         floats = FloatsFromTIF(outfilename);
-        floats = FlippedVertically(floats, dim, dim, 1);
+        if(floats.size() == dim * dim)
+            floats = FlippedVertically(floats, dim, dim, 1);
     }
     if(floats.empty())
     {
-        auto dimension = TileDimensionForLod(tileinfo.lod);
-        floats.resize(dimension * dimension);
+        floats.resize(dim * dim);
         std::fill(floats.begin(), floats.end(), -32767.0f);
     }
 
@@ -1162,6 +1234,47 @@ std::vector<std::pair<std::string, Tile>> CoverageTilesForTiles(const std::strin
             }
         }
         tiles = parent_tiles;
+    }
+    return result;
+}
+
+std::vector<std::pair<std::string, TileInfo>> CoverageTileInfosForTileInfo(const std::string& cdb, const TileInfo& source_tileinfo)
+{
+    auto cdblist = VersionChainForCDB(cdb);
+    auto result = std::vector<std::pair<std::string, TileInfo>>();
+    auto tileinfos = std::vector<TileInfo>();
+    tileinfos.push_back(source_tileinfo);
+    while(!tileinfos.empty())
+    {
+        auto parent_tileinfos = std::vector<TileInfo>();
+        for(auto tileinfo : tileinfos)
+        {
+            auto tile_filepath = FilePathForTileInfo(tileinfo);
+            auto tile_filename = FileNameForTileInfo(tileinfo);
+            bool found = false;
+            for(auto local_cdb : cdblist)
+            {
+                auto filename = local_cdb + "/Tiles/" + tile_filepath + "/" + tile_filename;
+                if(tileinfo.dataset == 1)
+                    filename += ".tif";
+                if(tileinfo.dataset == 4)
+                    filename += ".jp2";
+                if(std::filesystem::exists(filename))
+                {
+                    result.emplace_back(local_cdb, tileinfo);
+                    found = true;
+                    break;
+                }
+            }
+            if(found)
+                continue;
+            if(tileinfo.lod - 1 < -10)
+                continue;
+            auto parent_ti = ParentTileInfo(tileinfo);
+            if(std::find(parent_tileinfos.begin(), parent_tileinfos.end(), parent_ti) == parent_tileinfos.end())
+                parent_tileinfos.push_back(parent_ti);
+        }
+        tileinfos = parent_tileinfos;
     }
     return result;
 }
