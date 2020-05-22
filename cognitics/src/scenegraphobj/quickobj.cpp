@@ -20,7 +20,7 @@
 
 #include <GL/freeglut.h>
 #include <ip/jpgwrapper.h>
-
+#include "ip/pngwrapper.h"
 #include <errno.h>
 
 #ifndef GL_COMPRESSED_RGB_PVRTC_2BPPV1_IMG
@@ -1290,6 +1290,66 @@ namespace cognitics {
             | ((unsigned char)(b * 0xFF) << 16)
             | ((unsigned char)(g * 0xFF) << 8)
             | (unsigned char)(r * 0xFF);
+    }
+
+    bool QuickObj2Flt::convertTextures(QuickObj *obj, const std::string &outputDir)
+    {
+        for (auto str_mat_pair : obj->materialMap)
+        {
+            auto file_path = str_mat_pair.first;
+            auto& obj_mtl = str_mat_pair.second;
+            auto img_info = ip::ImageInfo();
+
+            auto img_buffer = ccl::binary();
+            ccl::FileInfo fi(obj_mtl.textureFile);
+            if (ccl::stringEndsWith(fi.getSuffix(), "rgb", false))
+            {
+                continue;
+            }
+            else if (ccl::stringEndsWith(fi.getSuffix(), "jpg", false))
+            {
+                ip::GetJPGImagePixels(obj_mtl.textureFile, img_info, img_buffer);
+            }
+            else if (ccl::stringEndsWith(fi.getSuffix(), "png", false))
+            {
+                ip::GetPNGImagePixels(obj_mtl.textureFile, img_info, img_buffer);
+            }
+            auto width = img_info.width;
+            auto height = img_info.height;
+            auto depth = img_info.depth;
+            auto r = new u_char[width * height];
+            auto g = new u_char[width * height];
+            auto b = new u_char[width * height];
+            ip::FlipVertically(img_info, img_buffer);
+            if (img_info.interleaved)
+            {
+                for (int pixel_idx = 0, pixel_count = width * height * depth,output_idx=0; pixel_idx < pixel_count; pixel_idx+=3,output_idx++)
+                {
+                    r[output_idx] = img_buffer.at((pixel_idx));
+                    g[output_idx] = img_buffer.at((pixel_idx) + 1);
+                    b[output_idx] = img_buffer.at((pixel_idx) + 2);
+                }
+            }
+            else
+            {
+                int r_ofs = 0;
+                int g_ofs = width * height;
+                int b_ofs = width * height * 2;
+                for(int j=0,jc=width*height;j<jc;j++)
+                {
+                    r[j] = img_buffer.at(r_ofs + j);
+                    g[j] = img_buffer.at(g_ofs +j);
+                    b[j] = img_buffer.at(b_ofs + j);
+                }
+            }
+            std::string output_rgb_path = ccl::joinPaths(outputDir, fi.getBaseName(true) + ".rgb");
+            obj->materialMap[file_path].textureFile = output_rgb_path;
+            ip::WriteRGB(output_rgb_path, r, g, b, width, height);
+            delete[] r;
+            delete[] g;
+            delete[] b;
+        }
+        return true;
     }
 
     bool QuickObj2Flt::convert(QuickObj *obj, const std::string &outputFltFilename)

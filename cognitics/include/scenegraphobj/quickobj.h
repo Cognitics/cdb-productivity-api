@@ -301,5 +301,6 @@ namespace cognitics {
     public:
 		QuickObj2Flt();
         bool convert(QuickObj *obj, const std::string &outputFltFilename);
+        bool convertTextures(QuickObj *obj, const std::string &outputDir);
     };
 }
