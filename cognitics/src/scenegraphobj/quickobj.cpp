@@ -11,14 +11,14 @@
 #include <ccl/StringUtils.h>
 
 #include <fstream>
+#ifdef COG_USE_GL
 #include <GL/glew.h>
 #include <GL/gl.h>
 #define FREEGLUT_LIB_PRAGMAS 0
-
-
-
-
 #include <GL/freeglut.h>
+#else
+    typedef unsigned int GLuint;
+#endif
 #include <ip/jpgwrapper.h>
 #include "ip/pngwrapper.h"
 #include <errno.h>
@@ -693,6 +693,7 @@ namespace cognitics {
 
     bool QuickObj::glRender()
     {
+#ifdef COG_USE_GL
         glPushAttrib(GL_ALL_ATTRIB_BITS);
             
         glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
@@ -736,6 +737,9 @@ namespace cognitics {
         
         glPopAttrib();
         return true;
+#else
+    return false;
+#endif
     }
 
 #define FOURCC_DXT1 0x31545844 // Equivalent to "DXT1" in ASCII
@@ -744,6 +748,7 @@ namespace cognitics {
 
     GLuint QuickObj::getOrLoadDDSTextureID(const std::string &texname)
     {
+#ifdef COG_USE_GL
         //DDS Reader Borrowed from http://www.opengl-tutorial.org
         unsigned char header[124];
         FILE* fp;
@@ -821,9 +826,10 @@ namespace cognitics {
             height /= 2;
         }
         free(buffer);
-
         return textureID;
-
+#else
+        return 0;
+#endif
     }
 
     class TexturePixels
@@ -953,6 +959,7 @@ namespace cognitics {
 
     GLuint QuickObj::getOrLoadTextureID(const std::string &texname)
     {
+#ifdef COG_USE_GL
         //std::string texpath = ccl::joinPaths(textureDirectory,texname);
         if(textures.find(texname)!=textures.end())
             return textures[texname];
@@ -1011,8 +1018,9 @@ namespace cognitics {
             
             return texid;
         }
-
+#else
         return -1;
+#endif
     }
     QuickObj &QuickObj::operator=(const QuickObj &other)
     {
@@ -1076,11 +1084,13 @@ namespace cognitics {
         {
             if(iter->second!=-1)
             {
+#ifdef COG_USE_GL
                 int texid = iter->second;                
                 glDeleteTextures(1,&iter->second);
                 //GLenum glerror = glGetError();
                 //std::string t = iter->first;
                 //std::cout << "deleted texture=" << t << " texid=" << texid << " err=" << (int)glerror << "\n";
+#endif
             }
             iter++;
         }

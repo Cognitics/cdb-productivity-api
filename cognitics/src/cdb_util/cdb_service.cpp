@@ -199,7 +199,7 @@ class WMSRequestHandler
         ss << "<DCPType>";
         ss << "<HTTP>";
         ss << "<Get>";
-        ss << "<OnlineResource xlink:type=\"simple\" xlink:href=\"" << host << "/wms?SERVICE=WMS&amp;\" />";
+        ss << "<OnlineResource xlink:type=\"simple\" xlink:href=\"/wms?SERVICE=WMS&amp;\" />";
         ss << "</Get>";
         ss << "</HTTP>";
         ss << "</DCPType>";
@@ -210,7 +210,7 @@ class WMSRequestHandler
         ss << "<DCPType>";
         ss << "<HTTP>";
         ss << "<Get>";
-        ss << "<OnlineResource xlink:type=\"simple\" xlink:href=\"" << host << "/wms?SERVICE=WMS&amp;\" />";
+        ss << "<OnlineResource xlink:type=\"simple\" xlink:href=\"/wms?SERVICE=WMS&amp;\" />";
         ss << "</Get>";
         ss << "</HTTP>";
         ss << "</DCPType>";
@@ -221,7 +221,7 @@ class WMSRequestHandler
         ss << "<DCPType>";
         ss << "<HTTP>";
         ss << "<Get>";
-        ss << "<OnlineResource xlink:type=\"simple\" xlink:href=\"" << host << "/wms?SERVICE=WMS&amp;\" />";
+        ss << "<OnlineResource xlink:type=\"simple\" xlink:href=\"/wms?SERVICE=WMS&amp;\" />";
         ss << "</Get>";
         ss << "</HTTP>";
         ss << "</DCPType>";

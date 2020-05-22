@@ -239,7 +239,7 @@ namespace cognitics {
 
 
 		bool exportObj(const std::string &filename);
-		void QuickObj::flattenVert(uint32_t index, float up_val);
+		void flattenVert(uint32_t index, float up_val);
 
 		void addSubMesh(const QuickSubMesh &submesh);
 
