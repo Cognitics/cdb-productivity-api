@@ -1030,6 +1030,12 @@ if(WIN32)
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/lpng154/lib/libpng15.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glew/release/lib/glew32.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glut/lib/freeglut.lib")
+    target_link_libraries(obj-extract "opengl32.lib")
+    
 endif(WIN32)
 if(UNIX)
     target_link_libraries(obj-extract ${CMAKE_DL_LIBS})
@@ -1038,6 +1044,11 @@ if(UNIX)
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glew/linux_x64/lib/libGLEW.a")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glut/linux_x64/lib/libglut.so")
+
 endif(UNIX)
 
 if(WIN32)
@@ -1215,7 +1226,7 @@ if(COG_BUILD_GL_TOOLS)
     endif(UNIX)
 
     add_executable(mesh2cdb
-		mesh2cdb/quickobj.h
+#		mesh2cdb/quickobj.h
 #		mesh2cdb/quickobj_lmb.cpp
         mesh2cdb/mesh2cdb.cpp
         mesh2cdb/mesh2cdb.h
