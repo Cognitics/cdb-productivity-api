@@ -1216,6 +1216,7 @@ endif(UNIX)
 
 
 if(COG_BUILD_GL_TOOLS)
+    add_definitions("-DCOG_USE_GL")
     if(WIN32)
         include_directories("${THIRD_PARTY_DIR}/glew/${CMAKE_BUILD_TYPE}/include")
         include_directories("${THIRD_PARTY_DIR}/glut/include")
