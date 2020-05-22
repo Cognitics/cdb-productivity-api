@@ -3,7 +3,7 @@
 #include <windows.h>
 #endif
 
-#include "quickobj.h"
+#include "scenegraphobj/quickobj.h"
 #include <stdio.h>
 #include <string.h>
 #include <float.h>
@@ -13,6 +13,12 @@
 #include <fstream>
 #include <GL/glew.h>
 #include <GL/gl.h>
+#define FREEGLUT_LIB_PRAGMAS 0
+
+
+
+
+#include <GL/freeglut.h>
 #include <ip/jpgwrapper.h>
 
 #include <errno.h>
@@ -78,6 +84,78 @@ namespace cognitics {
         y = local_y;
         z = local_z;
         return true;
+    }
+
+    /*
+     * expandCoordinates remaps everything that there are the exact same number
+     * of verts,UVs, and normals (unless there are no uvs or normals). This
+     * makes it easier to export to something like OpenFlight.
+     */
+    void QuickObj::expandCoordinates()
+    {
+        std::vector<QuickVert> newVerts;
+        std::vector<QuickVert> newNorms;
+        std::vector<QuickVert> newUvs;
+
+        //std::vector<int> indices;
+        std::map<coord_tuple_t, int32_t> newMappings;
+        for (auto&& submesh : subMeshes)
+        {
+            std::vector<uint32_t> newVertIdxs;
+            std::vector<uint32_t> newUvIdxs;
+            std::vector<uint32_t> newNormIdxs;
+            /*
+            if((vertIdxs.size() != uvIdxs.size()) || (vertIdxs.size() != normIdxs.size()))
+            {
+                log << "Error, unexpected index array sizes." << log.endl;
+                break;
+            }
+            */
+            bool has_uvs = (submesh.uvIdxs.size() > 0);
+            bool has_norms = (submesh.normIdxs.size() > 0);
+            for (size_t i = 0, ic = submesh.vertIdxs.size(); i < ic; i++)
+            {
+                int32_t idx = submesh.vertIdxs[i];
+                int32_t uvidx = -1;
+                int32_t normidx = -1;
+                if(has_uvs)
+                    uvidx = submesh.uvIdxs[i];
+                if (has_norms)
+                    normidx = submesh.normIdxs[i];
+                coord_tuple_t coord = std::make_tuple(idx, uvidx, normidx);
+                int newIdx = newVerts.size();
+                if (newMappings.find(coord) == newMappings.end())
+                {
+                    newMappings[coord] = newIdx;
+                    //Add a new vert values
+                    newVerts.push_back(verts[idx]);
+                    if (has_uvs)
+                        newUvs.push_back(uvs[uvidx]);
+                    if (has_norms)
+                        newNorms.push_back(norms[normidx]);
+                }
+                else
+                {
+                    newIdx = newMappings[coord];
+                }
+                //reset the mesh indexes
+                newVertIdxs.push_back(newIdx);
+                if (has_uvs)
+                {
+                    newUvIdxs.push_back(newIdx);
+                }
+                if (has_norms)
+                {
+                    newNormIdxs.push_back(newIdx);
+                }
+            }
+            submesh.vertIdxs = newVertIdxs;
+            submesh.uvIdxs = newUvIdxs;
+            submesh.normIdxs = newNormIdxs;
+        }
+        verts = newVerts;
+        uvs = newUvs;
+        norms = newNorms;
     }
 
     bool QuickObj::parseOBJ(bool loadTextures)
@@ -1158,8 +1236,16 @@ namespace cognitics {
         return true;
     }
 
-    bool QuickObj2Flt::buildSubmesh(QuickSubMesh &submesh)
+    bool QuickObj2Flt::buildSubmesh(QuickSubMesh &submesh, const std::string &name)
     {
+        flt::Record *container = NULL;
+        flt::Object *groupRecord = new flt::Object;
+        groupRecord->id = name;
+        container = groupRecord;
+        records.push_back(container);
+        records.push_back(new flt::PushLevel);
+        header->nextObjectNodeID = header->nextObjectNodeID + 1;
+        
 		//Assume that faces are always triangles...
         for(size_t i=0,ic=submesh.vertIdxs.size();i<ic;i+=3)
         {
@@ -1193,6 +1279,7 @@ namespace cognitics {
             records.push_back(vertexListRecord);
             records.push_back(new flt::PopLevel);
         }
+        records.push_back(new flt::PopLevel);//Pop the container level
         return true;
     }
 
@@ -1268,7 +1355,8 @@ namespace cognitics {
 			flt::TexturePalette *texturePalette = new flt::TexturePalette;
 			texIDMap[matPair.first] = currentTexId;
 			texturePalette->textureIndex = currentTexId++;
-			texturePalette->fileName = matPair.first;
+            ccl::FileInfo fltFI(matPair.second.textureFile);
+			texturePalette->fileName = fltFI.getBaseName();
 			records.push_back(texturePalette);
 		}
 		
@@ -1297,13 +1385,23 @@ namespace cognitics {
         {
             have_uvs = true;
         }
-        //for (auto &&vert : obj->verts)
+        const int vertexSize = 64;
+        flt::VertexPalette *vertexPalette = new flt::VertexPalette;
+        vertexPalette->vertexPaletteLength = int(8 + (obj->verts.size() * vertexSize));
+        records.push_back(vertexPalette);
+
         for(size_t i=0,ic=obj->verts.size();i<ic;i++)
         {
             flt::VertexWithColorNormalUV *vertexRecord = new flt::VertexWithColorNormalUV;
             vertexRecord->x = obj->verts[i].x;
             vertexRecord->y = obj->verts[i].y;
             vertexRecord->z = obj->verts[i].z;
+            vertexRecord->i = 0;
+            vertexRecord->j = 0;
+            vertexRecord->k = 0;
+            vertexRecord->u = 0;
+            vertexRecord->v = 0;
+
             if (have_norms)
             {
                 vertexRecord->i = obj->norms[i].x;
@@ -1321,14 +1419,10 @@ namespace cognitics {
             vertexRecord->colorIndex = -1;
             records.push_back(vertexRecord);
         }
-
-        //Are these needed?
-		const int vertexSize = 64;
-		flt::VertexPalette *vertexPalette = new flt::VertexPalette;
-        vertexPalette->vertexPaletteLength = int(8 + (obj->verts.size() * vertexSize));
-        records.push_back(vertexPalette);
-
-		records.push_back(new flt::PushLevel);
+       
+		
+        
+		records.push_back(new flt::PushLevel);//???
 
 //BuildScene Start
 		flt::Record *container = NULL;
@@ -1339,12 +1433,17 @@ namespace cognitics {
 		records.push_back(container);
 		records.push_back(new flt::PushLevel);//container
 
+        int submeshNo = 0;
         for (auto &&submesh : obj->subMeshes)
-        {            
-            buildSubmesh(submesh);            
+        {
+            std::stringstream ss;
+            ss << "mesh " << submeshNo++;
+            buildSubmesh(submesh,ss.str());
         }
 //BuildScene End
 		records.push_back(new flt::PopLevel);//container
+
+        records.push_back(new flt::PopLevel);//???
         if (!fltFile->addRecords(records))
         {
             log << "Error: Unable to add flt records." << log.endl;
@@ -1355,7 +1454,91 @@ namespace cognitics {
         return true;
     }
 
+	bool QuickObj::exportObj(const std::string &filename)
+	{
+		std::string out_name = filename.c_str();
+		out_name += ".obj";
+		std::ofstream out(out_name);
 
+		out << "# Produced by Cognitics\n";
+		std::time_t now = std::time(0);
+		std::string now_str = std::ctime(&now);
+		out << "# " + now_str;
+		out << "# " + std::to_string(this->verts.size()) + " vertices, " + std::to_string(this->vertIdxs.size()) + " faces\n";
+		out << "\nmtllib " + this->materialFilename + "\n\n";
+		if (this->verts.size() > 0)
+		{
+			for (cognitics::QuickVert &vertex : this->verts)
+			{
+				if (vertex.x != 0.000000 && vertex.y != 0.000000) {
+					out << "v " + std::to_string(vertex.x) + " " + std::to_string(vertex.y) + " " + std::to_string(vertex.z) + "\n";
+				}
+			}
+		}
+		if (this->uvs.size() > 0)
+		{
+			for (cognitics::QuickVert &uv : this->uvs)
+			{
+				if (uv.x != 0.000000) {
+					std::string w = uv.z == 0 ? "" : " " + std::to_string(uv.z);
+					out << "vt " + std::to_string(uv.x) + " " + std::to_string(uv.y) + w + "\n";
+				}
+			}
+		}
+		if (this->norms.size() > 0)
+		{
+			for (cognitics::QuickVert &norm : this->norms)
+			{
+				if (norm.x != 0.000000) {
+					out << "vn " + std::to_string(norm.x) + " " + std::to_string(norm.y) + " " + std::to_string(norm.z) + "\n";
+				}
+			}
+		}
+
+		for (cognitics::QuickSubMesh &subMesh : this->subMeshes)
+		{
+			if (subMesh.vertIdxs.size() < 1)
+			{
+				continue;
+			}
+			out << "\n";
+			out << "usemtl " + subMesh.materialName + "\n";
+			out << "\n";
+			for (int i = 0; i < subMesh.vertIdxs.size(); i += 3)
+			{
+				std::string vert_idx = std::to_string(subMesh.vertIdxs.at(i));
+				std::string uv_idx = i < subMesh.uvIdxs.size() ? "/" + std::to_string(subMesh.uvIdxs.at(i)) : "";
+				std::string norm_idx = i < subMesh.normIdxs.size() ? "/" + std::to_string(subMesh.normIdxs.at(i)) + " " : " ";
+
+				std::string vert_idx_one = std::to_string(subMesh.vertIdxs.at(i + 1));
+				std::string uv_idx_one = i + 1 < subMesh.uvIdxs.size() ? "/" + std::to_string(subMesh.uvIdxs.at(i + 1)) : "";
+				std::string norm_idx_one = i + 1 < subMesh.normIdxs.size() ? "/" + std::to_string(subMesh.normIdxs.at(i + 1)) + " " : " ";
+
+				std::string vert_idx_two = std::to_string(subMesh.vertIdxs.at(i + 2));
+				std::string uv_idx_two = i + 2 < subMesh.uvIdxs.size() ? "/" + std::to_string(subMesh.uvIdxs.at(i + 2)) : "";
+				std::string norm_idx_two = i + 2 < subMesh.normIdxs.size() ? "/" + std::to_string(subMesh.normIdxs.at(i + 2)) + "\n" : "\n";
+
+                //Ignore degenerate faces (triangles with no volume, because they share a vert).
+                if((vert_idx == vert_idx_one ) || (vert_idx == vert_idx_two) || (vert_idx_two == vert_idx_one))
+                {
+                    continue;
+                }
+			    out << "f " + vert_idx + uv_idx + norm_idx + vert_idx_one + uv_idx_one + norm_idx_one + vert_idx_two + uv_idx_two + norm_idx_two;
+			}
+		}
+		out.close();
+		return true;
+	}
+
+	void QuickObj::addSubMesh(const QuickSubMesh &submesh)
+	{
+		subMeshes.push_back(submesh);
+	}
+
+	void QuickObj::flattenVert(uint32_t index, float up_val)
+	{
+		verts[index].z = up_val;
+	}
 
     };
 
