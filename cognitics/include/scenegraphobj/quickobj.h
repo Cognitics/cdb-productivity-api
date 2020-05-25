@@ -248,6 +248,8 @@ namespace cognitics {
             const sfa::Point &_offset);
         //Iterate through all the subfaces and get the unique pairs of coordinates
         void expandCoordinates();
+        //Finds the centroid of the model and translate so that (centroid) is 0/0. Then return the lat/lon of the origin
+        sfa::Point findCenterAndReOrigin();
     };
 
     

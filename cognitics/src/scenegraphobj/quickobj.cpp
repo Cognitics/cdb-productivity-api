@@ -86,6 +86,37 @@ namespace cognitics {
         return true;
     }
 
+
+    sfa::Point ENU2LatLon(ObjSrs srs, sfa::Point enu)
+    {
+        auto ltp_ellipsoid = new Cognitics::CoordinateSystems::EllipsoidTangentPlane(srs.geoOrigin.Y(), srs.geoOrigin.X());
+        double lat = 0, lon = 0, elev = 0;
+        ltp_ellipsoid->LocalToGeodetic(enu.X(), enu.Y(), enu.Z(), lat, lon, elev);
+        sfa::Point latLon(lon, lat, elev);
+        return latLon;
+    }
+
+    sfa::Point QuickObj::findCenterAndReOrigin()
+    {
+        sfa::Point origin;
+        sfa::Point centroid;
+        for(auto &&v : this->verts)
+        {
+            centroid += sfa::Point(v.x,v.y,v.z);
+        }
+        centroid /= verts.size();
+        for (auto &&v : this->verts)
+        {
+            v.x -= centroid.X();
+            v.y -= centroid.Y();
+            v.z -= centroid.Z();
+        }
+        //reproject the ENU coordinate 'centroid' to lat/lon
+        origin = ENU2LatLon(this->srs, centroid);
+
+        return origin;
+    }
+
     /*
      * expandCoordinates remaps everything that there are the exact same number
      * of verts,UVs, and normals (unless there are no uvs or normals). This
@@ -224,15 +255,6 @@ namespace cognitics {
                 else
                     v.z = atof(z) + srs.offsetPt.Z();
 
-                /*
-                double tmpv = v.x;
-                v.x = v.y;
-                v.y = tmpv;
-                */
-                /*if(v.x < (srs.offsetPt.X()/2))
-                {
-                    printf("!!!");
-                }*/
                 minX = std::min<float>(minX, v.x);
                 minY = std::min<float>(minY, v.y);
                 minZ = std::min<float>(minZ, v.z);
@@ -396,6 +418,8 @@ namespace cognitics {
             }
             fileToENU(ltp_ellipsoid, coordTrans, minX, minY, minZ);
             fileToENU(ltp_ellipsoid, coordTrans, maxX, maxY, maxZ);
+            srs.srsWKT = "ENU";
+            srs.geoOrigin = sfa::Point(originLon, originLat, 0);
         }
         return true;
     }
@@ -413,6 +437,7 @@ namespace cognitics {
             const std::string &_textureDirectory, 
             bool loadTextures) :
                 objFilename(objFilename),
+                srs(srs),
                 textureDirectory(_textureDirectory),
                 minX(FLT_MAX),maxX(-FLT_MAX),minY(FLT_MAX),
                 maxY(-FLT_MAX),minZ(FLT_MAX),maxZ(-FLT_MAX),
