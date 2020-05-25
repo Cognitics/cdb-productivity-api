@@ -104,7 +104,7 @@ std::string fileToWKT(const std::string &filename)
 
 	std::ifstream prjfile(filename.c_str());
 	if (!prjfile)
-		return false;
+		return NULL;
 	std::stringstream buffer;
 	buffer << prjfile.rdbuf();
 	data = buffer.str();
@@ -120,7 +120,7 @@ OGRSpatialReference *LoadProjectionFromPRJ(const std::string &filename)
     
     std::ifstream prjfile(filename.c_str());
     if (!prjfile)
-        return false;
+        return NULL;
     std::stringstream buffer;
     buffer << prjfile.rdbuf();
     data = buffer.str();
@@ -237,7 +237,7 @@ int main(int argc, char **argv)
 	mesh_srs.srsWKT = to_print;
 	mesh_srs.offsetPt = mesh_offsets;
 
-	auto &mesh_obj = cognitics::QuickObj(file_str, mesh_srs, visitor_center_location, true);
+	auto mesh_obj = cognitics::QuickObj(file_str, mesh_srs, visitor_center_location, true);
 	auto vertex = mesh_obj.verts[0];
 
 	double origin_x = vertex.x;
@@ -299,7 +299,7 @@ int main(int argc, char **argv)
 
 	auto exportable_meshes = initializeExportableMeshesVector(building_polygons, mesh_obj);
 
-	auto &flatten_indices = std::list<uint32_t>();
+	auto flatten_indices = std::list<uint32_t>();
 
 	logger << "--- Preparing exportable meshes for cutting..." << logger.endl;
 	for (int i = 0; i < building_polygons.size(); ++i)
@@ -324,7 +324,8 @@ int main(int argc, char **argv)
 	auto bsp = sfa::BSP();
 	for (int i = 0, c = points.size(); i < c; ++i)
 		bsp.addGeometry(&points[i]);
-	bsp.generate(std::map<sfa::Geometry *, sfa::LineString *>());
+	auto _map = std::map<sfa::Geometry *, sfa::LineString *>();
+	bsp.generate(_map);
 	
 	auto indices_to_flatten_per_building = std::map<int, std::vector<uint32_t>>();
 	for (int i = 0, c = building_polygons.size(); i < c; ++i)
@@ -516,7 +517,7 @@ int main(int argc, char **argv)
 		auto& mesh = exportable_meshes.at(i);
 		mesh.exportObj(filename); // OBJ
 
-		auto& converter = cognitics::QuickObj2Flt();
+		auto converter = cognitics::QuickObj2Flt();
 		converter.convert(&mesh, filename + ".flt"); // FLT
 		exportable_mesh_collection_filenames[i] = filename;
 
@@ -524,7 +525,7 @@ int main(int argc, char **argv)
 		logger.endl;
 	}
 	mesh_obj.exportObj("Original_Mesh_Flattened");
-	auto& converter = cognitics::QuickObj2Flt();
+	auto converter = cognitics::QuickObj2Flt();
 	converter.convert(&mesh_obj, "Original_Mesh_Flattened.flt"); // FLT
 	logger << "Finished outputting meshes to OBJ files..." << logger.endl;
 
