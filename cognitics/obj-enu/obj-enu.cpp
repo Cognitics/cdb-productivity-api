@@ -36,7 +36,7 @@
 #pragma warning ( pop )
 
 #include "obj-enu.h"
-#include "quickobj.h"
+#include "scenegraphobj/quickobj.h"
 ccl::ObjLog logger;
 
 sfa::Point readOffsetXYZ(const std::string &filename)

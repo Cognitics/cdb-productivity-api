@@ -176,7 +176,7 @@ namespace ip {
 
     void MakeNonInterleaved(ip::ImageInfo &image)
     {
-        if(!image.interleaved)
+        if(image.interleaved)
         {
             ccl::binary noninterleaved_pix = image.pixels;
             for(int row=0;row<image.height;row++)

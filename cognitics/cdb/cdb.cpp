@@ -45,6 +45,7 @@ int usage(const std::string& error = "")
     cout_global_options();
     std::cout << "    Commands:\n";
     std::cout << "        INJECT                 inject data into a dataset\n";
+    std::cout << "        BUILD                  build dataset\n";
     std::cout << "        LOD                    generate LODs for dataset(s)\n";
     std::cout << "        SAMPLE                 sample a dataset\n";
     std::cout << "        VALIDATE               validate a dataset\n";
@@ -65,6 +66,8 @@ int usage_inject(const std::string& error = "")
     std::cout << "        -workers <#>             number of worker threads (default: 8)\n";
     std::cout << "    Supported Components (dataset cs1 cs2):\n";
     std::cout << "        Imagery 001 001\n";
+    std::cout << "        Imagery 003 001-012\n";
+    std::cout << "        Imagery 004 001-004\n";
     std::cout << "        Elevation 001 001\n";
     //std::cout << "        GSFeature 001 001\n";
     //std::cout << "        GSFeature 001 003\n";
@@ -105,6 +108,17 @@ int usage_inject(const std::string& error = "")
     std::cout << "        HydrographyNetwork 002 005\n";
     std::cout << "        HydrographyNetwork 002 007\n";
     std::cout << "        HydrographyNetwork 002 009\n";
+    return error.empty() ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+
+int usage_build(const std::string& error = "")
+{
+    if(!error.empty())
+        std::cerr << "\nERROR: " << error << "\n\n";
+    std::cout << "Usage: " << args[0] << " [options] <cdbpath> BUILD [command_options] <dataset> <cs1> <cs2>\n";
+    cout_global_options();
+    std::cout << "    Supported Components (dataset cs1 cs2):\n";
+    std::cout << "        MinMaxElevation 001\n";
     return error.empty() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
@@ -292,6 +306,8 @@ int main_inject(size_t arg_start)
     params.south = south;
     params.east = east;
     params.west = west;
+    params.cs1 = cs1;
+    params.cs2 = cs2;
     if(lod == 24)
         lod = 0;
 
@@ -301,6 +317,16 @@ int main_inject(size_t arg_start)
         return cognitics::cdb::cdb_inject(params) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
     else if((dataset == 4) && (cs1 == 1) && (cs2 == 1))  // Imagery, YearlyVstiRepresentation
+    {
+        params.imagery = sources;
+        return cognitics::cdb::cdb_inject(params) ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 4) && (cs1 == 3) && (cs2 >= 1) && (cs2 <= 12))  // Imagery, MonthlyVstiRepresentation
+    {
+        params.imagery = sources;
+        return cognitics::cdb::cdb_inject(params) ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 4) && (cs1 == 4) && (cs2 >= 1) && (cs2 <= 4))  // Imagery, QuarterlyVstiRepresentation
     {
         params.imagery = sources;
         return cognitics::cdb::cdb_inject(params) ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -363,6 +389,53 @@ int main_inject(size_t arg_start)
         return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
     else
         return usage_inject("Unsupported Component: " + cognitics::cdb::DatasetName(dataset) + " " + std::to_string(cs1) + " " + std::to_string(cs2));
+    return EXIT_SUCCESS;
+}
+
+int main_build(size_t arg_start)
+{
+    double north { DBL_MAX };
+    double south { -DBL_MAX };
+    double east { DBL_MAX };
+    double west { -DBL_MAX };
+    int dataset { 0 };
+    int cs1 { 0 };
+    int cs2 { 0 };
+    for(size_t argi = arg_start, argc = args.size(); argi < argc; ++argi)
+    {
+        if(dataset == 0)
+        {
+            dataset = to_int(args[argi], 0);
+            if(dataset == 0)
+                dataset = cognitics::cdb::DatasetCode(args[argi]);
+            if(dataset == 0)
+                return usage_build("Invalid Dataset: " + args[argi]);
+            continue;
+        }
+        if(cs1 == 0)
+        {
+            cs1 = to_int(args[argi], 0);
+            if(cs1 == 0)
+                return usage_build("Invalid Component Selector 1: " + args[argi]);
+            continue;
+        }
+        if(cs2 == 0)
+        {
+            cs2 = to_int(args[argi], 0);
+            if(cs2 == 0)
+                return usage_build("Invalid Component Selector 2: " + args[argi]);
+            continue;
+        }
+    }
+    if((dataset == 2) && (cs1 == 1))    // MinMaxElevation
+    {
+        cognitics::cdb::BuildMinMaxElevation(cdb, 2);
+        return EXIT_SUCCESS;
+    }
+    else
+    {
+        return usage_build("Unsupported Component: " + cognitics::cdb::DatasetName(dataset) + " " + std::to_string(cs1) + " " + std::to_string(cs2));
+    }
     return EXIT_SUCCESS;
 }
 
@@ -866,6 +939,8 @@ int main(int argc, char** argv)
 
     if(command == "inject")
         result = main_inject(command_argi);
+    else if(command == "build")
+        result = main_build(command_argi);
     else if(command == "lod")
         result = main_lod(command_argi);
     else if(command == "sample")

@@ -111,6 +111,7 @@ set(COGCORE_HEADERS
     ./include/ccl/ArgumentParser.h
     ./include/cad/AttributeDictionary.h
     ./include/scenegraphobj/scenegraphobj.h
+    ./include/scenegraphobj/quickobj.h
     ./include/sfa_file_factory/sfa_file_factory.h
     ./include/gltf/GltfData.h
     ./include/gltf/Tileset.h
@@ -858,6 +859,7 @@ set(COGCORE_SOURCES
     ./src/scenegraphfbx/buildFbxFromScene.cpp
     ./src/scenegraphobj/buildObjFromScene.cpp
     ./src/scenegraphobj/buildSceneFromOBJ.cpp
+    ./src/scenegraphobj/quickobj.cpp
     ./src/b64/base64.cpp    
     ./meshgen/ws/WebServices.cpp
     ./include/sqlite/sqlite3.c
@@ -971,30 +973,12 @@ source_group("Source Files\\ogr" REGULAR_EXPRESSION "src/ogr/.*$")
 link_libraries(cogcore)
 
 
+
+set (LM2OBJ_SOURCES ./lmbundle2obj/lmbundle2obj.cpp)
 SET(OBJ_EXT_SOURCES ./obj-preprocess/obj-preprocess.cpp
                     ./obj-preprocess/obj-preprocess.h
-		    ./obj-preprocess/quickobj.cpp
-		    ./obj-preprocess/quickobj.h
 		    ./obj-preprocess/meshrender.cpp
 		    ./obj-preprocess/MeshRender.h)
-
-add_executable(obj-preprocess ${OBJ_EXT_SOURCES})
-target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
-target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
-target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
-target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
-target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/lpng154/lib/libpng15.lib")
-target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")			
-target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/fbxsdk/lib/vs2015/x64/${CMAKE_BUILD_TYPE}/libfbxsdk.lib")
-target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/glew/release/lib/glew32.lib")
-target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/glut/lib/freeglut.lib")
-
-if(FALSE) #WIN32)
-    set(CMAKE_DEBUG_POSTFIX "d")
-    target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
-    target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
-    target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
-    target_link_libraries(obj-preprocess "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
 
     target_link_libraries(obj-preprocess
         debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgd.lib"
@@ -1016,7 +1000,33 @@ if(FALSE) #WIN32)
         debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib//OpenThreadsd.lib"
         optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/OpenThreads.lib")
 
+
+add_executable(obj-extract ${OBJ_EXT_SOURCES})
+if(WIN32)
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/lpng154/lib/libpng15.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glew/release/lib/glew32.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glut/lib/freeglut.lib")
+    target_link_libraries(obj-extract "opengl32.lib")
+    
 endif(WIN32)
+if(UNIX)
+    target_link_libraries(obj-extract ${CMAKE_DL_LIBS})
+    target_link_libraries(obj-extract "pthread")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glew/linux_x64/lib/libGLEW.a")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glut/linux_x64/lib/libglut.so")
+
+endif(UNIX)
 
 SET(OBJ_EXT_SOURCES ./obj-enu/obj-enu.cpp
                     ./obj-enu/obj-enu.h
@@ -1215,6 +1225,7 @@ endif(UNIX)
 
 
 if(COG_BUILD_GL_TOOLS)
+    add_definitions("-DCOG_USE_GL")
     if(WIN32)
         include_directories("${THIRD_PARTY_DIR}/glew/${CMAKE_BUILD_TYPE}/include")
         include_directories("${THIRD_PARTY_DIR}/glut/include")
@@ -1225,7 +1236,9 @@ if(COG_BUILD_GL_TOOLS)
     endif(UNIX)
 
     add_executable(mesh2cdb
-        mesh2cdb/quickobj.cpp
+
+#		mesh2cdb/quickobj.h
+#		mesh2cdb/quickobj_lmb.cpp
         mesh2cdb/mesh2cdb.cpp
         mesh2cdb/mesh2cdb.h
         mesh2cdb/meshconvert.cpp
@@ -1269,7 +1282,6 @@ if(COG_BUILD_GL_TOOLS)
     endif(UNIX)
 
     add_executable(mesh2cdb-rest
-        mesh2cdb/quickobj.cpp
         mesh2cdb/mesh2cdb-rest.cpp
         mesh2cdb/mesh2cdb.h
         mesh2cdb/meshconvert.cpp

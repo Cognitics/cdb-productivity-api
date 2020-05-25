@@ -35,7 +35,7 @@
 #pragma warning ( pop )
 
 #include "obj-preprocess.h"
-#include "quickobj.h"
+#include "scenegraphobj/quickobj.h"
 ccl::ObjLog logger;
 
 
@@ -72,5 +72,12 @@ int main(int argc, char **argv)
 		
 		logger << "test" << logger.endl;
 
+
+        //read an obj
+        ObjSrs srs;
+        cognitics::QuickObj qo("J:/for_cdb/output_0.obj", srs, "J:/for_cdb/", true);
+        //write a flt
+        cognitics::QuickObj2Flt flt;
+        flt.convert(&qo, "J:/for_cdb/test.flt");
 	return EXIT_SUCCESS;
 }

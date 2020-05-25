@@ -30,6 +30,54 @@ struct TileInfo
     int lod { 0 };
     int uref { 0 };
     int rref { 0 };
+    bool operator==(const TileInfo& rhs) const
+    {
+        return (latitude == rhs.latitude)
+            && (longitude == rhs.longitude)
+            && (dataset == rhs.dataset)
+            && (selector1 == rhs.selector1)
+            && (selector2 == rhs.selector2)
+            && (lod == rhs.lod)
+            && (uref == rhs.uref)
+            && (rref == rhs.rref) ;
+    }
+    bool operator!=(const TileInfo& rhs) const { return !(*this == rhs); } 
+    bool operator<(const TileInfo& rhs) const
+    {
+        if(latitude < rhs.latitude)
+            return true;
+        if(latitude > rhs.latitude)
+            return false;
+        if(longitude < rhs.longitude)
+            return true;
+        if(longitude > rhs.longitude)
+            return false;
+        if(dataset < rhs.dataset)
+            return true;
+        if(dataset > rhs.dataset)
+            return false;
+        if(selector1 < rhs.selector1)
+            return true;
+        if(selector1 > rhs.selector1)
+            return false;
+        if(selector2 < rhs.selector2)
+            return true;
+        if(selector2 > rhs.selector2)
+            return false;
+        if(lod < rhs.lod)
+            return true;
+        if(lod > rhs.lod)
+            return false;
+        if(uref < rhs.uref)
+            return true;
+        if(uref > rhs.uref)
+            return false;
+        if(rref < rhs.rref)
+            return true;
+        if(rref > rhs.rref)
+            return false;
+        return false;
+    }
 };
 
 struct RasterInfo
@@ -65,6 +113,9 @@ int TileDimensionForLod(int lod);
 double PixelSizeForLod(int lod);
 double MinimumPixelSizeForLod(int lod, double latitude);
 
+
+TileInfo ParentTileInfo(const TileInfo& tileinfo);
+
 std::vector<std::string> FileNamesForTiledDataset(const std::string& cdb, int dataset);
 
 std::vector<TileInfo> FeatureTileInfoForTiledDataset(const std::string& cdb, int dataset, std::tuple<double, double, double, double> nsew = std::make_tuple(DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX) );
@@ -91,7 +142,7 @@ bool TextureExists(const std::string& filename);
 
 RasterInfo ReadRasterInfo(const std::string& filename);
 bool WriteBytesToJP2(const std::string& filename, const RasterInfo& rasterinfo, const std::vector<unsigned char>& bytes);
-bool WriteFloatsToTIF(const std::string& filename, const RasterInfo& rasterinfo, const std::vector<float>& floats);
+bool WriteFloatsToTIF(const std::string& filename, const RasterInfo& rasterinfo, const std::vector<float>& floats, bool pixel_is_point = true);
 RasterInfo RasterInfoFromTileInfo(const TileInfo& tileinfo);
 std::vector<unsigned char> FlippedVertically(const std::vector<unsigned char>& bytes, size_t width, size_t height, size_t depth);
 std::vector<float> FlippedVertically(const std::vector<float>& bytes, size_t width, size_t height, size_t depth);
@@ -120,6 +171,7 @@ std::string PreviousIncrementalRootDirectory(const std::string& cdb);
 std::vector<std::string> VersionChainForCDB(const std::string& cdb);
 
 std::vector<std::pair<std::string, Tile>> CoverageTilesForTiles(const std::string& cdb, const std::vector<Tile>& source_tiles);
+std::vector<std::pair<std::string, TileInfo>> CoverageTileInfosForTileInfo(const std::string& cdb, const TileInfo& source_tileinfo);
 
 bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::string& filename, const std::string& models_path = "", const std::string& textures_path = "");
 bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::vector<std::string>& filenames, const std::string& models_path = "", const std::string& textures_path = "");
@@ -153,6 +205,8 @@ int ColumnsForLOD(int lod);
 int TileWidthAtLatitude(double latitude);
 
 std::vector<TileInfo> GenerateTileInfos(int lod, const NSEW& nsew);
+
+void BuildMinMaxElevation(const std::string& cdb, int lod_offset = 4);
 
 }
 }

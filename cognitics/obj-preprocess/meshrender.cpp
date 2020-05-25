@@ -26,7 +26,8 @@
 #include <scenegraph_gl/scenegraph_gl.h>
 #include "MeshRender.h"
 #include "ip/pngwrapper.h"
-#include "quickobj.h"
+
+#include "scenegraphobj/quickobj.h"
 #pragma warning ( push )
 #pragma warning ( disable : 4251 )        // C4251: 'GDALColorTable::aoEntries' : class 'std::vector<_Ty>' needs to have dll-interface to be used by clients of class 'GDALColorTable'
 #include "gdal_priv.h"
