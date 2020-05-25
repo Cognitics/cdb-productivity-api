@@ -124,11 +124,11 @@ int LodForPixelSize(double pixel_size)
         if(i<0)
         {
             int abspow = std::pow(2, abs(i));
-            lod_pixel_size = (1.0 / 1024) / (1/abspow);
+            lod_pixel_size = (1.0 / 1024.0) / (1.0/double(abspow));
         }
         else
         {
-            lod_pixel_size = (1.0 / 1024) / std::pow(2, i);
+            lod_pixel_size = (1.0 / 1024.0) / std::pow(2, i);
         }
         
         if(lod_pixel_size < pixel_size)
