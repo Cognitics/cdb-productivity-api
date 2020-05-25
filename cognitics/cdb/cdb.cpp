@@ -331,6 +331,28 @@ int main_inject(size_t arg_start)
         params.imagery = sources;
         return cognitics::cdb::cdb_inject(params) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
+    else if((dataset == 100) && (cs1 == 1) && (cs2 == 1))    // GSFeature, Man-made, point features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 100) && (cs1 == 1) && (cs2 == 3))    // GSFeature, Man-made, lineal features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 100) && (cs1 == 1) && (cs2 == 5))    // GSFeature, Man-made, polygon features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 100) && (cs1 == 2) && (cs2 == 1))    // GSFeature, Natural, point features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 100) && (cs1 == 2) && (cs2 == 3))    // GSFeature, Natural, lineal features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 100) && (cs1 == 2) && (cs2 == 5))    // GSFeature, Natural, polygon features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 100) && (cs1 == 3) && (cs2 == 1))    // GSFeature, Trees, point features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 100) && (cs1 == 4) && (cs2 == 1))    // GSFeature, Airport light, point features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 100) && (cs1 == 4) && (cs2 == 3))    // GSFeature, Airport, lineal features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 100) && (cs1 == 4) && (cs2 == 5))    // GSFeature, Airport, polygon features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 100) && (cs1 == 5) && (cs2 == 1))    // GSFeature, Environmental light, point features
+        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 101) && (cs1 == 1) && (cs2 == 1))    // GTFeature, Man-made, point features
         return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 101) && (cs1 == 1) && (cs2 == 3))    // GTFeature, Man-made, lineal features

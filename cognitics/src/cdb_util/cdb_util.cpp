@@ -124,11 +124,11 @@ int LodForPixelSize(double pixel_size)
         if(i<0)
         {
             int abspow = std::pow(2, abs(i));
-            lod_pixel_size = (1.0 / 1024) / (1/abspow);
+            lod_pixel_size = (1.0 / 1024.0) / (1.0/double(abspow));
         }
         else
         {
-            lod_pixel_size = (1.0 / 1024) / std::pow(2, i);
+            lod_pixel_size = (1.0 / 1024.0) / std::pow(2, i);
         }
         
         if(lod_pixel_size < pixel_size)
@@ -1338,7 +1338,9 @@ bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int l
         }
         if(tile_features.empty())
             continue;
-        if(!models_path.empty())
+        if((dataset == 100) && !models_path.empty())
+            InjectGSModels(cdb, tile, tile_features, models_path, textures_path);
+        if((dataset == 101) && !models_path.empty())
             InjectGTModels(cdb, tile_features, models_path, textures_path);
         auto tile_filepath = FilePathForTileInfo(tile_info);
         auto tile_filename = FileNameForTileInfo(tile_info);
@@ -1559,6 +1561,126 @@ void FileFromBytes(const std::string& filename, const std::string& bytes)
     file.close();
 }
 
+void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<sfa::Feature*>& features, const std::string& source_model_path, const std::string& source_texture_path)
+{
+    auto D300_tile_info = TileInfoForTile(tile);
+    D300_tile_info.dataset = 300;
+    D300_tile_info.selector1 = 1;
+    D300_tile_info.selector2 = 1;
+    auto D300_filepath = FilePathForTileInfo(D300_tile_info);
+    auto D300_filename = FileNameForTileInfo(D300_tile_info);
+
+    //"C:\data\CDB_Yemen_4.0.0\Tiles\N12\E045\300_GSModelGeometry\L05\U25\N12E045_D300_S001_T001_L05_U25_R0.zip"
+
+    ccl::ObjLog log;
+    auto fdd = FeatureDataDictionary();
+    auto source_by_target = std::map<std::string, std::string>();
+    for(auto feature : features)
+    {
+        if(!feature->attributes.hasAttribute("FACC"))
+            continue;
+        if(!feature->attributes.hasAttribute("FSC"))
+            continue;
+        if(!feature->attributes.hasAttribute("MODL"))
+            continue;
+        auto facc = feature->attributes.getAttributeAsString("FACC");
+        auto fsc = feature->attributes.getAttributeAsString("FSC");
+        while (fsc.size() < 3)
+            fsc = "0" + fsc;
+        auto modl = feature->attributes.getAttributeAsString("MODL");
+        auto modl_base = ccl::FileInfo(modl).getBaseName(true);
+        modl = modl_base + ".flt";
+        auto infile = source_model_path + "/" + modl;
+        auto outfile = cdb + "/Tiles/" + D300_filepath + "/" + D300_filename + "_" + facc + "_" + fsc + "_" + modl;
+
+        // TODO: TESTING
+        //infile = source_model_path + "/" + "N12E045_D300_S001_T001_L05_U25_R0_" + facc + "_" + fsc + "_" + modl;
+
+        source_by_target[outfile] = infile;
+        feature->attributes.setAttribute("MODL", modl_base);
+    }
+
+    for(auto entry : source_by_target)
+    {
+        auto outfile = entry.first;
+        if(ccl::fileExists(outfile))
+            continue;
+        auto infile = entry.second;
+        if(!ccl::fileExists(infile))
+        {
+            log << "Missing source model: " << infile << log.endl;
+            continue;
+        }
+
+        auto outpath = ccl::FileInfo(outfile).getDirName();
+        ccl::makeDirectory(outpath);
+
+        auto bytes = BytesFromFile(infile);
+        auto is = std::istringstream(bytes);
+        ccl::BindStream bs(is);
+        while(bs.pos() < bytes.size())
+        {
+            ccl::BigEndian<ccl::uint16_t> opcode;
+            ccl::BigEndian<ccl::uint16_t> length;
+            bs.bind(opcode);
+            bs.bind(length);
+            if(opcode == flt::Record::FLT_TEXTUREPALETTE)
+            {
+                std::string texture_filename;
+                auto pos = bs.pos();
+                bs.bind(texture_filename, 200);
+                bs.seek(pos);
+                texture_filename = texture_filename.c_str();
+                auto last = texture_filename.find_last_not_of(" \r\n");
+                if(last != std::string::npos)
+                    texture_filename = texture_filename.substr(0, last + 1);
+                auto texture_basename = ccl::FileInfo(texture_filename).getBaseName();
+
+                std::string wslod = "00";
+                if(ccl::FileInfo(texture_basename).getSuffix() == "rgb")
+                {
+                    auto wh = WidthHeightFromRGB(source_texture_path + "/" + texture_basename);
+                    int dim = std::max<int>(wh.first, wh.second);
+                    int exp = 1;
+                    while(std::pow(2, exp) < dim)
+                        ++exp;
+                    wslod = std::to_string(exp);
+                    if(wslod.size() < 2)
+                        wslod = "0" + wslod;
+                }
+                auto char1 = texture_basename.substr(0, 1);
+                auto char2 = texture_basename.substr(1, 1);
+
+                // TODO: storing texture in GT right now
+
+                auto target_texture_path = "/501_GTModelTexture/" + char1 + "/" + char2 + "/" + ccl::FileInfo(texture_basename).getBaseName(true);
+
+                auto out_texture_basename = "/D501_S001_D001_W" + wslod + "_" + texture_basename;
+                texture_filename = "../../../.." + target_texture_path + "/" + out_texture_basename;
+                memset(&bytes[pos], 0, 200);
+                strncpy(&bytes[pos], texture_filename.c_str(), 200);
+
+                texture_filename = cdb + "/GTModel" + target_texture_path + "/" + out_texture_basename;
+                if(!ccl::fileExists(texture_filename))
+                {
+                    if(ccl::fileExists(source_texture_path + "/" + texture_basename))
+                    {
+                        auto outpath = ccl::FileInfo(texture_filename).getDirName();
+                        ccl::makeDirectory(outpath);
+                        log << "  " << source_texture_path << "/" << texture_basename << " -> " << texture_filename << log.endl;
+                        ccl::copyFile(source_texture_path + "/" + texture_basename, texture_filename);
+                    }
+                    else
+                    {
+                        log << "Missing source texture: " << texture_basename << log.endl;
+                    }
+                }
+            }
+            bs.seek(bs.pos() + length - 4);
+        }
+        FileFromBytes(outfile, bytes);
+    }
+}
 
 void InjectGTModels(const std::string& cdb, const std::vector<sfa::Feature*>& features, const std::string& source_model_path, const std::string& source_texture_path)
 {
