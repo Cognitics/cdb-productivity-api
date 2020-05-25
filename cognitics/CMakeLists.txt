@@ -975,31 +975,94 @@ link_libraries(cogcore)
 
 
 set (LM2OBJ_SOURCES ./lmbundle2obj/lmbundle2obj.cpp)
-SET(OBJ_EXT_SOURCES ./obj-preprocess/obj-preprocess.cpp
-                    ./obj-preprocess/obj-preprocess.h
-		    ./obj-preprocess/meshrender.cpp
-		    ./obj-preprocess/MeshRender.h)
+#SET(OBJ_EXT_SOURCES ./obj-preprocess/obj-preprocess.cpp
+#                    ./obj-preprocess/obj-preprocess.h
+#		    ./obj-preprocess/meshrender.cpp
+#		    ./obj-preprocess/MeshRender.h)
 
-    target_link_libraries(obj-preprocess
-        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgd.lib"
-        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osg.lib")
+#add_executable(obj-preprocess ${OBJ_EXT_SOURCES})
+#    target_link_libraries(obj-preprocess
+#        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgd.lib"
+#        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osg.lib")
 
-    target_link_libraries(obj-preprocess
-        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgGAd.lib"
-        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgGA.lib")
+#    target_link_libraries(obj-preprocess
+#        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgGAd.lib"
+#        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgGA.lib")
 
-    target_link_libraries(obj-preprocess
-        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgDBd.lib"
-        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgDB.lib")
+#    target_link_libraries(obj-preprocess
+#        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgDBd.lib"
+#        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgDB.lib")
 
-    target_link_libraries(obj-preprocess
-        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib//osgUtild.lib"
-        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgUtil.lib")
+#    target_link_libraries(obj-preprocess
+#        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib//osgUtild.lib"
+#        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgUtil.lib")
 
-    target_link_libraries(obj-preprocess
-        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib//OpenThreadsd.lib"
-        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/OpenThreads.lib")
+#    target_link_libraries(obj-preprocess
+#        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib//OpenThreadsd.lib"
+#        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/OpenThreads.lib")
 
+
+#add_executable(obj-extract ${OBJ_EXT_SOURCES})
+#if(WIN32)
+#    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
+#    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+#    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+#    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+#    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/lpng154/lib/libpng15.lib")
+#    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")
+#    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glew/release/lib/glew32.lib")
+#    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glut/lib/freeglut.lib")
+#    target_link_libraries(obj-extract "opengl32.lib")
+    
+#endif(WIN32)
+#if(UNIX)
+#    target_link_libraries(obj-extract ${CMAKE_DL_LIBS})
+#    target_link_libraries(obj-extract "pthread")
+#    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+#    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
+#    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
+#    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+#    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
+#    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
+#    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glew/linux_x64/lib/libGLEW.a")
+#    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glut/linux_x64/lib/libglut.so")
+
+#endif(UNIX)
+
+SET(OBJ_EXT_SOURCES ./obj-enu/obj-enu.cpp
+                    ./obj-enu/obj-enu.h)
+
+add_executable(obj-enu ${OBJ_EXT_SOURCES})
+if(WIN32)
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/lpng154/lib/libpng15.lib")
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/glew/release/lib/glew32.lib")
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/fbxsdk/lib/vs2015/x64/${CMAKE_BUILD_TYPE}/libfbxsdk.lib")
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/glut/lib/freeglut.lib")
+    target_link_libraries(obj-enu "opengl32.lib")
+    
+endif(WIN32)
+if(UNIX)
+    target_link_libraries(obj-enu ${CMAKE_DL_LIBS})
+    target_link_libraries(obj-enu "pthread")
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/fbxsdk/lib/vs2015/x64/${CMAKE_BUILD_TYPE}/libfbxsdk.lib")
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/glew/linux_x64/lib/libGLEW.a")
+    target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/glut/linux_x64/lib/libglut.so")
+
+endif(UNIX)
+
+SET(OBJ_EXT_SOURCES ./obj-extract/obj-extract.cpp
+                    ./obj-extract/obj-extract.h)
 
 add_executable(obj-extract ${OBJ_EXT_SOURCES})
 if(WIN32)
@@ -1025,70 +1088,7 @@ if(UNIX)
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glew/linux_x64/lib/libGLEW.a")
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glut/linux_x64/lib/libglut.so")
-
 endif(UNIX)
-
-SET(OBJ_EXT_SOURCES ./obj-enu/obj-enu.cpp
-                    ./obj-enu/obj-enu.h
-		    ./obj-enu/quickobj.cpp
-		    ./obj-enu/quickobj.h)
-
-add_executable(obj-enu ${OBJ_EXT_SOURCES})
-target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
-target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
-target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
-target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
-target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/lpng154/lib/libpng15.lib")
-target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")			
-target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/fbxsdk/lib/vs2015/x64/${CMAKE_BUILD_TYPE}/libfbxsdk.lib")
-target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/glew/release/lib/glew32.lib")
-target_link_libraries(obj-enu "${THIRD_PARTY_DIR}/glut/lib/freeglut.lib")
-
-SET(OBJ_EXT_SOURCES ./obj-extract/obj-extract.cpp
-                    ./obj-extract/obj-extract.h
-		    ./obj-extract/quickobj.cpp
-		    ./obj-extract/quickobj.h)
-
-add_executable(obj-extract ${OBJ_EXT_SOURCES})
-target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
-target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
-target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
-target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
-target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/lpng154/lib/libpng15.lib")
-target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")			
-target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/fbxsdk/lib/vs2015/x64/${CMAKE_BUILD_TYPE}/libfbxsdk.lib")
-target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glew/release/lib/glew32.lib")
-target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glut/lib/freeglut.lib")
-
-if(FALSE) #WIN32)
-    set(CMAKE_DEBUG_POSTFIX "d")
-    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
-    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
-    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
-    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
-
-    target_link_libraries(obj-extract 
-        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgd.lib"
-        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osg.lib")
-
-    target_link_libraries(obj-extract 
-        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgGAd.lib"
-        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgGA.lib")
-
-    target_link_libraries(obj-extract 
-        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgDBd.lib"
-        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgDB.lib")
-
-    target_link_libraries(obj-extract 
-        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib//osgUtild.lib"
-        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/osgUtil.lib")
-
-    target_link_libraries(obj-extract 
-        debug "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib//OpenThreadsd.lib"
-        optimized "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/OpenThreads.lib")
-
-endif(WIN32)
-
 
 add_executable(cdbinfo cdbinfo/cdbinfo.cpp)
 if(WIN32)

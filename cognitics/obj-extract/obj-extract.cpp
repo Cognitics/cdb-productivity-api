@@ -222,7 +222,7 @@ int main(int argc, char **argv)
     }
 	putenv("GDAL_DATA=./gdal-data");
 
-	std::string visitor_center_location = "C:\\Users\\mkrentz\\Development\\3DStuffs\\models\\fort_story\\final\\";
+	std::string visitor_center_location = argv[1];
 	// C:\Users\mkrentz\Development\cdb_mesh\cdb-productivity-api\cognitics\build\data
 
 	auto building_polygons = geometryListFromPolygonJson(visitor_center_location + "Polygons.json");

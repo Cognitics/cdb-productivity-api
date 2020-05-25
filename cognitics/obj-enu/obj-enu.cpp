@@ -68,7 +68,7 @@ std::string fileToWKT(const std::string &filename)
 
 	std::ifstream prjfile(filename.c_str());
 	if (!prjfile)
-		return false;
+		return "";
 	std::stringstream buffer;
 	buffer << prjfile.rdbuf();
 	data = buffer.str();
@@ -84,7 +84,7 @@ OGRSpatialReference *LoadProjectionFromPRJ(const std::string &filename)
     
     std::ifstream prjfile(filename.c_str());
     if (!prjfile)
-        return false;
+        return NULL;
     std::stringstream buffer;
     buffer << prjfile.rdbuf();
     data = buffer.str();
@@ -118,7 +118,7 @@ int main(int argc, char **argv)
 	logger << argv[0] << logger.endl;
 	printf("This microservices assumes that for each separate mesh there exists:\n- an mtl file\n- texture(s)\n- an xyz file\n- an obj file,\n- a prj file\n");
 
-	std::string visitor_center_location = "C:/Users/mkrentz/Development/cdb_mesh/cdb-productivity-api/cognitics/build/data/";
+	std::string visitor_center_location = argv[2];
 	// C:\Users\mkrentz\Development\cdb_mesh\cdb-productivity-api\cognitics\build\data
 
 	auto fileread = ccl::FileInfo();
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 	auto new_dir_obj = ccl::makeDirectory(new_dir);
 	auto all_files = fileread.getAllFiles(argv[1], "*");
 
-	auto& global_mesh_collection = cognitics::QuickObj();
+	auto global_mesh_collection = cognitics::QuickObj();
 
 	auto mesh_offsets = sfa::Point();
 	auto prj_str = std::string();
