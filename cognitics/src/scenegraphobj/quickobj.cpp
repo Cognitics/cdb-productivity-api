@@ -98,18 +98,23 @@ namespace cognitics {
 
     sfa::Point QuickObj::findCenterAndReOrigin()
     {
+        //The z origin will always be set to the lowest z value in the model
         sfa::Point origin;
         sfa::Point centroid;
+        double lowest_z = FLT_MAX;
         for(auto &&v : this->verts)
         {
             centroid += sfa::Point(v.x,v.y,v.z);
+            lowest_z = std::min<double>(lowest_z, v.z);
         }
         centroid /= verts.size();
+        centroid.setZ(lowest_z);
         for (auto &&v : this->verts)
         {
             v.x -= centroid.X();
             v.y -= centroid.Y();
             v.z -= centroid.Z();
+            
         }
         //reproject the ENU coordinate 'centroid' to lat/lon
         origin = ENU2LatLon(this->srs, centroid);
