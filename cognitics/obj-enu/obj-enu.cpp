@@ -151,6 +151,8 @@ int main(int argc, char **argv)
 		if (!extension.compare("xyz"))
 		{
 			mesh_offsets = readOffsetXYZ(name);
+			auto new_dest = new_dir + "output.xyz";
+			ccl::copyFile(name, new_dest);
 		}
 		if (!extension.compare("obj"))
 		{
@@ -158,6 +160,9 @@ int main(int argc, char **argv)
 		}
 		if (!extension.compare("prj"))
 		{
+
+			auto new_dest = new_dir + "output.prj";
+			ccl::copyFile(name, new_dest);
 			prj_str = name;
 		}
 		if (!mesh_offsets.isEmpty() && !prj_str.empty() && !obj_str.empty())

@@ -216,11 +216,11 @@ int main(int argc, char **argv)
 {
     cognitics::ArgumentParser args;
     
-    if(args.Parse(argc,argv)==EXIT_FAILURE)
-    {
-		return args.Usage("failure");
-    }
-	putenv("GDAL_DATA=./gdal-data");
+  //  if(args.Parse(argc,argv)==EXIT_FAILURE)
+  //  {
+  //		return args.Usage("failure");
+  //  }
+  //	putenv("GDAL_DATA=./gdal-data");
 
 	std::string visitor_center_location = argv[1];
 	// C:\Users\mkrentz\Development\cdb_mesh\cdb-productivity-api\cognitics\build\data
