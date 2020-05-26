@@ -1569,8 +1569,8 @@ void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<
     D300_tile_info.selector2 = 1;
     auto D300_filepath = FilePathForTileInfo(D300_tile_info);
     auto D300_filename = FileNameForTileInfo(D300_tile_info);
-
-    //"C:\data\CDB_Yemen_4.0.0\Tiles\N12\E045\300_GSModelGeometry\L05\U25\N12E045_D300_S001_T001_L05_U25_R0.zip"
+    auto D300_zipname_temp = cdb + "/Tiles/" + D300_filepath + "/" + D300_filename + ".zip";
+    auto D300_zipname = std::filesystem::path(D300_zipname_temp).string();
 
     ccl::ObjLog log;
     auto fdd = FeatureDataDictionary();
@@ -1592,13 +1592,21 @@ void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<
         modl = modl_base + ".flt";
         auto infile = source_model_path + "/" + modl;
         auto outfile = cdb + "/Tiles/" + D300_filepath + "/" + D300_filename + "_" + facc + "_" + fsc + "_" + modl;
-
-        // TODO: TESTING
-        //infile = source_model_path + "/" + "N12E045_D300_S001_T001_L05_U25_R0_" + facc + "_" + fsc + "_" + modl;
-
         source_by_target[outfile] = infile;
         feature->attributes.setAttribute("MODL", modl_base);
     }
+
+    //mz_bool mz_zip_add_mem_to_archive_file_in_place(const char *pZip_filename, const char *pArchive_name, const void *pBuf, size_t buf_size, const void *pComment, mz_uint16 comment_size, mz_uint level_and_flags);
+    /*
+        mz_zip_archive zip;
+        memset(&zip, 0, sizeof(zip));
+        if(!mz_zip_reader_init_file(&zip, parent_path.c_str(), 0))
+            return false;
+        mz_zip_reader_end(&zip);
+        */
+
+    // currently, we populate the entire tile from scratch
+    std::remove(D300_zipname.c_str());
 
     for(auto entry : source_by_target)
     {
@@ -1653,14 +1661,13 @@ void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<
 
                 // TODO: storing texture in GT right now
 
-                auto target_texture_path = "/501_GTModelTexture/" + char1 + "/" + char2 + "/" + ccl::FileInfo(texture_basename).getBaseName(true);
-
+                auto target_texture_path = "GTModel/501_GTModelTexture/" + char1 + "/" + char2 + "/" + ccl::FileInfo(texture_basename).getBaseName(true);
                 auto out_texture_basename = "/D501_S001_D001_W" + wslod + "_" + texture_basename;
-                texture_filename = "../../../.." + target_texture_path + "/" + out_texture_basename;
+                texture_filename = "../../../../../../" + target_texture_path + "/" + out_texture_basename;
                 memset(&bytes[pos], 0, 200);
                 strncpy(&bytes[pos], texture_filename.c_str(), 200);
 
-                texture_filename = cdb + "/GTModel" + target_texture_path + "/" + out_texture_basename;
+                texture_filename = cdb + "/" + target_texture_path + "/" + out_texture_basename;
                 if(!ccl::fileExists(texture_filename))
                 {
                     if(ccl::fileExists(source_texture_path + "/" + texture_basename))
@@ -1678,7 +1685,10 @@ void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<
             }
             bs.seek(bs.pos() + length - 4);
         }
-        FileFromBytes(outfile, bytes);
+
+        //FileFromBytes(outfile, bytes);
+        auto outfn = ccl::FileInfo(outfile).getBaseName();
+        auto mz_result = mz_zip_add_mem_to_archive_file_in_place(D300_zipname.c_str(), outfn.c_str(), bytes.data(), bytes.size(), NULL, 0, MZ_DEFAULT_COMPRESSION);
     }
 }
 
