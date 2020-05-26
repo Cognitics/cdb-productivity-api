@@ -515,21 +515,97 @@ int main(int argc, char **argv)
 		logger << "\tWriting " + filename << logger.endl;
 
 		auto& mesh = exportable_meshes.at(i);
-		mesh.exportObj(filename); // OBJ
+		mesh.exportObj(visitor_center_location + filename); // OBJ
 
-		auto converter = cognitics::QuickObj2Flt();
-		converter.convert(&mesh, filename + ".flt"); // FLT
-		exportable_mesh_collection_filenames[i] = filename;
+		ObjSrs srs;
+		OGRSpatialReference *srf = LoadProjectionFromPRJ(visitor_center_location + "output.prj");
+		char *pszSRS_WKT = NULL;
+		srf->exportToWkt(&pszSRS_WKT);
+		if (pszSRS_WKT)
+			srs.srsWKT = std::string(pszSRS_WKT);
+		else
+			srs.srsWKT = std::string("ENU");
+		srs.offsetPt = readOffsetXYZ(visitor_center_location + "output.xyz");
+		cognitics::QuickObj qo(visitor_center_location + filename + ".obj", srs, visitor_center_location, true);
+
+		qo.expandCoordinates();
+		//Translate to the centroid and get the origin in lat/lon
+		sfa::Point geoOrigin = qo.findCenterAndReOrigin();
+		cognitics::QuickObj2Flt qo_flt;
+		qo_flt.convertTextures(&qo, visitor_center_location);
+		qo_flt.convert(&qo, visitor_center_location + filename + ".flt");
+		//Now, write a shapefile with the point feature and the attribute of the filename.
+		InitOGR();
+		std::string shapeFilename = visitor_center_location + filename + ".shp";
+		sfa::File *output_sfa_file = sfa::FileRegistry::instance()->getFile(shapeFilename);
+		if (!output_sfa_file->open(shapeFilename, true))
+		{
+			if (!output_sfa_file || !output_sfa_file->create(shapeFilename))
+			{
+				logger << ccl::LERR << "failed to open " << shapeFilename << "." << logger.endl;
+				return -1;
+			}
+		}
+		output_sfa_file->beginUpdating();
+		sfa::Layer *output_layer_point = output_sfa_file->addLayer("points", sfa::wkbPointZ);
+		sfa::Feature instanceFeature;
+		instanceFeature.setAttribute("filename", filename + ".flt");
+		instanceFeature.geometry = geoOrigin.copy();
+		sfa::Feature *new_feature = output_layer_point->addFeature(&instanceFeature);
+		delete new_feature;
+		output_sfa_file->commitUpdates();
+		sfa::FileRegistry::instance()->destroyFile(output_sfa_file);
 
 		logger << "\tFinished writing " + filename << logger.endl;
 		logger.endl;
 	}
-	mesh_obj.exportObj("Original_Mesh_Flattened");
-	auto converter = cognitics::QuickObj2Flt();
-	converter.convert(&mesh_obj, "Original_Mesh_Flattened.flt"); // FLT
+	std::string filename = "Original_Mesh_Flattened";
+	mesh_obj.exportObj(visitor_center_location + filename);
+	
+	ObjSrs srs;
+	OGRSpatialReference *srf = LoadProjectionFromPRJ(visitor_center_location + "output.prj");
+	char *pszSRS_WKT = NULL;
+	srf->exportToWkt(&pszSRS_WKT);
+	if (pszSRS_WKT)
+		srs.srsWKT = std::string(pszSRS_WKT);
+	else
+		srs.srsWKT = std::string("ENU");
+	srs.offsetPt = readOffsetXYZ(visitor_center_location + "output.xyz");
+	cognitics::QuickObj qo(visitor_center_location + filename + ".obj", srs, visitor_center_location, true);
+
+	qo.expandCoordinates();
+	//Translate to the centroid and get the origin in lat/lon
+	sfa::Point geoOrigin = qo.findCenterAndReOrigin();
+	cognitics::QuickObj2Flt qo_flt;
+	qo_flt.convertTextures(&qo, visitor_center_location);
+	qo_flt.convert(&qo, visitor_center_location + filename + ".flt");
+	//Now, write a shapefile with the point feature and the attribute of the filename.
+	InitOGR();
+	std::string shapeFilename = visitor_center_location + filename + ".shp";
+	sfa::File *output_sfa_file = sfa::FileRegistry::instance()->getFile(shapeFilename);
+	if (!output_sfa_file->open(shapeFilename, true))
+	{
+		if (!output_sfa_file || !output_sfa_file->create(shapeFilename))
+		{
+			logger << ccl::LERR << "failed to open " << shapeFilename << "." << logger.endl;
+			return -1;
+		}
+	}
+	output_sfa_file->beginUpdating();
+	sfa::Layer *output_layer_point = output_sfa_file->addLayer("points", sfa::wkbPointZ);
+	sfa::Feature instanceFeature;
+	instanceFeature.setAttribute("filename", filename + ".flt");
+	instanceFeature.geometry = geoOrigin.copy();
+	sfa::Feature *new_feature = output_layer_point->addFeature(&instanceFeature);
+	delete new_feature;
+	output_sfa_file->commitUpdates();
+	sfa::FileRegistry::instance()->destroyFile(output_sfa_file);
+
 	logger << "Finished outputting meshes to OBJ files..." << logger.endl;
 
 	
+
+	/*
 	auto etp_convert = Cognitics::CoordinateSystems::EllipsoidTangentPlane(mesh_srs.geoOrigin.X(), mesh_srs.geoOrigin.Y(), mesh_srs.geoOrigin.Z());
 	cts::CS_CoordinateSystem *wgs84;
 	auto coordinate_system_factory = cts::CS_CoordinateSystemFactory();
@@ -584,7 +660,7 @@ int main(int argc, char **argv)
 	feature.setAttribute("FSC", 0);
 	feature.setAttribute("MODL", base_filename + ".flt");
 	pointLayer->addFeature(&feature);
-
+	*/
 
 	logger << "test" << logger.endl;
 
