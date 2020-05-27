@@ -181,6 +181,7 @@ std::vector<sfa::Feature*> FeaturesForTileCroppedFeature(const TileInfo& tile_in
 void ReportMissingGSFeatureData(const std::string& cdb, std::tuple<double, double, double, double> nsew = std::make_tuple(DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX));
 void ReportMissingGTFeatureData(const std::string& cdb, std::tuple<double, double, double, double> nsew = std::make_tuple(DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX));
 
+void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<sfa::Feature*>& features, const std::string& source_model_path, const std::string& source_textures_path);
 void InjectGTModels(const std::string& cdb, const std::vector<sfa::Feature*>& features, const std::string& source_model_path, const std::string& source_textures_path);
 bool WriteFeaturesToOGRFile(const std::string& filename, const std::vector<sfa::Feature*> features);
 std::vector<sfa::Feature*> FeaturesForTileInfo(const std::string& cdb, const TileInfo& tile_info);
