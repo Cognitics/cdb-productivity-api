@@ -1080,8 +1080,8 @@ bool MakeCDB(const std::string& cdb)
         return false;
     outfile << "<?xml version = \"1.0\"?>\n";
     outfile << "<Version xmlns:xsi = \"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n";
-    outfile << "<PreviousIncrementalRootDirectory name = \"\" />\n";
-    outfile << "<Comment>Created by mesh2cdb</Comment>\n";
+    outfile << "<PreviousIncrementalRootDirectory name=\"\" />\n";
+    outfile << "<Comment>Created by Cognitics CDB Productivity Suite</Comment>\n";
     outfile << "</Version>\n";
     outfile.close();
     return true;
@@ -1175,7 +1175,9 @@ std::string PreviousIncrementalRootDirectory(const std::string& cdb)
     auto pird_name = xml.substr(pos + 1, endpos - pos - 1);
     if(pird_name.empty())
         return "";
-    return cdb + "/" + pird_name;
+    if(pird_name[0] == '.')
+        return cdb + "/" + pird_name;
+    return pird_name;
 }
 
 std::vector<std::string> VersionChainForCDB(const std::string& cdb)
