@@ -1279,7 +1279,7 @@ std::vector<std::pair<std::string, TileInfo>> CoverageTileInfosForTileInfo(const
     return result;
 }
 
-bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::string& filename, const std::string& models_path, const std::string& textures_path)
+bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::string& filename, bool replace, const std::string& models_path, const std::string& textures_path)
 {
     if (!IsCDB(cdb))
         MakeCDB(cdb);
@@ -1339,7 +1339,7 @@ bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int l
         if(tile_features.empty())
             continue;
         if((dataset == 100) && !models_path.empty())
-            InjectGSModels(cdb, tile, tile_features, models_path, textures_path);
+            InjectGSModels(cdb, tile, tile_features, replace, models_path, textures_path);
         if((dataset == 101) && !models_path.empty())
             InjectGTModels(cdb, tile_features, models_path, textures_path);
         auto tile_filepath = FilePathForTileInfo(tile_info);
@@ -1347,13 +1347,17 @@ bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int l
         auto tile_fn = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename + ".shp";
         log << "    " << tile_filename << ": " << tile_features.size() << " features" << log.endl;
         ccl::makeDirectory(cdb + "/Tiles/" + tile_filepath);
+        if(replace)
+            std::remove(tile_fn.c_str());
         auto file = ogr::File();
         if(!file.open(tile_fn, true))
         {
             if(!file.create(tile_fn))
                 return false;
-            // TODO: create layer?
         }
+        auto layer = file.getLayerByName(tile_filename);
+        if(!layer)
+            layer = file.addLayer(tile_filename, tile_features[0]->getWKBGeometryType());
         for(auto feature : tile_features)
         {
             // TODO: attribute handling
@@ -1361,7 +1365,7 @@ bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int l
             auto new_features = FeaturesForTileCroppedFeature(tile_info, *feature);
             for(auto new_feature : new_features)
             {
-                delete file.addFeature(new_feature);
+                delete layer->addFeature(new_feature);
                 delete new_feature;
             }
         }
@@ -1372,12 +1376,12 @@ bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int l
     return true;
 }
 
-bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::vector<std::string>& filenames, const std::string& models_path, const std::string& textures_path)
+bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::vector<std::string>& filenames, bool replace, const std::string& models_path, const std::string& textures_path)
 {
     bool result = true;
     for(auto fn : filenames)
     {
-        if(!InjectFeatures(cdb, dataset, cs1, cs2, lod, fn, models_path, textures_path))
+        if(!InjectFeatures(cdb, dataset, cs1, cs2, lod, fn, replace, models_path, textures_path))
             result = false;
     }
     return result;
@@ -1561,7 +1565,7 @@ void FileFromBytes(const std::string& filename, const std::string& bytes)
     file.close();
 }
 
-void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<sfa::Feature*>& features, const std::string& source_model_path, const std::string& source_texture_path)
+void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<sfa::Feature*>& features, bool replace, const std::string& source_model_path, const std::string& source_texture_path)
 {
     auto D300_tile_info = TileInfoForTile(tile);
     D300_tile_info.dataset = 300;
@@ -1605,8 +1609,8 @@ void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<
         mz_zip_reader_end(&zip);
         */
 
-    // currently, we populate the entire tile from scratch
-    std::remove(D300_zipname.c_str());
+    if(replace)
+        std::remove(D300_zipname.c_str());
 
     for(auto entry : source_by_target)
     {

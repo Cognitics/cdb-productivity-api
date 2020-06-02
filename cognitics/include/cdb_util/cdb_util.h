@@ -173,15 +173,15 @@ std::vector<std::string> VersionChainForCDB(const std::string& cdb);
 std::vector<std::pair<std::string, Tile>> CoverageTilesForTiles(const std::string& cdb, const std::vector<Tile>& source_tiles);
 std::vector<std::pair<std::string, TileInfo>> CoverageTileInfosForTileInfo(const std::string& cdb, const TileInfo& source_tileinfo);
 
-bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::string& filename, const std::string& models_path = "", const std::string& textures_path = "");
-bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::vector<std::string>& filenames, const std::string& models_path = "", const std::string& textures_path = "");
+bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::string& filename, bool replace = false, const std::string& models_path = "", const std::string& textures_path = "");
+bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::vector<std::string>& filenames, bool replace = false, const std::string& models_path = "", const std::string& textures_path = "");
 
 std::vector<sfa::Feature*> FeaturesForTileCroppedFeature(const TileInfo& tile_info, const sfa::Feature& feature);
 
 void ReportMissingGSFeatureData(const std::string& cdb, std::tuple<double, double, double, double> nsew = std::make_tuple(DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX));
 void ReportMissingGTFeatureData(const std::string& cdb, std::tuple<double, double, double, double> nsew = std::make_tuple(DBL_MAX, DBL_MAX, DBL_MAX, DBL_MAX));
 
-void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<sfa::Feature*>& features, const std::string& source_model_path, const std::string& source_textures_path);
+void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<sfa::Feature*>& features, bool replace, const std::string& source_model_path, const std::string& source_textures_path);
 void InjectGTModels(const std::string& cdb, const std::vector<sfa::Feature*>& features, const std::string& source_model_path, const std::string& source_textures_path);
 bool WriteFeaturesToOGRFile(const std::string& filename, const std::vector<sfa::Feature*> features);
 std::vector<sfa::Feature*> FeaturesForTileInfo(const std::string& cdb, const TileInfo& tile_info);
