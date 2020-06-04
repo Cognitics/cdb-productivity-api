@@ -112,7 +112,7 @@ public:
     int cs1 { 1 };
     int cs2 { 1 };
     int lod { 24 };
-    bool replace { false };
+    bool insert { false };
     std::string models_path;
     std::string textures_path;
 
@@ -193,9 +193,6 @@ std::vector<std::string> VersionChainForCDB(const std::string& cdb);
 
 std::vector<std::pair<std::string, Tile>> CoverageTilesForTiles(const std::string& cdb, const std::vector<Tile>& source_tiles);
 std::vector<std::pair<std::string, TileInfo>> CoverageTileInfosForTileInfo(const std::string& cdb, const TileInfo& source_tileinfo);
-
-//bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::string& filename, bool replace = false, const std::string& models_path = "", const std::string& textures_path = "");
-//bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::vector<std::string>& filenames, bool replace = false, const std::string& models_path = "", const std::string& textures_path = "");
 
 std::vector<sfa::Feature*> FeaturesForTileCroppedFeature(const TileInfo& tile_info, const sfa::Feature& feature);
 

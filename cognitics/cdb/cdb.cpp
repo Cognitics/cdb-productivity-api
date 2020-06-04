@@ -64,24 +64,24 @@ int usage_inject(const std::string& error = "")
     std::cout << "        -models <path>           path to models\n";
     std::cout << "        -textures <path>         path to textures\n";
     std::cout << "        -workers <#>             number of worker threads (default: 8)\n";
-    std::cout << "        -replace                 replace target tile data\n";
+    std::cout << "        -insert                  insert target tile data (GS/GT point features only)\n";
     std::cout << "        -previous-cdb <path>     path to previous version CDB\n";
     std::cout << "    Supported Components (dataset cs1 cs2):\n";
     std::cout << "        Imagery 001 001\n";
     std::cout << "        Imagery 003 001-012\n";
     std::cout << "        Imagery 004 001-004\n";
     std::cout << "        Elevation 001 001\n";
-    //std::cout << "        GSFeature 001 001\n";
-    //std::cout << "        GSFeature 001 003\n";
-    //std::cout << "        GSFeature 001 005\n";
-    //std::cout << "        GSFeature 002 001\n";
-    //std::cout << "        GSFeature 002 003\n";
-    //std::cout << "        GSFeature 002 005\n";
-    //std::cout << "        GSFeature 003 001\n";
-    //std::cout << "        GSFeature 004 001\n";
-    //std::cout << "        GSFeature 004 003\n";
-    //std::cout << "        GSFeature 004 005\n";
-    //std::cout << "        GSFeature 005 001\n";
+    std::cout << "        GSFeature 001 001\n";
+    std::cout << "        GSFeature 001 003\n";
+    std::cout << "        GSFeature 001 005\n";
+    std::cout << "        GSFeature 002 001\n";
+    std::cout << "        GSFeature 002 003\n";
+    std::cout << "        GSFeature 002 005\n";
+    std::cout << "        GSFeature 003 001\n";
+    std::cout << "        GSFeature 004 001\n";
+    std::cout << "        GSFeature 004 003\n";
+    std::cout << "        GSFeature 004 005\n";
+    std::cout << "        GSFeature 005 001\n";
     std::cout << "        GTFeature 001 001\n";
     std::cout << "        GTFeature 001 003\n";
     std::cout << "        GTFeature 001 005\n";
@@ -220,7 +220,7 @@ int main_inject(size_t arg_start)
     int dataset { 0 };
     int cs1 { 0 };
     int cs2 { 0 };
-    bool replace = false;
+    bool insert = false;
     auto previous_cdb = std::string();
     auto models = std::string();
     auto textures = std::string();
@@ -259,9 +259,9 @@ int main_inject(size_t arg_start)
             workers = to_int(args[argi], 8);
             continue;
         }
-        if(args[argi] == "-replace")
+        if(args[argi] == "-insert")
         {
-            replace = true;
+            insert = true;
             continue;
         }
         if(args[argi] == "-previous-cdb")
@@ -336,9 +336,12 @@ int main_inject(size_t arg_start)
     injector.cs1 = cs1;
     injector.cs2 = cs2;
     injector.lod = lod;
-    injector.replace = replace;
+    injector.insert = insert;
     injector.models_path = models;
     injector.textures_path = textures;
+
+    if(insert && (dataset != 100) && (dataset != 101))
+        return usage_inject("Insert not supported for component: " + cognitics::cdb::DatasetName(dataset) + " " + std::to_string(cs1) + " " + std::to_string(cs2));
 
     if((dataset == 1) && (cs1 == 1) && (cs2 == 1))  // Elevation, PrimaryTerrainElevation
     {
