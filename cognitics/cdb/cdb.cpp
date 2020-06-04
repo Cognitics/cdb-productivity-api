@@ -65,6 +65,7 @@ int usage_inject(const std::string& error = "")
     std::cout << "        -textures <path>         path to textures\n";
     std::cout << "        -workers <#>             number of worker threads (default: 8)\n";
     std::cout << "        -replace                 replace target tile data\n";
+    std::cout << "        -previous-cdb <path>     path to previous version CDB\n";
     std::cout << "    Supported Components (dataset cs1 cs2):\n";
     std::cout << "        Imagery 001 001\n";
     std::cout << "        Imagery 003 001-012\n";
@@ -220,6 +221,7 @@ int main_inject(size_t arg_start)
     int cs1 { 0 };
     int cs2 { 0 };
     bool replace = false;
+    auto previous_cdb = std::string();
     auto models = std::string();
     auto textures = std::string();
     auto sources = std::vector<std::string>();
@@ -260,6 +262,14 @@ int main_inject(size_t arg_start)
         if(args[argi] == "-replace")
         {
             replace = true;
+            continue;
+        }
+        if(args[argi] == "-previous-cdb")
+        {
+            ++argi;
+            if(argi > argc - 1)
+                return usage_inject("Missing previous version CDB path");
+            previous_cdb = args[argi];
             continue;
         }
         if(args[argi] == "-bounds")
@@ -305,6 +315,7 @@ int main_inject(size_t arg_start)
         return usage_inject();
     auto params = cognitics::cdb::cdb_inject_parameters();
     params.cdb = cdb;
+    params.previous_cdb = previous_cdb;
     if(lod != 24)
         params.lod = lod;
     if(workers != 8)
@@ -317,6 +328,17 @@ int main_inject(size_t arg_start)
     params.cs2 = cs2;
     if(lod == 24)
         lod = 0;
+
+    auto injector = cognitics::cdb::CDBInjector();
+    injector.cdb = cdb;
+    injector.previous_cdb = previous_cdb;
+    injector.dataset = dataset;
+    injector.cs1 = cs1;
+    injector.cs2 = cs2;
+    injector.lod = lod;
+    injector.replace = replace;
+    injector.models_path = models;
+    injector.textures_path = textures;
 
     if((dataset == 1) && (cs1 == 1) && (cs2 == 1))  // Elevation, PrimaryTerrainElevation
     {
@@ -339,83 +361,83 @@ int main_inject(size_t arg_start)
         return cognitics::cdb::cdb_inject(params) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
     else if((dataset == 100) && (cs1 == 1) && (cs2 == 1))    // GSFeature, Man-made, point features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 100) && (cs1 == 1) && (cs2 == 3))    // GSFeature, Man-made, lineal features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 100) && (cs1 == 1) && (cs2 == 5))    // GSFeature, Man-made, polygon features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 100) && (cs1 == 2) && (cs2 == 1))    // GSFeature, Natural, point features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 100) && (cs1 == 2) && (cs2 == 3))    // GSFeature, Natural, lineal features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 100) && (cs1 == 2) && (cs2 == 5))    // GSFeature, Natural, polygon features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 100) && (cs1 == 3) && (cs2 == 1))    // GSFeature, Trees, point features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 100) && (cs1 == 4) && (cs2 == 1))    // GSFeature, Airport light, point features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 100) && (cs1 == 4) && (cs2 == 3))    // GSFeature, Airport, lineal features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 100) && (cs1 == 4) && (cs2 == 5))    // GSFeature, Airport, polygon features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 100) && (cs1 == 5) && (cs2 == 1))    // GSFeature, Environmental light, point features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 101) && (cs1 == 1) && (cs2 == 1))    // GTFeature, Man-made, point features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 101) && (cs1 == 1) && (cs2 == 3))    // GTFeature, Man-made, lineal features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 101) && (cs1 == 1) && (cs2 == 5))    // GTFeature, Man-made, polygon features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 101) && (cs1 == 2) && (cs2 == 1))    // GTFeature, Tree, point features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 101) && (cs1 == 2) && (cs2 == 3))    // GTFeature, Tree, lineal features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 101) && (cs1 == 2) && (cs2 == 5))    // GTFeature, Tree, polygon features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 101) && (cs1 == 3) && (cs2 == 1))    // GTFeature, Moving Model location, point features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 1) && (cs2 == 1))    // GeoPoliticalGTFeature, Boundary, point features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 1) && (cs2 == 3))    // GeoPoliticalGTFeature, Boundary, lineal features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 1) && (cs2 == 5))    // GeoPoliticalGTFeature, Boundary, polygon features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 2) && (cs2 == 1))    // GeoPoliticalGTFeature, Location, point features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 2) && (cs2 == 3))    // GeoPoliticalGTFeature, Location, lineal features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 2) && (cs2 == 5))    // GeoPoliticalGTFeature, Location, polygon features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 3) && (cs2 == 1))    // GeoPoliticalGTFeature, Constraint, point features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 3) && (cs2 == 3))    // GeoPoliticalGTFeature, Constraint, lineal features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 102) && (cs1 == 3) && (cs2 == 5))    // GeoPoliticalGTFeature, Constraint, polygon features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 201) && (cs1 == 2) && (cs2 == 3))    // RoadNetwork, Road Network, lineal features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 201) && (cs1 == 2) && (cs2 == 7))    // RoadNetwork, Road Network, lineal figure point features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 201) && (cs1 == 3) && (cs2 == 3))    // RoadNetwork, Airport Network, lineal features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 201) && (cs1 == 3) && (cs2 == 5))    // RoadNetwork, Airport Network, polygon features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 202) && (cs1 == 2) && (cs2 == 3))    // RailRoadNetwork, RailRoad Network, lineal features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 202) && (cs1 == 2) && (cs2 == 7))    // RailRoadNetwork, RailRoad Network, lineal figure point features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 203) && (cs1 == 2) && (cs2 == 3))    // PowerLineNetwork, PowerLine Network, lineal features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 203) && (cs1 == 2) && (cs2 == 7))    // PowerLineNetwork, PowerLine Network, lineal figure point features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 204) && (cs1 == 2) && (cs2 == 3))    // HydrographyNetwork, Hydrography Network, lineal features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 204) && (cs1 == 2) && (cs2 == 5))    // HydrographyNetwork, Hydrography Network, polygon features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 204) && (cs1 == 2) && (cs2 == 7))    // HydrographyNetwork, Hydrography Network, lineal figure point features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 204) && (cs1 == 2) && (cs2 == 9))    // HydrographyNetwork, Hydrography Network, polygon figure point features
-        return cognitics::cdb::InjectFeatures(cdb, dataset, cs1, cs2, lod, sources, replace, models, textures) ? EXIT_SUCCESS : EXIT_FAILURE;
+        return injector.InjectFeatures(sources) ? EXIT_SUCCESS : EXIT_FAILURE;
     else
         return usage_inject("Unsupported Component: " + cognitics::cdb::DatasetName(dataset) + " " + std::to_string(cs1) + " " + std::to_string(cs2));
     return EXIT_SUCCESS;

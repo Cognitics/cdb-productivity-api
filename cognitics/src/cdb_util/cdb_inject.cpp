@@ -323,7 +323,7 @@ bool cdb_inject(cdb_inject_parameters& params)
     }
 
     if (!cognitics::cdb::IsCDB(params.cdb))
-        cognitics::cdb::MakeCDB(params.cdb);
+        cognitics::cdb::MakeCDB(params.cdb, params.previous_cdb);
     JobProgressReporter jobReporter;
     CDBTileJobThreadDataManager cdbTileJobThreadDataManager;
     ccl::JobManager jobManager(params.workers, NULL, &cdbTileJobThreadDataManager);

@@ -12,6 +12,7 @@ struct cdb_inject_parameters
 {
     int workers { 8 };
     std::string cdb;
+    std::string previous_cdb;
     double north { DBL_MAX };
     double south { -DBL_MAX };
     double east { DBL_MAX };

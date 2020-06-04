@@ -110,6 +110,7 @@ set(COGCORE_HEADERS
     ./include/ccl/miniz.h
     ./include/ccl/ArgumentParser.h
     ./include/ccl/gdal.h
+    ./include/ccl/tinyxml2.h
     ./include/cad/AttributeDictionary.h
     ./include/scenegraphobj/scenegraphobj.h
     ./include/scenegraphobj/quickobj.h
@@ -582,6 +583,7 @@ set(COGCORE_SOURCES
     ./src/ccl/miniz.c
     ./src/ccl/ArgumentParser.cpp
     ./src/ccl/gdal.cpp
+    ./src/ccl/tinyxml2.cpp
     ./src/sfa_file_factory/sfa_file_factory.cpp
     ./src/gltf/GltfJson.cpp
     ./src/gltf/GltfInfo.cpp

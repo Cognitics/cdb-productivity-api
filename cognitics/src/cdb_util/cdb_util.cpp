@@ -3,6 +3,7 @@
 #include <ogr/File.h>
 
 #include <cdb_util/FeatureDataDictionary.h>
+#include <ccl/tinyxml2.h>
 
 #include <cdb_tile/TileLatitude.h>
 #include <ccl/miniz.h>
@@ -1068,7 +1069,7 @@ bool IsCDB(const std::string& cdb)
     return ccl::fileExists(cdb + "/Metadata/Version.xml");
 }
 
-bool MakeCDB(const std::string& cdb)
+bool MakeCDB(const std::string& cdb, const std::string& previous_cdb)
 {
     if(IsCDB(cdb))
         return false;
@@ -1080,7 +1081,7 @@ bool MakeCDB(const std::string& cdb)
         return false;
     outfile << "<?xml version = \"1.0\"?>\n";
     outfile << "<Version xmlns:xsi = \"http://www.w3.org/2001/XMLSchema-instance\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\">\n";
-    outfile << "<PreviousIncrementalRootDirectory name=\"\" />\n";
+    outfile << "<PreviousIncrementalRootDirectory name=\"" << previous_cdb << "\" />\n";
     outfile << "<Comment>Created by Cognitics CDB Productivity Suite</Comment>\n";
     outfile << "</Version>\n";
     outfile.close();
@@ -1156,28 +1157,19 @@ std::tuple<double, double, double, double> NSEWBoundsForCDB(const std::string& c
 std::string PreviousIncrementalRootDirectory(const std::string& cdb)
 {
     auto version_xml = cdb + "/Metadata/Version.xml";
-    if(!std::filesystem::exists(version_xml))
+    tinyxml2::XMLDocument doc;
+    if(doc.LoadFile(version_xml.c_str()) != tinyxml2::XML_SUCCESS)
         return "";
-    auto ifs = std::ifstream(version_xml);
-    auto xml = std::string(std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>());
-    auto pos = xml.find("<PreviousIncrementalRootDirectory");
-    if(pos == std::string::npos)
+    auto version_element = doc.FirstChildElement("Version");
+    if(!version_element)
         return "";
-    pos = xml.find("name=", pos);
-    if(pos == std::string::npos)
+    auto pird_element = version_element->FirstChildElement("PreviousIncrementalRootDirectory");
+    if(!pird_element)
         return "";
-    pos = xml.find('"', pos);
-    if(pos == std::string::npos)
+    auto pird_name = pird_element->Attribute("name");
+    if(pird_name == nullptr)
         return "";
-    auto endpos = xml.find('"', pos + 1);
-    if(endpos == std::string::npos)
-        return "";
-    auto pird_name = xml.substr(pos + 1, endpos - pos - 1);
-    if(pird_name.empty())
-        return "";
-    if(pird_name[0] == '.')
-        return cdb + "/" + pird_name;
-    return pird_name;
+    return std::string(pird_name);
 }
 
 std::vector<std::string> VersionChainForCDB(const std::string& cdb)
@@ -1281,6 +1273,7 @@ std::vector<std::pair<std::string, TileInfo>> CoverageTileInfosForTileInfo(const
     return result;
 }
 
+/*
 bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int lod, const std::string& filename, bool replace, const std::string& models_path, const std::string& textures_path)
 {
     if (!IsCDB(cdb))
@@ -1384,6 +1377,115 @@ bool InjectFeatures(const std::string& cdb, int dataset, int cs1, int cs2, int l
     for(auto fn : filenames)
     {
         if(!InjectFeatures(cdb, dataset, cs1, cs2, lod, fn, replace, models_path, textures_path))
+            result = false;
+    }
+    return result;
+}
+*/
+
+bool CDBInjector::InjectFeatures(const std::string& filename)
+{
+    if (!IsCDB(cdb))
+        MakeCDB(cdb, previous_cdb);
+    ccl::ObjLog log;
+    double north = -DBL_MAX;
+    double south = DBL_MAX;
+    double east = -DBL_MAX;
+    double west = DBL_MAX;
+    auto features = std::vector<sfa::Feature*>();
+    {
+        // TODO: coordinate transforms
+        auto file = ogr::File();
+        if(!file.open(filename))
+            return false;
+        auto layers = file.getLayers();
+        for(auto layer : layers)
+        {
+            while(auto feature = layer->getNextFeature())
+                features.push_back(feature);
+            double left, bottom, right, top;
+            layer->getExtent(left, bottom, right, top, false);
+            north = std::max<double>(north, top);
+            south = std::min<double>(south, bottom);
+            east = std::max<double>(east, right);
+            west = std::min<double>(west, left);
+        }
+        file.close();
+    }
+    auto coords = CoordinatesRange(west, east, south, north);
+    auto tiles = generate_tiles(coords, Dataset((uint16_t)dataset), lod);
+    log << "INJECT " << filename << " ((" << west << ", " << south << ") (" << east << ", " << north << ")) : " << tiles.size() << " tiles" << log.endl;
+    for(auto tile : tiles)
+    {
+        auto tile_info = TileInfoForTile(tile);
+        tile_info.selector1 = cs1;
+        tile_info.selector2 = cs2;
+        double tile_north, tile_south, tile_east, tile_west;
+        std::tie(tile_north, tile_south, tile_east, tile_west) = NSEWBoundsForTileInfo(tile_info);
+        auto tile_features = std::vector<sfa::Feature*>();
+        for(auto feature : features)
+        {
+            if(!feature->geometry)
+                continue;
+            auto envelope = std::make_unique<sfa::LineString>(dynamic_cast<sfa::LineString*>(feature->geometry->getEnvelope()));
+            auto point_min = envelope->getPointN(0);
+            auto point_max = envelope->getPointN(1);
+            if(point_min->Y() > tile_north)
+                continue;
+            if(point_min->X() > tile_east)
+                continue;
+            if(point_max->Y() < tile_south)
+                continue;
+            if(point_max->X() < tile_west)
+                continue;
+            tile_features.push_back(feature);
+        }
+        if(tile_features.empty())
+            continue;
+        if((dataset == 100) && !models_path.empty())
+            InjectGSModels(cdb, tile, tile_features, replace, models_path, textures_path);
+        if((dataset == 101) && !models_path.empty())
+            InjectGTModels(cdb, tile_features, models_path, textures_path);
+        auto tile_filepath = FilePathForTileInfo(tile_info);
+        auto tile_filename = FileNameForTileInfo(tile_info);
+        auto tile_fn = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename + ".shp";
+        log << "    " << tile_filename << ": " << tile_features.size() << " features" << log.endl;
+        ccl::makeDirectory(cdb + "/Tiles/" + tile_filepath);
+        if(replace)
+            std::remove(tile_fn.c_str());
+        auto file = ogr::File();
+        if(!file.open(tile_fn, true))
+        {
+            if(!file.create(tile_fn))
+                return false;
+        }
+        auto layer = file.getLayerByName(tile_filename);
+        if(!layer)
+            layer = file.addLayer(tile_filename, tile_features[0]->getWKBGeometryType());
+        for(auto feature : tile_features)
+        {
+            // TODO: attribute handling
+
+            auto new_features = FeaturesForTileCroppedFeature(tile_info, *feature);
+            for(auto new_feature : new_features)
+            {
+                delete layer->addFeature(new_feature);
+                delete new_feature;
+            }
+        }
+        file.close();
+    }
+    for(auto feature : features)
+        delete feature;
+    return true;
+}
+
+bool CDBInjector::InjectFeatures(const std::vector<std::string>& filenames)
+{
+    bool result = true;
+    for(auto fn : filenames)
+    {
+        if(!InjectFeatures(fn))
             result = false;
     }
     return result;
