@@ -3,6 +3,7 @@
 #include <cdb_util/cdb_inject.h>
 #include <cdb_util/cdb_lod.h>
 #include <cdb_util/cdb_sample.h>
+#include <Version.h>
 
 #include <ccl/gdal.h>
 #include <ccl/LogStream.h>
@@ -955,6 +956,8 @@ int main_validate(size_t arg_start)
 
 int main(int argc, char** argv)
 {
+    std::cout << "## CDB Productivity Suite " << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_RELEASE << "\n";
+
     cognitics::gdal::init(argv[0]);
 
     std::ofstream logfile;
