@@ -1571,6 +1571,12 @@ void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<
     auto D300_filename = FileNameForTileInfo(D300_tile_info);
     auto D300_zipname_temp = cdb + "/Tiles/" + D300_filepath + "/" + D300_filename + ".zip";
     auto D300_zipname = std::filesystem::path(D300_zipname_temp).string();
+    auto D301_tile_info = D300_tile_info;
+    D301_tile_info.dataset = 301;
+    auto D301_filepath = FilePathForTileInfo(D301_tile_info);
+    auto D301_filename = FileNameForTileInfo(D301_tile_info);
+    auto D301_zipname_temp = cdb + "/Tiles/" + D301_filepath + "/" + D301_filename + ".zip";
+    auto D301_zipname = std::filesystem::path(D301_zipname_temp).string();
 
     ccl::ObjLog log;
     auto fdd = FeatureDataDictionary();
@@ -1643,45 +1649,28 @@ void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<
                 if(last != std::string::npos)
                     texture_filename = texture_filename.substr(0, last + 1);
                 auto texture_basename = ccl::FileInfo(texture_filename).getBaseName();
+                auto d301_lod = std::to_string(D301_tile_info.lod);
+                if(d301_lod.size() < 2)
+                    d301_lod = "0" + d301_lod;
+                auto d301_uref = std::to_string(D301_tile_info.uref);
+                texture_filename = "../../../301_GSModelTexture/L" + d301_lod + "/U" + d301_uref + "/" + D301_filename + "_" + texture_basename;
 
-                std::string wslod = "00";
-                if(ccl::FileInfo(texture_basename).getSuffix() == "rgb")
+                auto source_texture = source_texture_path + "/" + texture_basename;
+                if(ccl::fileExists(source_texture))
                 {
-                    auto wh = WidthHeightFromRGB(source_texture_path + "/" + texture_basename);
-                    int dim = std::max<int>(wh.first, wh.second);
-                    int exp = 1;
-                    while(std::pow(2, exp) < dim)
-                        ++exp;
-                    wslod = std::to_string(exp);
-                    if(wslod.size() < 2)
-                        wslod = "0" + wslod;
+                    auto d301_outpath = ccl::FileInfo(D301_zipname).getDirName();
+                    ccl::makeDirectory(d301_outpath);
+                    auto texture_bytes = BytesFromFile(source_texture);
+                    auto outfn = ccl::FileInfo(texture_filename).getBaseName();
+                    auto mz_result = mz_zip_add_mem_to_archive_file_in_place(D301_zipname.c_str(), outfn.c_str(), texture_bytes.data(), texture_bytes.size(), NULL, 0, MZ_DEFAULT_COMPRESSION);
                 }
-                auto char1 = texture_basename.substr(0, 1);
-                auto char2 = texture_basename.substr(1, 1);
+                else
+                {
+                    log << "Missing source texture: " << texture_basename << log.endl;
+                }
 
-                // TODO: storing texture in GT right now
-
-                auto target_texture_path = "GTModel/501_GTModelTexture/" + char1 + "/" + char2 + "/" + ccl::FileInfo(texture_basename).getBaseName(true);
-                auto out_texture_basename = "/D501_S001_D001_W" + wslod + "_" + texture_basename;
-                texture_filename = "../../../../../../" + target_texture_path + "/" + out_texture_basename;
                 memset(&bytes[pos], 0, 200);
                 strncpy(&bytes[pos], texture_filename.c_str(), 200);
-
-                texture_filename = cdb + "/" + target_texture_path + "/" + out_texture_basename;
-                if(!ccl::fileExists(texture_filename))
-                {
-                    if(ccl::fileExists(source_texture_path + "/" + texture_basename))
-                    {
-                        auto outpath = ccl::FileInfo(texture_filename).getDirName();
-                        ccl::makeDirectory(outpath);
-                        log << "  " << source_texture_path << "/" << texture_basename << " -> " << texture_filename << log.endl;
-                        ccl::copyFile(source_texture_path + "/" + texture_basename, texture_filename);
-                    }
-                    else
-                    {
-                        log << "Missing source texture: " << texture_basename << log.endl;
-                    }
-                }
             }
             bs.seek(bs.pos() + length - 4);
         }
