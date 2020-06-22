@@ -315,6 +315,19 @@ std::tuple<double, double, double, double> NSEWBoundsForTileInfo(const TileInfo&
     return std::make_tuple(north, south, east, west);
 }
 
+NSEW NSEWForTileInfo(const TileInfo& tileinfo)
+{
+    auto div = std::max<int>(std::pow(2, tileinfo.lod), 1);
+    auto lat_spacing = 1.0 / div;
+    auto tile_width = (int)get_tile_width(double(tileinfo.latitude));
+    auto lon_spacing = (double)tile_width / div;
+    double south = tileinfo.latitude + (lat_spacing * tileinfo.uref);
+    double north = south + lat_spacing;
+    double west = tileinfo.longitude + (lon_spacing * tileinfo.rref);
+    double east = west + lon_spacing;
+    return NSEW{ north, south, east, west };
+}
+
 std::string BoundsStringForTileInfo(const TileInfo& tileinfo)
 {
     double north, south, east, west;
@@ -1273,18 +1286,62 @@ std::vector<std::pair<std::string, TileInfo>> CoverageTileInfosForTileInfo(const
     return result;
 }
 
+NSEW NSEWForOGRFile(const std::string& filename)
+{
+    auto file = ogr::File();
+    auto nsew = NSEW{ -DBL_MAX, DBL_MAX, -DBL_MAX, DBL_MAX };
+    if(!file.open(filename))
+        return nsew;
+	auto layers = file.getLayers();
+    for(auto layer : layers)
+    {
+        double left, bottom, right, top;
+        layer->getExtent(left, bottom, right, top, false);
+		nsew.north = std::max<double>(nsew.north, top);
+		nsew.south = std::min<double>(nsew.south, bottom);
+		nsew.east = std::max<double>(nsew.east, right);
+		nsew.west = std::min<double>(nsew.west, left);
+    }
+    return nsew;
+}
+
+std::vector<TileInfo> TileInfosForOGRFile(const std::string& filename)
+{
+    auto nsew = NSEWForOGRFile(filename);
+    return GenerateTileInfos(0, nsew);
+}
+
 bool CDBInjector::InjectFeatures(const std::string& filename)
 {
-    if (!IsCDB(cdb))
+    return InjectFeatures(std::vector<std::string>{ filename });
+}
+
+bool CDBInjector::InjectFeatures(const std::vector<std::string>& filenames)
+{
+    if(!IsCDB(cdb))
         MakeCDB(cdb, previous_cdb);
-    ccl::ObjLog log;
-    double north = -DBL_MAX;
-    double south = DBL_MAX;
-    double east = -DBL_MAX;
-    double west = DBL_MAX;
-    auto features = std::vector<sfa::Feature*>();
+    std::map<TileInfo, std::vector<std::string>> filenames_by_tile_info;
+    for(auto filename : filenames)
     {
-        // TODO: coordinate transforms
+        auto tileinfos = TileInfosForOGRFile(filename);
+        for(auto tileinfo : tileinfos)
+        {
+            tileinfo.dataset = dataset;
+            tileinfo.selector1 = cs1;
+            tileinfo.selector2 = cs2;
+            filenames_by_tile_info[tileinfo].push_back(filename);
+        }
+    }
+    for(auto entry : filenames_by_tile_info)
+        InjectFeatures(entry.first, entry.second);
+    return true;
+}
+
+bool CDBInjector::InjectFeatures(const TileInfo& tileinfo, const std::vector<std::string>& filenames)
+{
+    auto features = std::vector<sfa::Feature*>();
+    for(auto filename : filenames)
+    {
         auto file = ogr::File();
         if(!file.open(filename))
             return false;
@@ -1293,95 +1350,75 @@ bool CDBInjector::InjectFeatures(const std::string& filename)
         {
             while(auto feature = layer->getNextFeature())
                 features.push_back(feature);
-            double left, bottom, right, top;
-            layer->getExtent(left, bottom, right, top, false);
-            north = std::max<double>(north, top);
-            south = std::min<double>(south, bottom);
-            east = std::max<double>(east, right);
-            west = std::min<double>(west, left);
         }
         file.close();
     }
-    auto coords = CoordinatesRange(west, east, south, north);
-    auto tiles = generate_tiles(coords, Dataset((uint16_t)dataset), lod);
-    log << "INJECT " << filename << " ((" << west << ", " << south << ") (" << east << ", " << north << ")) : " << tiles.size() << " tiles" << log.endl;
-    for(auto tile : tiles)
+    bool result = InjectFeatures(tileinfo, features);
+    for(auto feature : features)
+        delete feature;
+    return result;
+}
+
+bool CDBInjector::InjectFeatures(const TileInfo& tileinfo, const std::vector<sfa::Feature*>& features)
+{
+    auto tile_features = std::vector<sfa::Feature*>();
+    auto nsew = NSEWForTileInfo(tileinfo);
+    for(auto feature : features)
     {
-        auto tile_info = TileInfoForTile(tile);
-        tile_info.selector1 = cs1;
-        tile_info.selector2 = cs2;
-        double tile_north, tile_south, tile_east, tile_west;
-        std::tie(tile_north, tile_south, tile_east, tile_west) = NSEWBoundsForTileInfo(tile_info);
-        auto tile_features = std::vector<sfa::Feature*>();
-        for(auto feature : features)
-        {
-            if(!feature->geometry)
-                continue;
-            auto envelope = std::make_unique<sfa::LineString>(dynamic_cast<sfa::LineString*>(feature->geometry->getEnvelope()));
-            auto point_min = envelope->getPointN(0);
-            auto point_max = envelope->getPointN(1);
-            if(point_min->Y() > tile_north)
-                continue;
-            if(point_min->X() > tile_east)
-                continue;
-            if(point_max->Y() < tile_south)
-                continue;
-            if(point_max->X() < tile_west)
-                continue;
-            tile_features.push_back(feature);
-        }
-        if(tile_features.empty())
-            continue;
+		if(!feature->geometry)
+			continue;
+		auto envelope = std::make_unique<sfa::LineString>(dynamic_cast<sfa::LineString*>(feature->geometry->getEnvelope()));
+		auto point_min = envelope->getPointN(0);
+		auto point_max = envelope->getPointN(1);
+		if(point_min->Y() > nsew.north)
+			continue;
+		if(point_min->X() > nsew.east)
+			continue;
+		if(point_max->Y() < nsew.south)
+			continue;
+		if(point_max->X() < nsew.west)
+			continue;
+		tile_features.push_back(feature);
+    }
+    if(tile_features.empty())
+        return true;
+
+	auto tile_filepath = FilePathForTileInfo(tileinfo);
+	auto tile_filename = FileNameForTileInfo(tileinfo);
+	auto tile_fn = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename + ".shp";
+
+    ccl::ObjLog log;
+
+    if(tile_features.size() <= 16384)
+    {
+        log << "INJECT " << tile_filename << ": writing " << tile_features.size() << " features" << log.endl;
         if((dataset == 100) && !models_path.empty())
-            InjectGSModels(cdb, tile, tile_features, insert, models_path, textures_path);
+            InjectGSModels(cdb, tileinfo, tile_features, insert, models_path, textures_path);
         if((dataset == 101) && !models_path.empty())
             InjectGTModels(cdb, tile_features, models_path, textures_path);
-        auto tile_filepath = FilePathForTileInfo(tile_info);
-        auto tile_filename = FileNameForTileInfo(tile_info);
-        auto tile_fn = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename + ".shp";
-        log << "    " << tile_filename << ": " << tile_features.size() << " features" << log.endl;
-        ccl::makeDirectory(cdb + "/Tiles/" + tile_filepath);
 
         if(!insert)
             std::remove(tile_fn.c_str());
 
-        auto file = ogr::File();
-        if(!file.open(tile_fn, true))
-        {
-            if(!file.create(tile_fn))
-                return false;
-        }
-        auto layer = file.getLayerByName(tile_filename);
-        if(!layer)
-            layer = file.addLayer(tile_filename, tile_features[0]->getWKBGeometryType());
-        for(auto feature : tile_features)
-        {
-            // TODO: attribute handling
-
-            auto new_features = FeaturesForTileCroppedFeature(tile_info, *feature);
-            for(auto new_feature : new_features)
-            {
-                delete layer->addFeature(new_feature);
-                delete new_feature;
-            }
-        }
-        file.close();
+        return WriteFeaturesToOGRFile(tile_fn, tile_features);
     }
-    for(auto feature : features)
-        delete feature;
+
+	log << "INJECT " << tile_filename << ": splitting " << tile_features.size() << " features" << log.endl;
+
+    WriteFeaturesToOGRFile(tile_fn, { });
+    auto children = GenerateTileInfos(tileinfo.lod + 1, nsew);
+    bool result = true;
+    for(auto child : children)
+    {
+        child.dataset = tileinfo.dataset;
+        child.selector1 = tileinfo.selector1;
+        child.selector2 = tileinfo.selector2;
+        if(!InjectFeatures(child, tile_features))
+            result = false;
+    }
     return true;
 }
 
-bool CDBInjector::InjectFeatures(const std::vector<std::string>& filenames)
-{
-    bool result = true;
-    for(auto fn : filenames)
-    {
-        if(!InjectFeatures(fn))
-            result = false;
-    }
-    return result;
-}
 
 std::vector<sfa::Feature*> FeaturesForTileCroppedFeature(const TileInfo& tile_info, const sfa::Feature& feature)
 {
@@ -1561,9 +1598,9 @@ void FileFromBytes(const std::string& filename, const std::string& bytes)
     file.close();
 }
 
-void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<sfa::Feature*>& features, bool insert, const std::string& source_model_path, const std::string& source_texture_path)
+void InjectGSModels(const std::string& cdb, const TileInfo& tileinfo, const std::vector<sfa::Feature*>& features, bool insert, const std::string& source_model_path, const std::string& source_texture_path)
 {
-    auto D300_tile_info = TileInfoForTile(tile);
+    auto D300_tile_info = tileinfo;
     D300_tile_info.dataset = 300;
     D300_tile_info.selector1 = 1;
     D300_tile_info.selector2 = 1;
@@ -1571,6 +1608,12 @@ void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<
     auto D300_filename = FileNameForTileInfo(D300_tile_info);
     auto D300_zipname_temp = cdb + "/Tiles/" + D300_filepath + "/" + D300_filename + ".zip";
     auto D300_zipname = std::filesystem::path(D300_zipname_temp).string();
+    auto D301_tile_info = D300_tile_info;
+    D301_tile_info.dataset = 301;
+    auto D301_filepath = FilePathForTileInfo(D301_tile_info);
+    auto D301_filename = FileNameForTileInfo(D301_tile_info);
+    auto D301_zipname_temp = cdb + "/Tiles/" + D301_filepath + "/" + D301_filename + ".zip";
+    auto D301_zipname = std::filesystem::path(D301_zipname_temp).string();
 
     ccl::ObjLog log;
     auto fdd = FeatureDataDictionary();
@@ -1594,6 +1637,9 @@ void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<
         auto outfile = cdb + "/Tiles/" + D300_filepath + "/" + D300_filename + "_" + facc + "_" + fsc + "_" + modl;
         source_by_target[outfile] = infile;
         feature->attributes.setAttribute("MODL", modl_base);
+        feature->attributes.setAttribute("MLOD", tileinfo.lod);
+        if(!feature->attributes.hasAttribute("CNAM"))
+			feature->attributes.setAttribute("CNAM", "");
     }
 
     //mz_bool mz_zip_add_mem_to_archive_file_in_place(const char *pZip_filename, const char *pArchive_name, const void *pBuf, size_t buf_size, const void *pComment, mz_uint16 comment_size, mz_uint level_and_flags);
@@ -1604,9 +1650,6 @@ void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<
             return false;
         mz_zip_reader_end(&zip);
         */
-
-    if(!insert)
-        std::remove(D300_zipname.c_str());
 
     for(auto entry : source_by_target)
     {
@@ -1644,43 +1687,30 @@ void InjectGSModels(const std::string& cdb, const Tile& tile, const std::vector<
                     texture_filename = texture_filename.substr(0, last + 1);
                 auto texture_basename = ccl::FileInfo(texture_filename).getBaseName();
 
-                std::string wslod = "00";
-                if(ccl::FileInfo(texture_basename).getSuffix() == "rgb")
+                auto source_texture = source_texture_path + "/" + texture_basename;
+                if(ccl::fileExists(source_texture))
                 {
-                    auto wh = WidthHeightFromRGB(source_texture_path + "/" + texture_basename);
-                    int dim = std::max<int>(wh.first, wh.second);
-                    int exp = 1;
-                    while(std::pow(2, exp) < dim)
-                        ++exp;
-                    wslod = std::to_string(exp);
-                    if(wslod.size() < 2)
-                        wslod = "0" + wslod;
+                    auto outext = ccl::FileInfo(texture_basename).getSuffix();
+                    auto outbase = ccl::FileInfo(texture_basename).getBaseName(true);
+					if(outbase.size() > 32)
+						outbase.resize(32);
+					std::replace(outbase.begin(), outbase.end(), '.', '_');
+                    auto outfn = D301_filename + "_" + outbase + "." + outext;
+					auto outpath = ccl::FileInfo(D301_zipname).getDirName();
+					ccl::makeDirectory(outpath);
+                    auto texture_bytes = BytesFromFile(source_texture);
+                    auto mz_result = mz_zip_add_mem_to_archive_file_in_place(D301_zipname.c_str(), outfn.c_str(), texture_bytes.data(), texture_bytes.size(), NULL, 0, MZ_DEFAULT_COMPRESSION);
+                    auto lodstr = std::to_string(tileinfo.lod);
+                    if(lodstr.size() < 2)
+                        lodstr = "0" + lodstr;
+                    auto ustr = std::to_string(tileinfo.uref);
+                    outfn = "../../../301_GSModelTexture/L" + lodstr + "/U" + ustr + "/" + outfn;
+					memset(&bytes[pos], 0, 200);
+					strncpy(&bytes[pos], outfn.c_str(), 200);
                 }
-                auto char1 = texture_basename.substr(0, 1);
-                auto char2 = texture_basename.substr(1, 1);
-
-                // TODO: storing texture in GT right now
-
-                auto target_texture_path = "GTModel/501_GTModelTexture/" + char1 + "/" + char2 + "/" + ccl::FileInfo(texture_basename).getBaseName(true);
-                auto out_texture_basename = "/D501_S001_D001_W" + wslod + "_" + texture_basename;
-                texture_filename = "../../../../../../" + target_texture_path + "/" + out_texture_basename;
-                memset(&bytes[pos], 0, 200);
-                strncpy(&bytes[pos], texture_filename.c_str(), 200);
-
-                texture_filename = cdb + "/" + target_texture_path + "/" + out_texture_basename;
-                if(!ccl::fileExists(texture_filename))
+                else
                 {
-                    if(ccl::fileExists(source_texture_path + "/" + texture_basename))
-                    {
-                        auto outpath = ccl::FileInfo(texture_filename).getDirName();
-                        ccl::makeDirectory(outpath);
-                        log << "  " << source_texture_path << "/" << texture_basename << " -> " << texture_filename << log.endl;
-                        ccl::copyFile(source_texture_path + "/" + texture_basename, texture_filename);
-                    }
-                    else
-                    {
-                        log << "Missing source texture: " << texture_basename << log.endl;
-                    }
+                    log << "Missing source texture: " << texture_basename << log.endl;
                 }
             }
             bs.seek(bs.pos() + length - 4);
@@ -1797,6 +1827,8 @@ void InjectGTModels(const std::string& cdb, const std::vector<sfa::Feature*>& fe
 
 bool WriteFeaturesToOGRFile(const std::string& filename, const std::vector<sfa::Feature*> features)
 {
+	auto outpath = ccl::FileInfo(filename).getDirName();
+	ccl::makeDirectory(outpath);
     auto file = ogr::File();
     if (!file.open(filename, true))
     {
@@ -2011,6 +2043,9 @@ int TileWidthAtLatitude(double latitude)
 std::vector<TileInfo> GenerateTileInfos(int lod, const NSEW& nsew)
 {
     auto result = std::vector<TileInfo>();
+
+    if(nsew.north < nsew.south)
+        return result;
 
     int inorth = (int)std::ceil(nsew.north);
     int isouth = (int)std::floor(nsew.south);

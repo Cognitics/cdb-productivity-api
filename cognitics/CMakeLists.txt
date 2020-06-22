@@ -23,6 +23,8 @@ endif(WIN32)
 #cmake -G "Unix Makefiles" -DCOG_BUILD_GL_TOOLS=1 -DTHIRD_PARTY_DIR=/home/ubuntu/cognitics/ThirdParty -DCMAKE_INSTALL_PREFIX=/usr/local ..
 #make DESTDIR=/home/ubuntu/cdbtools install
 
+#cmake -G "Visual Studio 16 2019" -A x64 -T v141 -DCOG_BUILD_GL_TOOLS=1 ..
+
 ################################################################################
 
 if(WIN32)
