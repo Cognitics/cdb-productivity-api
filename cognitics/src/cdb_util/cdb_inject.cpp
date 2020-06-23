@@ -398,7 +398,7 @@ bool cdb_inject(cdb_inject_parameters& params)
             auto cdbTileJob = new CDBTileJob(&jobManager, params.cdb, std::ref(sampler), ti, jobReporter, true);
             jobManager.submitJob(cdbTileJob);
         }
-        jobReporter.setTotalJobCount(imagery_tileinfos.size());
+        jobReporter.setTotalJobCount(elevation_tileinfos.size());
         jobManager.waitForCompletion();
         /*
         {
