@@ -1002,8 +1002,6 @@ bool BuildElevationTileFromSampler(const std::string& cdb, GDALRasterSampler& sa
         std::fill(floats.begin(), floats.end(), -32767.0f);
     }
 
-    std::fill(floats.begin(), floats.end(), -1.0f);
-
     BuildElevationTileFloatsFromSampler(sampler, tileinfo, floats);
     floats = FlippedVertically(floats, dim, dim, 1);
     auto info = RasterInfoFromTileInfo(tileinfo);
