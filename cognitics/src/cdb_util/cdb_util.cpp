@@ -1881,9 +1881,11 @@ void InjectGTModels(const std::string& cdb, const std::vector<sfa::Feature*>& fe
                     if(wslod.size() < 2)
                         wslod = "0" + wslod;
                 }
-                auto char1 = texture_basename.substr(0, 1);
-                auto char2 = texture_basename.substr(1, 1);
-                auto target_texture_path = "/501_GTModelTexture/" + char1 + "/" + char2 + "/" + ccl::FileInfo(texture_basename).getBaseName(true);
+                char char1 = std::toupper(texture_basename[0]);
+                char char2 = std::toupper(texture_basename[1]);
+                auto str1 = std::string{ char1 };
+                auto str2 = std::string{ char2 };
+                auto target_texture_path = "/501_GTModelTexture/" + str1 + "/" + str2 + "/" + ccl::FileInfo(texture_basename).getBaseName(true);
 
                 auto out_texture_basename = "/D501_S001_D001_W" + wslod + "_" + texture_basename;
                 texture_filename = "../../../.." + target_texture_path + "/" + out_texture_basename;
