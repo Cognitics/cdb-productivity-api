@@ -120,6 +120,10 @@ public:
     bool InjectFeatures(const std::vector<std::string>& filenames);
 	bool InjectFeatures(const TileInfo& tileinfo, const std::vector<std::string>& filenames);
 	bool InjectFeatures(const TileInfo& tileinfo, const std::vector<sfa::Feature*>& features);
+    bool InsertFeatures(const std::string& filename);
+    bool InsertFeatures(const std::vector<std::string>& filenames);
+	bool InsertFeatures(const std::vector<sfa::Feature*>& features);
+	bool InsertFeature(sfa::Feature* feature);
 };
 
 NSEW NSEWForOGRFile(const std::string& filename);
@@ -127,6 +131,7 @@ std::vector<TileInfo> TileInfosForOGRFile(const std::string& filename);
 
 NSEW NSEWForTileInfo(const TileInfo& tileinfo);
 
+TileInfo HighestExistingTileInfoForPosition(const std::string& cdb, int dataset, int cs1, int cs2, double latitude, double longitude);
 
 std::string DatasetName(int code);
 int DatasetCode(const std::string& name);

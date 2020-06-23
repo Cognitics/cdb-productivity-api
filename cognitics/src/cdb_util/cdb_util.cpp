@@ -1320,6 +1320,10 @@ bool CDBInjector::InjectFeatures(const std::vector<std::string>& filenames)
 {
     if(!IsCDB(cdb))
         MakeCDB(cdb, previous_cdb);
+
+    if(insert)
+        return InsertFeatures(filenames);
+
     std::map<TileInfo, std::vector<std::string>> filenames_by_tile_info;
     for(auto filename : filenames)
     {
@@ -1417,6 +1421,64 @@ bool CDBInjector::InjectFeatures(const TileInfo& tileinfo, const std::vector<sfa
             result = false;
     }
     return true;
+}
+
+bool CDBInjector::InsertFeatures(const std::string& filename)
+{
+    return InsertFeatures(std::vector<std::string>{ filename });
+}
+
+bool CDBInjector::InsertFeatures(const std::vector<std::string>& filenames)
+{
+	auto features = std::vector<sfa::Feature*>();
+    for(auto filename : filenames)
+    {
+        auto file = ogr::File();
+        if(!file.open(filename))
+            return false;
+        auto layers = file.getLayers();
+        for(auto layer : layers)
+        {
+            while(auto feature = layer->getNextFeature())
+                features.push_back(feature);
+        }
+        file.close();
+    }
+    bool result = InsertFeatures(features);
+    for(auto feature : features)
+        delete feature;
+    return result;
+}
+
+bool CDBInjector::InsertFeatures(const std::vector<sfa::Feature*>& features)
+{
+    bool result = true;
+    for(auto feature : features)
+    {
+        if(!InsertFeature(feature))
+            result = false;
+    }
+    return result;
+}
+
+bool CDBInjector::InsertFeature(sfa::Feature* feature)
+{
+	if(!feature->geometry)
+		return false;
+    ccl::ObjLog log;
+	auto envelope = std::make_unique<sfa::LineString>(dynamic_cast<sfa::LineString*>(feature->geometry->getEnvelope()));
+	auto point = envelope->getPointN(0);
+    auto tileinfo = HighestExistingTileInfoForPosition(cdb, dataset, cs1, cs2, point->Y(), point->X());
+	auto tile_filepath = FilePathForTileInfo(tileinfo);
+	auto tile_filename = FileNameForTileInfo(tileinfo);
+	auto tile_fn = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename + ".shp";
+	log << "INJECT " << tile_filename << ": inserting " << point->asText(false) << log.endl;
+    auto tile_features = std::vector<sfa::Feature*>{ feature };
+	if((dataset == 100) && !models_path.empty())
+		InjectGSModels(cdb, tileinfo, tile_features, insert, models_path, textures_path);
+	if((dataset == 101) && !models_path.empty())
+		InjectGTModels(cdb, tile_features, models_path, textures_path);
+	return WriteFeaturesToOGRFile(tile_fn, tile_features);
 }
 
 
@@ -1596,6 +1658,33 @@ void FileFromBytes(const std::string& filename, const std::string& bytes)
     std::ofstream file(filename, std::ios::out | std::ios::binary);
     file.write(&bytes[0], bytes.size());
     file.close();
+}
+
+TileInfo TileInfoForPositionAndLOD(double latitude, double longitude, int lod)
+{
+    auto tileinfos = GenerateTileInfos(lod, NSEW{ latitude, latitude, longitude, longitude });
+    return tileinfos.empty() ? TileInfo() : tileinfos[0];
+}
+
+TileInfo HighestExistingTileInfoForPosition(const std::string& cdb, int dataset, int cs1, int cs2, double latitude, double longitude)
+{
+    // WARNING: this only works for shapefiles
+    auto result = TileInfo();
+    for(int lod = 0; lod < 23; ++lod)
+    {
+		auto tileinfo = TileInfoForPositionAndLOD(latitude, longitude, lod);
+		tileinfo.dataset = dataset;
+		tileinfo.selector1 = cs1;
+		tileinfo.selector2 = cs2;
+        auto filepath = FilePathForTileInfo(tileinfo);
+        auto filename = FileNameForTileInfo(tileinfo);
+		auto fn = cdb + "/Tiles/" + filepath + "/" + filename + ".shp";
+		auto fnpath = std::filesystem::path(fn);
+        if(!std::filesystem::exists(fnpath))
+            return result;
+        result = tileinfo;
+    }
+    return result;
 }
 
 void InjectGSModels(const std::string& cdb, const TileInfo& tileinfo, const std::vector<sfa::Feature*>& features, bool insert, const std::string& source_model_path, const std::string& source_texture_path)
