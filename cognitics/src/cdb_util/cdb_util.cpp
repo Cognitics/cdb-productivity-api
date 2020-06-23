@@ -2170,6 +2170,7 @@ std::vector<TileInfo> GenerateTileInfos(int lod, const NSEW& nsew)
 
 void BuildMinMaxElevation(const std::string& cdb, int lod_offset)
 {
+    ccl::ObjLog log;
     auto elevation_filenames = FileNamesForTiledDataset(cdb, 1);
     auto elevation_tileinfos = TileInfoForFileNames(elevation_filenames);
     auto minmax_tiles = std::vector<Tile>();
@@ -2198,6 +2199,11 @@ void BuildMinMaxElevation(const std::string& cdb, int lod_offset)
             auto elevation_tif_filename = FileNameForTileInfo(elevation_tile_info);
             auto elevation_tif = cdb + "/Tiles/" + elevation_tif_filepath + "/" + elevation_tif_filename + ".tif";
             auto elevation_floats = FloatsFromTIF(elevation_tif);
+            if(elevation_floats.empty())
+            {
+                log << elevation_tif_filename << " not found.\n\nEnsure elevation LODs are generated prior to building MinMaxElevation." << log.endl;
+                return;
+            }
             for(int row = 0; row < dim; ++row)
             {
                 for(int col = 0; col < dim; ++col)
