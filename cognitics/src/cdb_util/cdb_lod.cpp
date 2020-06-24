@@ -110,14 +110,14 @@ namespace cdb {
 bool cdb_lod(const std::string& cdb, int workers)
 {
     bool result = true;
-    if(!cdb_lod(cdb, 1, workers))
+    if(!cdb_lod(cdb, 1, 1, 1, workers))
         result = false;
-    if(!cdb_lod(cdb, 4, workers))
+    if(!cdb_lod(cdb, 4, 1, 1, workers))
         result = false;
     return result;
 }
 
-bool cdb_lod(const std::string& cdb, int dataset, int workers)
+bool cdb_lod(const std::string& cdb, int dataset, int cs1, int cs2, int workers)
 {
     ccl::ObjLog log;
 
@@ -151,7 +151,7 @@ bool cdb_lod(const std::string& cdb, int dataset, int workers)
                     try
                     {
                         auto ti = TileInfoForFileName(std::filesystem::path(tmp_file).stem().string());
-                        if((ti.latitude == lat) && (ti.longitude == lon) && (ti.lod == target_lod))
+                        if((ti.latitude == lat) && (ti.longitude == lon) && (ti.lod == target_lod) && (ti.selector1 == cs1) && (ti.selector2 == cs2))
                             lod_files.push_back(tmp_file);
                     }
                     catch(std::exception &)

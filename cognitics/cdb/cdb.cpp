@@ -135,6 +135,10 @@ int usage_lod(const std::string& error = "")
     std::cout << "        -workers <#>           number of worker threads (default: 8)\n";
     std::cout << "    Supported Components:\n";
     std::cout << "        Imagery 001 001\n";
+    std::cout << "        Imagery 003 001-012\n";
+    std::cout << "        Imagery 004 001-004\n";
+    std::cout << "        Imagery 003 000 (does 1-12)\n";
+    std::cout << "        Imagery 004 000 (does 1-4)\n";
     std::cout << "        Elevation 001 001\n";
     return error.empty() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
@@ -532,17 +536,45 @@ int main_lod(size_t arg_start)
         {
             cs2 = to_int(args[argi], 0);
             if(cs2 == 0)
+            {
+                if(cs1 == 3)
+                    continue;
+                if(cs1 == 4)
+                    continue;
                 return usage_lod("Invalid Component Selector 2: " + args[argi]);
+            }
             continue;
         }
     }
     if((dataset == 1) && (cs1 == 1) && (cs2 == 1))  // Elevation, PrimaryTerrainElevation
-    {
-        return cognitics::cdb::cdb_lod(cdb, 1, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
-    }
+        return cognitics::cdb::cdb_lod(cdb, dataset, cs1, cs2, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 4) && (cs1 == 1) && (cs2 == 1))  // Imagery, YearlyVstiRepresentation
+        return cognitics::cdb::cdb_lod(cdb, dataset, cs1, cs2, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+	else if((dataset == 4) && (cs1 == 3) && (cs2 >= 1) && (cs2 <= 12))  // Imagery, MonthlyVstiRepresentation
+        return cognitics::cdb::cdb_lod(cdb, dataset, cs1, cs2, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 4) && (cs1 == 4) && (cs2 >= 1) && (cs2 <= 4))  // Imagery, QuarterlyVstiRepresentation
+        return cognitics::cdb::cdb_lod(cdb, dataset, cs1, cs2, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 4) && (cs1 == 3) && (cs2 == 0))  // Imagery, MonthlyVstiRepresentation
     {
-        return cognitics::cdb::cdb_lod(cdb, 4, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+        cognitics::cdb::cdb_lod(cdb, dataset, cs1, 1, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+        cognitics::cdb::cdb_lod(cdb, dataset, cs1, 2, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+        cognitics::cdb::cdb_lod(cdb, dataset, cs1, 3, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+        cognitics::cdb::cdb_lod(cdb, dataset, cs1, 4, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+        cognitics::cdb::cdb_lod(cdb, dataset, cs1, 5, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+        cognitics::cdb::cdb_lod(cdb, dataset, cs1, 6, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+        cognitics::cdb::cdb_lod(cdb, dataset, cs1, 7, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+        cognitics::cdb::cdb_lod(cdb, dataset, cs1, 8, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+        cognitics::cdb::cdb_lod(cdb, dataset, cs1, 9, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+        cognitics::cdb::cdb_lod(cdb, dataset, cs1, 10, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+        cognitics::cdb::cdb_lod(cdb, dataset, cs1, 11, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+        cognitics::cdb::cdb_lod(cdb, dataset, cs1, 12, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    else if((dataset == 4) && (cs1 == 4) && (cs2 == 0))  // Imagery, QuarterlyVstiRepresentation
+    {
+        cognitics::cdb::cdb_lod(cdb, dataset, cs1, 1, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+        cognitics::cdb::cdb_lod(cdb, dataset, cs1, 2, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+        cognitics::cdb::cdb_lod(cdb, dataset, cs1, 3, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+        cognitics::cdb::cdb_lod(cdb, dataset, cs1, 4, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
     }
     else
         return usage_lod("Unsupported Component: " + cognitics::cdb::DatasetName(dataset) + " " + std::to_string(cs1) + " " + std::to_string(cs2));
