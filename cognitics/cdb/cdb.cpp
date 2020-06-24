@@ -994,7 +994,7 @@ int main_validate(size_t arg_start)
 
 int main(int argc, char** argv)
 {
-    std::cout << "## CDB Productivity Suite " << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_RELEASE << "\n";
+    std::cout << "## CDB Productivity Suite " << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_RELEASE << " (" << BUILDTS << ")" << "\n";
 
     cognitics::gdal::init(argv[0]);
 

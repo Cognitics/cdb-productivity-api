@@ -16,7 +16,7 @@ endif(CMAKE_CUDA_COMPILER)
 if(WIN32)
     if(NOT DEFINED CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "$(Configuration)")
-    message("Defaulting to $(Configration) build type macro for Visual Studio")
+    message("Defaulting to $(Configuration) build type macro for Visual Studio")
     endif(NOT DEFINED CMAKE_BUILD_TYPE)
 endif(WIN32)
 
@@ -58,6 +58,12 @@ if(WIN32)
 endif(WIN32)
 
 message("THIRD_PARTY_DIR: ${THIRD_PARTY_DIR}")
+
+################################################################################
+
+string(TIMESTAMP BUILDTS "%Y%m%d-%H%M")
+
+#add_custom_target(build_clear_cache COMMAND ${CMAKE_COMMAND} -U BUILDTS ${CMAKE_BINARY_DIR})
 
 ################################################################################
 
@@ -1130,6 +1136,7 @@ if(UNIX)
 endif(UNIX)
 
 add_executable(cdb cdb/cdb.cpp)
+target_compile_definitions(cdb PRIVATE -DBUILDTS="${BUILDTS}")
 if(WIN32)
     target_link_libraries(cdb "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
     target_link_libraries(cdb "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")
