@@ -152,6 +152,8 @@ int usage_sample(const std::string& error = "")
     std::cout << "        -lod <lod>               forced level of detail\n";
     std::cout << "    Supported Components:\n";
     std::cout << "        Imagery 001 001\n";
+    std::cout << "        Imagery 003 001-012\n";
+    std::cout << "        Imagery 004 001-004\n";
     std::cout << "        Elevation 001 001\n";
     std::cout << "        GSFeature 001 001\n";
     std::cout << "        GSFeature 001 003\n";
@@ -643,6 +645,10 @@ int main_sample(size_t arg_start)
     if((dataset == 1) && (cs1 == 1) && (cs2 == 1))  // Elevation, PrimaryTerrainElevation
         return cognitics::cdb::cdb_sample(params) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 4) && (cs1 == 1) && (cs2 == 1))  // Imagery, YearlyVstiRepresentation
+        return cognitics::cdb::cdb_sample(params) ? EXIT_SUCCESS : EXIT_FAILURE;
+	else if((dataset == 4) && (cs1 == 3) && (cs2 >= 1) && (cs2 <= 12))  // Imagery, MonthlyVstiRepresentation
+        return cognitics::cdb::cdb_sample(params) ? EXIT_SUCCESS : EXIT_FAILURE;
+    else if((dataset == 4) && (cs1 == 4) && (cs2 >= 1) && (cs2 <= 4))  // Imagery, QuarterlyVstiRepresentation
         return cognitics::cdb::cdb_sample(params) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 100) && (cs1 == 1) && (cs2 == 1))    // GSFeature, Man-made, point features
     {

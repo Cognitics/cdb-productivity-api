@@ -34,6 +34,11 @@ bool cdb_sample(cdb_sample_parameters& params)
 
     auto coords = cognitics::cdb::CoordinatesRange(params.west, params.east, params.south, params.north);
     auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)params.dataset), target_lod);
+    for(auto tile : tiles)
+    {
+        tile.setCs1(params.cs1);
+        tile.setCs2(params.cs2);
+    }
     auto coverage_tiles = cognitics::cdb::CoverageTilesForTiles(params.cdb, tiles);
 
     GDALRasterSampler sampler;
