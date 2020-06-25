@@ -1719,8 +1719,13 @@ void InjectGSModels(const std::string& cdb, const TileInfo& tileinfo, const std:
             fsc = "0" + fsc;
         auto modl = feature->attributes.getAttributeAsString("MODL");
         auto modl_base = ccl::FileInfo(modl).getBaseName(true);
+        auto infile = source_model_path + "/" + modl_base + ".flt";
+        if(modl_base.size() > 32)
+        {
+            std::reverse(modl_base.begin(), modl_base.end());
+            modl_base.resize(32);
+        }
         modl = modl_base + ".flt";
-        auto infile = source_model_path + "/" + modl;
         auto outfile = cdb + "/Tiles/" + D300_filepath + "/" + D300_filename + "_" + facc + "_" + fsc + "_" + modl;
         source_by_target[outfile] = infile;
         feature->attributes.setAttribute("MODL", modl_base);
@@ -1828,8 +1833,13 @@ void InjectGTModels(const std::string& cdb, const std::vector<sfa::Feature*>& fe
             fsc = "0" + fsc;
         auto modl = feature->attributes.getAttributeAsString("MODL");
         auto modl_base = ccl::FileInfo(modl).getBaseName(true);
-        auto infile = source_model_path + "/" + modl;
-        auto relpath = "/GTModel/500_GTModelGeometry/" + fdd.Subdirectory(facc) + "/D500_S001_T001_" + facc + "_" + fsc + "_" + modl;
+        auto infile = source_model_path + "/" + modl_base + ".flt";
+        if(modl_base.size() > 32)
+        {
+            std::reverse(modl_base.begin(), modl_base.end());
+            modl_base.resize(32);
+        }
+        auto relpath = "/GTModel/500_GTModelGeometry/" + fdd.Subdirectory(facc) + "/D500_S001_T001_" + facc + "_" + fsc + "_" + modl_base + ".flt";
         auto outfile = cdb + relpath;
         source_by_target[outfile] = infile;
         feature->attributes.setAttribute("MODL", modl_base);
@@ -1924,6 +1934,8 @@ bool WriteFeaturesToOGRFile(const std::string& filename, const std::vector<sfa::
         if (!file.create(filename))
             return false;
     }
+    if(features.empty())
+        file.addLayer(filename, sfa::wkbPoint);
     for (auto feature : features)
         delete file.addFeature(feature);
     file.close();
