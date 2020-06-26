@@ -630,8 +630,8 @@ int main_sample(size_t arg_start)
         {
             ++argi;
             if(argi > argc - 1)
-                return usage_inject("Missing width");
-            width = to_int(args[argi], 1024);
+                return usage_inject("Missing height");
+            height = to_int(args[argi], 1024);
             continue;
         }
         if(dataset == 0)
