@@ -666,6 +666,8 @@ int main_sample(size_t arg_start)
     auto params = cognitics::cdb::cdb_sample_parameters();
     params.cdb = cdb;
     params.dataset = dataset;
+    params.cs1 = cs1;
+    params.cs2 = cs2;
     params.north = north;
     params.south = south;
     params.east = east;
