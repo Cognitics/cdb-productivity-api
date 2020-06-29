@@ -1987,6 +1987,8 @@ std::vector<sfa::Feature*> FeaturesForTileInfo(const std::string& cdb, const Til
 
 std::vector<sfa::Feature*> Features(const std::string& cdb, int dataset, int cs1, int cs2, int lod, std::tuple<double, double, double, double> nsew)
 {
+    if(lod == 24)
+        lod = 0;
     auto result = std::vector<sfa::Feature*>();
     auto coords = CoordinatesRange(std::get<3>(nsew), std::get<2>(nsew), std::get<1>(nsew), std::get<0>(nsew));
     auto tiles = generate_tiles(coords, Dataset((uint16_t)dataset), lod);
