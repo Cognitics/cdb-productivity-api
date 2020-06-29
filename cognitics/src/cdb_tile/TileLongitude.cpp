@@ -19,7 +19,7 @@ TileLongitude::TileLongitude(const TileLatitude& latitude, int16_t value) : _val
     _value = std::max<int16_t>(_value, -180);
 
     int16_t tile_width = get_tile_width(latitude.value());
-    _value /= tile_width;
+    _value = std::floor((float)_value / tile_width);
     _value *= tile_width;
 }
 
