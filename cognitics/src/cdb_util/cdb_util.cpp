@@ -290,9 +290,11 @@ std::string FileNameForTileInfo(const TileInfo& tileinfo)
 
 TileInfo TileInfoForTile(const Tile& tile)
 {
+    auto tile_latitude = TileLatitude(tile.getCoordinates().low().latitude().value());
+    auto tile_longitude = TileLongitude(tile_latitude, tile.getCoordinates().low().longitude().value());
     auto info = TileInfo();
-    info.latitude = std::floor(tile.getCoordinates().low().latitude().value());
-    info.longitude = std::floor(tile.getCoordinates().low().longitude().value());
+    info.latitude = tile_latitude.value();
+    info.longitude = tile_longitude.value();
     info.dataset = tile.getDataset().code();
     info.lod = tile.getLod();
     info.selector1 = tile.getCs1();
