@@ -1685,6 +1685,17 @@ TileInfo HighestExistingTileInfoForPosition(const std::string& cdb, int dataset,
     return result;
 }
 
+bool FileExistsInZip(const std::string& zipname, const std::string& filename)
+{
+    mz_zip_archive zip;
+    memset(&zip, 0, sizeof(zip));
+    if(!mz_zip_reader_init_file(&zip, zipname.c_str(), 0))
+        return false;
+    bool result = mz_zip_reader_locate_file(&zip, filename.c_str(), nullptr, 0) >= 0;
+    mz_zip_reader_end(&zip);
+    return result;
+}
+
 void InjectGSModels(const std::string& cdb, const TileInfo& tileinfo, const std::vector<sfa::Feature*>& features, bool insert, const std::string& source_model_path, const std::string& source_texture_path)
 {
     auto D300_tile_info = tileinfo;
@@ -1790,8 +1801,11 @@ void InjectGSModels(const std::string& cdb, const TileInfo& tileinfo, const std:
                     auto outfn = D301_filename + "_" + outbase + "." + outext;
 					auto outpath = ccl::FileInfo(D301_zipname).getDirName();
 					ccl::makeDirectory(outpath);
-                    auto texture_bytes = BytesFromFile(source_texture);
-                    auto mz_result = mz_zip_add_mem_to_archive_file_in_place(D301_zipname.c_str(), outfn.c_str(), texture_bytes.data(), texture_bytes.size(), NULL, 0, MZ_DEFAULT_COMPRESSION);
+                    if(!FileExistsInZip(D301_zipname.c_str(), outfn.c_str()))
+                    {
+                        auto texture_bytes = BytesFromFile(source_texture);
+                        auto mz_result = mz_zip_add_mem_to_archive_file_in_place(D301_zipname.c_str(), outfn.c_str(), texture_bytes.data(), texture_bytes.size(), NULL, 0, MZ_DEFAULT_COMPRESSION);
+                    }
                     auto lodstr = std::to_string(tileinfo.lod);
                     if(lodstr.size() < 2)
                         lodstr = "0" + lodstr;
@@ -1810,7 +1824,8 @@ void InjectGSModels(const std::string& cdb, const TileInfo& tileinfo, const std:
 
         //FileFromBytes(outfile, bytes);
         auto outfn = ccl::FileInfo(outfile).getBaseName();
-        auto mz_result = mz_zip_add_mem_to_archive_file_in_place(D300_zipname.c_str(), outfn.c_str(), bytes.data(), bytes.size(), NULL, 0, MZ_DEFAULT_COMPRESSION);
+        if(!FileExistsInZip(D300_zipname.c_str(), outfn.c_str()))
+			mz_zip_add_mem_to_archive_file_in_place(D300_zipname.c_str(), outfn.c_str(), bytes.data(), bytes.size(), NULL, 0, MZ_DEFAULT_COMPRESSION);
     }
 }
 
