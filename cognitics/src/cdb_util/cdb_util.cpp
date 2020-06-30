@@ -406,6 +406,31 @@ std::vector<ccl::AttributeContainer> AttributesForDBF(const std::string& filenam
     return result;
 }
 
+bool WriteAttributesToDBF(const std::string& filename, std::vector<ccl::AttributeContainer>& attribute_containers)
+{
+    auto features = std::vector<sfa::Feature*>();
+    for(auto& attr : attribute_containers)
+    {
+        auto feature = new sfa::Feature();
+        feature->geometry = new sfa::Point();
+        feature->attributes = attr;
+        features.push_back(feature);
+    }
+    auto result = WriteFeaturesToOGRFile(filename, features);
+    for(auto feature : features)
+        delete feature;
+    if(std::filesystem::path(filename).extension() == ".shp")
+		std::remove(filename.c_str());
+    return result;
+}
+
+bool WriteDummyClassDBF(const std::string& filename)
+{
+    auto attributes = ccl::AttributeContainer();
+    attributes.setAttribute("CNAM", std::string(""));
+    return WriteAttributesToDBF(filename, std::vector<ccl::AttributeContainer>{ attributes });
+}
+
 std::map<std::string, ccl::AttributeContainer> AttributesByCNAM(const std::vector<ccl::AttributeContainer>& attrvec)
 {
     auto result = std::map<std::string, ccl::AttributeContainer>();
@@ -1236,6 +1261,8 @@ std::vector<std::pair<std::string, Tile>> CoverageTilesForTiles(const std::strin
             auto parent_tiles_add = generate_tiles(parent_coords, Dataset((uint16_t)tile_info.dataset), tile_info.lod - 1);
             for(auto parent_tile : parent_tiles_add)
             {
+                parent_tile.setCs1(tile_info.selector1);
+                parent_tile.setCs2(tile_info.selector2);
                 if(std::find(parent_tiles.begin(), parent_tiles.end(), parent_tile) == parent_tiles.end())
                     parent_tiles.push_back(parent_tile);
             }
@@ -1390,6 +1417,11 @@ bool CDBInjector::InjectFeatures(const TileInfo& tileinfo, const std::vector<sfa
 	auto tile_filepath = FilePathForTileInfo(tileinfo);
 	auto tile_filename = FileNameForTileInfo(tileinfo);
 	auto tile_fn = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename + ".shp";
+    auto class_tile = tileinfo;
+    ++class_tile.selector2;
+    auto class_tile_filepath = FilePathForTileInfo(class_tile);
+    auto class_tile_filename = FileNameForTileInfo(class_tile);
+    auto class_tile_fn = cdb + "/Tiles/" + class_tile_filepath + "/" + class_tile_filename + ".dbf";
 
     ccl::ObjLog log;
 
@@ -1402,14 +1434,17 @@ bool CDBInjector::InjectFeatures(const TileInfo& tileinfo, const std::vector<sfa
             InjectGTModels(cdb, tile_features, models_path, textures_path);
 
         if(!insert)
+        {
             std::remove(tile_fn.c_str());
-
+            WriteDummyClassDBF(class_tile_fn);
+        }
         return WriteFeaturesToOGRFile(tile_fn, tile_features);
     }
 
 	log << "INJECT " << tile_filename << ": splitting " << tile_features.size() << " features" << log.endl;
 
     WriteFeaturesToOGRFile(tile_fn, { });
+	WriteDummyClassDBF(class_tile_fn);
     auto children = GenerateTileInfos(tileinfo.lod + 1, nsew);
     bool result = true;
     for(auto child : children)

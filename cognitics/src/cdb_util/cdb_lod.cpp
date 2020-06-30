@@ -61,6 +61,11 @@ public:
             std::tie(tile_north, tile_south, tile_east, tile_west) = cognitics::cdb::NSEWBoundsForTileInfo(tile_info);
             auto coords = cognitics::cdb::CoordinatesRange(tile_west, tile_east, tile_south, tile_north);
             auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)tile_info.dataset), tile_info.lod - 1);
+            for(auto& tile : tiles)
+            {
+                tile.setCs1(tile_info.selector1);
+                tile.setCs2(tile_info.selector2);
+            }
             auto coverage_tiles = cognitics::cdb::CoverageTilesForTiles(cdb, tiles);
             auto coverage_filenames = std::vector<std::string>();
             for (auto ctile : coverage_tiles)
