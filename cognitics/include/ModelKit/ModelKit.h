@@ -238,7 +238,7 @@ namespace modelkit
 		bool isValid() { return valid; }
 	};
 
-	typedef std::tr1::shared_ptr<ModelKit> ModelKitSP;
+	typedef std::shared_ptr<ModelKit> ModelKitSP;
 
 	struct ModelKitReference
 	{

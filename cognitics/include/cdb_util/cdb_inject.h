@@ -12,6 +12,7 @@ struct cdb_inject_parameters
 {
     int workers { 8 };
     std::string cdb;
+    std::string previous_cdb;
     double north { DBL_MAX };
     double south { -DBL_MAX };
     double east { DBL_MAX };
@@ -23,6 +24,8 @@ struct cdb_inject_parameters
     bool build_overviews { false };
     bool count_tiles { false };
     bool dry_run { false };
+    int cs1 = 1;
+    int cs2 = 1;
 };
 
 bool cdb_inject(cdb_inject_parameters& params);

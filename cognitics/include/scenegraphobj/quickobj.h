@@ -160,6 +160,9 @@ namespace cognitics {
         float z;
     } QuickVert;
 
+
+
+
     class QuickSubMesh
     {
     public:
@@ -169,6 +172,8 @@ namespace cognitics {
         std::string materialName;
     };
 
+    //Used to collect unique combinations of verts/uvs/normals
+    typedef std::tuple<int32_t, int32_t, int32_t> coord_tuple_t;
     /*
         QuickObj makes a bunch of assumptions, such as each 
         face being a triangle.
@@ -232,11 +237,22 @@ namespace cognitics {
         bool glRender();
         bool isValid() { return _isValid;}
 
+
+		bool exportObj(const std::string &filename);
+		void flattenVert(uint32_t index, float up_val);
+
+		void addSubMesh(const QuickSubMesh &submesh);
+
         bool transform(Cognitics::CoordinateSystems::EllipsoidTangentPlane *_etp,
             OGRCoordinateTransformation *_coordTrans,
             const sfa::Point &_offset);
+        //Iterate through all the subfaces and get the unique pairs of coordinates
+        void expandCoordinates();
+        //Finds the centroid of the model and translate so that (centroid) is 0/0. Then return the lat/lon of the origin
+        sfa::Point findCenterAndReOrigin();
     };
 
+    
 
     /***
      * Warning, this cache isn't thread safe. Nothing is done to control the lifetime
@@ -282,10 +298,11 @@ namespace cognitics {
 
         bool buildMat(Material &mat);
         bool buildMesh(QuickObj &obj);
-        bool buildSubmesh(QuickSubMesh &submesh);
+        bool buildSubmesh(QuickSubMesh &submesh, const std::string &name);
 
     public:
 		QuickObj2Flt();
         bool convert(QuickObj *obj, const std::string &outputFltFilename);
+        bool convertTextures(QuickObj *obj, const std::string &outputDir);
     };
 }

@@ -157,7 +157,7 @@ namespace modelkit
 				dom::NamedNodeMap attrlist = child->getAttributes();
 				for(dom::NamedNodeMap::iterator it = attrlist.begin(), end = attrlist.end(); it != end; ++it)
 				{
-					dom::AttrSP attr = std::tr1::dynamic_pointer_cast<dom::Attr>(it->second);
+					dom::AttrSP attr = std::dynamic_pointer_cast<dom::Attr>(it->second);
 					if((attr->getName() == "name")
 						|| (attr->getName() == "fid")
 						|| (attr->getName() == "smc"))
@@ -174,7 +174,7 @@ namespace modelkit
 						dom::NamedNodeMap attrlist = childChild->getAttributes();
 						for(dom::NamedNodeMap::iterator it = attrlist.begin(), end = attrlist.end(); it != end; ++it)
 						{
-							dom::AttrSP attr = std::tr1::dynamic_pointer_cast<dom::Attr>(it->second);
+							dom::AttrSP attr = std::dynamic_pointer_cast<dom::Attr>(it->second);
 							if((attr->getValue().as_string() == "true") || (attr->getValue().as_int() > 0))
 								edge->getFlags().setAttribute(attr->getName(), true);
 						}
@@ -268,7 +268,7 @@ namespace modelkit
 						dom::NamedNodeMap attrlist = childChild->getAttributes();
 						for(dom::NamedNodeMap::iterator it = attrlist.begin(), end = attrlist.end(); it != end; ++it)
 						{
-							dom::AttrSP attr = std::tr1::dynamic_pointer_cast<dom::Attr>(it->second);
+							dom::AttrSP attr = std::dynamic_pointer_cast<dom::Attr>(it->second);
 							if((attr->getValue().as_string() == "true") || (attr->getValue().as_int() > 0))
 								face->getFlags().setAttribute(attr->getName(), true);
 						}

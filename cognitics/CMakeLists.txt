@@ -16,12 +16,14 @@ endif(CMAKE_CUDA_COMPILER)
 if(WIN32)
     if(NOT DEFINED CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "$(Configuration)")
-    message("Defaulting to $(Configration) build type macro for Visual Studio")
+    message("Defaulting to $(Configuration) build type macro for Visual Studio")
     endif(NOT DEFINED CMAKE_BUILD_TYPE)
 endif(WIN32)
 
 #cmake -G "Unix Makefiles" -DCOG_BUILD_GL_TOOLS=1 -DTHIRD_PARTY_DIR=/home/ubuntu/cognitics/ThirdParty -DCMAKE_INSTALL_PREFIX=/usr/local ..
 #make DESTDIR=/home/ubuntu/cdbtools install
+
+#cmake -G "Visual Studio 16 2019" -A x64 -T v141 -DCOG_BUILD_GL_TOOLS=1 ..
 
 ################################################################################
 
@@ -59,7 +61,14 @@ message("THIRD_PARTY_DIR: ${THIRD_PARTY_DIR}")
 
 ################################################################################
 
+string(TIMESTAMP BUILDTS "%Y%m%d-%H%M")
+
+#add_custom_target(build_clear_cache COMMAND ${CMAKE_COMMAND} -U BUILDTS ${CMAKE_BINARY_DIR})
+
+################################################################################
+
 set(COGCORE_HEADERS
+    ./include/Version.h
     ./include/ccl/ccl.h
     ./include/ccl/FileInfo.h
     ./include/ccl/Value.h
@@ -110,8 +119,10 @@ set(COGCORE_HEADERS
     ./include/ccl/miniz.h
     ./include/ccl/ArgumentParser.h
     ./include/ccl/gdal.h
+    ./include/ccl/tinyxml2.h
     ./include/cad/AttributeDictionary.h
     ./include/scenegraphobj/scenegraphobj.h
+    ./include/scenegraphobj/quickobj.h
     ./include/sfa_file_factory/sfa_file_factory.h
     ./include/gltf/GltfData.h
     ./include/gltf/Tileset.h
@@ -176,6 +187,7 @@ set(COGCORE_HEADERS
     ./include/scenegraph/LineString.h
     ./include/scenegraph/Scene.h
     ./include/scenegraph/GroupingVisitor.h
+    ./include/scenegraph/IntegrateExternalsVisitor.h
     ./include/scenegraph/Material.h
     ./include/scenegraph/DrapeVisitor.h
     ./include/scenegraph/CoordinateTransformVisitor.h
@@ -508,6 +520,25 @@ set(COGCORE_HEADERS
 
 	./include/civetweb/civetweb.h
 	./include/civetweb/CivetServer.h
+
+    ./include/ModelKit/Attachment.h
+    ./include/ModelKit/AttachmentPoint.h
+    ./include/ModelKit/AvoidArea.h
+    ./include/ModelKit/AvoidClipper.h
+    ./include/ModelKit/Connection.h
+    ./include/ModelKit/CrossSection.h
+    ./include/ModelKit/Edge.h
+    ./include/ModelKit/Face.h
+    ./include/ModelKit/FlightToCSM.h
+    ./include/ModelKit/Material.h
+    ./include/ModelKit/ModelGenerator.h
+    ./include/ModelKit/ModelInstance.h
+    ./include/ModelKit/ModelKit.h
+    ./include/ModelKit/Reference.h
+    ./include/ModelKit/RGBA.h
+    ./include/ModelKit/SceneData.h
+    ./include/ModelKit/TextureReference.h
+    ./include/ModelKit/TunnelFeatureGenerator.h
 )
 
 ################################################################################
@@ -561,6 +592,7 @@ set(COGCORE_SOURCES
     ./src/ccl/miniz.c
     ./src/ccl/ArgumentParser.cpp
     ./src/ccl/gdal.cpp
+    ./src/ccl/tinyxml2.cpp
     ./src/sfa_file_factory/sfa_file_factory.cpp
     ./src/gltf/GltfJson.cpp
     ./src/gltf/GltfInfo.cpp
@@ -620,6 +652,7 @@ set(COGCORE_SOURCES
     ./src/scenegraph/Visitor.cpp
     ./src/scenegraph/Scene.cpp
     ./src/scenegraph/GroupingVisitor.cpp
+    ./src/scenegraph/IntegrateExternalsVisitor.cpp
     ./src/scenegraph/buildSceneFromFeature.cpp
     ./src/scenegraph/MappedTexture.cpp
     ./src/scenegraph/SGLineString.cpp
@@ -860,6 +893,7 @@ set(COGCORE_SOURCES
     ./src/scenegraphfbx/buildFbxFromScene.cpp
     ./src/scenegraphobj/buildObjFromScene.cpp
     ./src/scenegraphobj/buildSceneFromOBJ.cpp
+    ./src/scenegraphobj/quickobj.cpp
     ./src/b64/base64.cpp    
     ./meshgen/ws/WebServices.cpp
     ./include/sqlite/sqlite3.c
@@ -901,6 +935,23 @@ set(COGCORE_SOURCES
 	./src/civetweb/md5.inl
 	./src/civetweb/sha1.inl
 	./src/civetweb/timer.inl
+    
+    ./src/ModelKit/Attachment.cpp
+    ./src/ModelKit/AttachmentPoint.cpp
+    ./src/ModelKit/AvoidArea.cpp
+    ./src/ModelKit/AvoidClipper.cpp
+    ./src/ModelKit/Connection.cpp
+    ./src/ModelKit/CrossSection.cpp
+    ./src/ModelKit/Edge.cpp
+    ./src/ModelKit/Face.cpp
+    ./src/ModelKit/FlightToCSM.cpp
+    ./src/ModelKit/Material.cpp
+    ./src/ModelKit/ModelGenerator.cpp
+    ./src/ModelKit/ModelInstance.cpp
+    ./src/ModelKit/ModelKit.cpp
+    ./src/ModelKit/Reference.cpp
+    ./src/ModelKit/TextureReference.cpp
+    ./src/ModelKit/TunnelFeatureGenerator.cpp
 )
 
 ################################################################################
@@ -974,6 +1025,10 @@ link_libraries(cogcore)
 
 
 set (LM2OBJ_SOURCES ./lmbundle2obj/lmbundle2obj.cpp)
+SET(OBJ_EXT_SOURCES ./obj-preprocess/obj-preprocess.cpp
+                    ./obj-preprocess/obj-preprocess.h
+		    ./obj-preprocess/meshrender.cpp
+		    ./obj-preprocess/MeshRender.h)
 
 add_executable(lmbundle2obj ${LM2OBJ_SOURCES})
 
@@ -986,6 +1041,12 @@ if(WIN32)
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/lpng154/lib/libpng15.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glew/release/lib/glew32.lib")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glut/lib/freeglut.lib")
+    target_link_libraries(obj-extract "opengl32.lib")
+    
 endif(WIN32)
 if(UNIX)
     target_link_libraries(obj-extract ${CMAKE_DL_LIBS})
@@ -994,6 +1055,11 @@ if(UNIX)
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
     target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glew/linux_x64/lib/libGLEW.a")
+    target_link_libraries(obj-extract "${THIRD_PARTY_DIR}/glut/linux_x64/lib/libglut.so")
+
 endif(UNIX)
 
 if(WIN32)
@@ -1025,39 +1091,6 @@ if(FALSE)
 endif(FALSE)
 endif(WIN32)
 
-
-add_executable(cdbinfo cdbinfo/cdbinfo.cpp)
-if(WIN32)
-    target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
-    target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
-    target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
-    target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
-endif(WIN32)
-if(UNIX)
-    target_link_libraries(cdbinfo ${CMAKE_DL_LIBS})
-    target_link_libraries(cdbinfo "pthread")
-    target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
-    target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
-    target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
-    target_link_libraries(cdbinfo "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
-endif(UNIX)
-
-add_executable(cdb-inject cdb-inject/cdb-inject.cpp)
-if(WIN32)
-    target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
-    target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
-    target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
-    target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
-endif(WIN32)
-if(UNIX)
-    target_link_libraries(cdb-inject ${CMAKE_DL_LIBS})
-    target_link_libraries(cdb-inject "pthread")
-    target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
-    target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
-    target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
-    target_link_libraries(cdb-inject "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
-endif(UNIX)
-
 add_executable(meshgen meshgen/meshgen.cpp)
 if(WIN32)
     target_link_libraries(meshgen "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
@@ -1082,42 +1115,6 @@ if(UNIX)
     target_link_libraries(meshgen "${THIRD_PARTY_DIR}/fbxsdk/lib/gcc4/x64/release/libfbxsdk.a")
 endif(UNIX)
 
-add_executable(cdb-lod cdb-lod/cdb-lod.cpp)
-if(WIN32)
-    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
-    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")
-    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
-    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
-    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
-endif(WIN32)
-if(UNIX)
-    target_link_libraries(cdb-lod ${CMAKE_DL_LIBS})
-    target_link_libraries(cdb-lod "pthread")
-    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
-    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
-    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
-    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
-    target_link_libraries(cdb-lod "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
-endif(UNIX)
-
-add_executable(cdb-sample cdb-sample/cdb-sample.cpp)
-if(WIN32)
-    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
-    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")
-    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
-    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
-    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
-endif(WIN32)
-if(UNIX)
-    target_link_libraries(cdb-sample ${CMAKE_DL_LIBS})
-    target_link_libraries(cdb-sample "pthread")
-    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
-    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
-    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
-    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
-    target_link_libraries(cdb-sample "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
-endif(UNIX)
-
 add_executable(cdb-service cdb-service/cdb-service.cpp)
 if(WIN32)
     target_link_libraries(cdb-service "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
@@ -1139,6 +1136,7 @@ if(UNIX)
 endif(UNIX)
 
 add_executable(cdb cdb/cdb.cpp)
+target_compile_definitions(cdb PRIVATE -DBUILDTS="${BUILDTS}")
 if(WIN32)
     target_link_libraries(cdb "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
     target_link_libraries(cdb "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")
@@ -1161,6 +1159,7 @@ endif(UNIX)
 
 
 if(COG_BUILD_GL_TOOLS)
+    add_definitions("-DCOG_USE_GL")
     if(WIN32)
         include_directories("${THIRD_PARTY_DIR}/glew/${CMAKE_BUILD_TYPE}/include")
         include_directories("${THIRD_PARTY_DIR}/glut/include")
@@ -1171,8 +1170,7 @@ if(COG_BUILD_GL_TOOLS)
     endif(UNIX)
 
     add_executable(mesh2cdb
-        mesh2cdb/quickobj.cpp
-		mesh2cdb/quickobj.h
+#		mesh2cdb/quickobj.h
 #		mesh2cdb/quickobj_lmb.cpp
         mesh2cdb/mesh2cdb.cpp
         mesh2cdb/mesh2cdb.h
@@ -1217,7 +1215,6 @@ if(COG_BUILD_GL_TOOLS)
     endif(UNIX)
 
     add_executable(mesh2cdb-rest
-        mesh2cdb/quickobj.cpp
         mesh2cdb/mesh2cdb-rest.cpp
         mesh2cdb/mesh2cdb.h
         mesh2cdb/meshconvert.cpp
@@ -1286,11 +1283,8 @@ endif(CMAKE_CUDA_COMPILER)
 
 if(UNIX)
     install(TARGETS meshgen DESTINATION bin)
-    install(TARGETS cdb-inject DESTINATION bin)
-    install(TARGETS cdb-lod  DESTINATION bin)
-    install(TARGETS cdb-sample  DESTINATION bin)
+    install(TARGETS cdb DESTINATION bin)
     install(TARGETS cdb-service  DESTINATION bin)
-    install(TARGETS cdbinfo  DESTINATION bin)
   
     install(DIRECTORY ${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64_lin/ DESTINATION lib USE_SOURCE_PERMISSIONS FILES_MATCHING PATTERN "*.so" PATTERN "*.a")
     install(DIRECTORY ${THIRD_PARTY_DIR}/linux_x64/ DESTINATION . USE_SOURCE_PERMISSIONS)

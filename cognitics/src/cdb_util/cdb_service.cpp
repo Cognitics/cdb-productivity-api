@@ -175,7 +175,16 @@ class WMSRequestHandler
         double east = 180.0;
         double west = -180.0;
 
-        auto host = "http://localhost:8080";
+        std::string host;
+        for(int i = 0; i < cdb_request.request_info->num_headers; ++i)
+        {
+            auto header = cdb_request.request_info->http_headers[i];
+            auto name = std::string(header.name);
+            if(name == "Host")
+                host = std::string("http://") + header.value;
+            //std::cout << "HEADER [" << i << "] " << name << ": " << header.value << "\n";
+        }
+
 
         auto ss = std::stringstream();
         ss << "HTTP/1.1 200 OK\r\n";

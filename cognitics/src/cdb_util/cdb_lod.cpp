@@ -55,10 +55,41 @@ public:
             }
             if(child_filenames.empty())
                 return 0;
+
+            auto tile_info = cognitics::cdb::TileInfoForFileName(stem);
+            double tile_north, tile_south, tile_east, tile_west;
+            std::tie(tile_north, tile_south, tile_east, tile_west) = cognitics::cdb::NSEWBoundsForTileInfo(tile_info);
+            auto coords = cognitics::cdb::CoordinatesRange(tile_west, tile_east, tile_south, tile_north);
+            auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)tile_info.dataset), tile_info.lod - 1);
+            for(auto& tile : tiles)
+            {
+                tile.setCs1(tile_info.selector1);
+                tile.setCs2(tile_info.selector2);
+            }
+            auto coverage_tiles = cognitics::cdb::CoverageTilesForTiles(cdb, tiles);
+            auto coverage_filenames = std::vector<std::string>();
+            for (auto ctile : coverage_tiles)
+            {
+                auto cdb = ctile.first;
+                auto tile = ctile.second;
+                auto tile_info = cognitics::cdb::TileInfoForTile(tile);
+                auto tile_filepath = cognitics::cdb::FilePathForTileInfo(tile_info);
+                auto tile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
+                auto filename = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename;
+                if (tile_info.dataset == 1)
+                    filename += ".tif";
+                if (tile_info.dataset == 4)
+                    filename += ".jp2";
+                if (std::find(coverage_filenames.begin(), coverage_filenames.end(), filename) == coverage_filenames.end())
+                    coverage_filenames.push_back(filename);
+            }
+
+
             GDALRasterSampler sampler;
+            for (auto coverage_filename : coverage_filenames)
+                sampler.AddFile(coverage_filename);
             for (auto child_filename : child_filenames)
                 sampler.AddFile(child_filename);
-            auto tile_info = cognitics::cdb::TileInfoForFileName(stem);
             if(tile_info.dataset == 1)
                 cognitics::cdb::BuildElevationTileFromSampler(cdb, sampler, tile_info);
             if(tile_info.dataset == 4)
@@ -84,14 +115,14 @@ namespace cdb {
 bool cdb_lod(const std::string& cdb, int workers)
 {
     bool result = true;
-    if(!cdb_lod(cdb, 1, workers))
+    if(!cdb_lod(cdb, 1, 1, 1, workers))
         result = false;
-    if(!cdb_lod(cdb, 4, workers))
+    if(!cdb_lod(cdb, 4, 1, 1, workers))
         result = false;
     return result;
 }
 
-bool cdb_lod(const std::string& cdb, int dataset, int workers)
+bool cdb_lod(const std::string& cdb, int dataset, int cs1, int cs2, int workers)
 {
     ccl::ObjLog log;
 
@@ -113,8 +144,9 @@ bool cdb_lod(const std::string& cdb, int dataset, int workers)
 
             auto lod_files = std::vector<std::string>();
             {
+                std::error_code ec;
                 auto tmp_files = std::vector<std::string>();
-                for(const auto& entry : std::filesystem::recursive_directory_iterator(lod_path))
+                for(const auto& entry : std::filesystem::recursive_directory_iterator(lod_path,ec))
                 {
                     if(std::filesystem::is_regular_file(entry))
                         tmp_files.push_back(entry.path().string());
@@ -124,7 +156,7 @@ bool cdb_lod(const std::string& cdb, int dataset, int workers)
                     try
                     {
                         auto ti = TileInfoForFileName(std::filesystem::path(tmp_file).stem().string());
-                        if((ti.latitude == lat) && (ti.longitude == lon) && (ti.lod == target_lod))
+                        if((ti.latitude == lat) && (ti.longitude == lon) && (ti.lod == target_lod) && (ti.selector1 == cs1) && (ti.selector2 == cs2))
                             lod_files.push_back(tmp_file);
                     }
                     catch(std::exception &)
@@ -135,7 +167,8 @@ bool cdb_lod(const std::string& cdb, int dataset, int workers)
 
             auto parent_files = std::vector<std::string>();
             {
-                for(const auto& entry : std::filesystem::recursive_directory_iterator(parent_path))
+                std::error_code ec;
+                for(const auto& entry : std::filesystem::recursive_directory_iterator(parent_path, ec))
                 {
                     if(std::filesystem::is_regular_file(entry))
                         parent_files.push_back(entry.path().string());

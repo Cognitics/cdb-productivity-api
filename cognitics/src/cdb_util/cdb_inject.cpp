@@ -110,16 +110,24 @@ public:
     int execute(void)
     {
         ccl::ObjLog log;
-        log << "Processing " << cognitics::cdb::FileNameForTileInfo(tileinfo) << log.endl;
-        if (isElevation)
+        auto fn = cognitics::cdb::FileNameForTileInfo(tileinfo);
+        log << "Processing " << fn << log.endl;
+        try
         {
-            cognitics::cdb::BuildElevationTileFromSampler(cdb, sampler, tileinfo);
+            if (isElevation)
+            {
+                cognitics::cdb::BuildElevationTileFromSampler(cdb, sampler, tileinfo);
+            }
+            else
+            {
+                cognitics::cdb::BuildImageryTileFromSampler(cdb, sampler, tileinfo);
+            }
+            reporter.reportCompletedJob("");
         }
-        else
+        catch(std::exception e)
         {
-            cognitics::cdb::BuildImageryTileFromSampler(cdb, sampler, tileinfo);
+            log << fn << " EXCEPTION: " << e.what() << log.endl;
         }
-        reporter.reportCompletedJob("");
 
         //log << "Finished " << cognitics::cdb::FileNameForTileInfo(tileinfo) << log.endl;
 
@@ -176,7 +184,10 @@ bool cdb_inject(cdb_inject_parameters& params)
             auto jp2_files = ccl::FileInfo::getAllFiles(imagery_param, "*.jp2");
             std::transform(jp2_files.begin(), jp2_files.end(), std::back_inserter(imagery_filenames), [](const ccl::FileInfo& fi) { return fi.getFileName(); });
         }
-        imagery_filenames.push_back(imagery_param);
+        else
+        {
+            imagery_filenames.push_back(imagery_param);
+        }
     }
     bool imagery_enabled = !imagery_filenames.empty();
 
@@ -193,19 +204,23 @@ bool cdb_inject(cdb_inject_parameters& params)
             auto tif_files = ccl::FileInfo::getAllFiles(elevation_param, "*.tif");
             std::transform(tif_files.begin(), tif_files.end(), std::back_inserter(elevation_filenames), [](const ccl::FileInfo& fi) { return fi.getFileName(); });
         }
-        elevation_filenames.push_back(elevation_param);
+        else
+        {
+            elevation_filenames.push_back(elevation_param);
+        }
     }
     bool elevation_enabled = !elevation_filenames.empty();
 
     auto raster_info_by_filename = std::map<std::string, cognitics::cdb::RasterInfo>();
 
     auto imagery_tiles = std::vector<cognitics::cdb::Tile>();
-    auto imagery_tileinfos = std::vector<cognitics::cdb::TileInfo>();
+    auto imagery_tileinfos = std::set<cognitics::cdb::TileInfo>();
     if (imagery_enabled)
     {
         log << ccl::LINFO << "Gathering information on " << imagery_filenames.size() << " imagery file(s)..." << log.endl;
         for (auto filename : imagery_filenames)
         {
+            log << ccl::LINFO << "Reading metadata for " << filename << log.endl;
             auto raster_info = cognitics::cdb::ReadRasterInfo(filename);
             raster_info_by_filename[filename] = raster_info;
             auto pixel_size = std::min<double>(std::abs(raster_info.PixelSizeX), std::abs(raster_info.PixelSizeY));
@@ -220,15 +235,19 @@ bool cdb_inject(cdb_inject_parameters& params)
             auto raster_tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)0), target_lod);
             imagery_tiles.insert(imagery_tiles.end(), raster_tiles.begin(), raster_tiles.end());
         }
-        std::sort(imagery_tiles.begin(), imagery_tiles.end());
-        imagery_tiles.erase(std::unique(imagery_tiles.begin(), imagery_tiles.end()), imagery_tiles.end());
-        log << "Identified " << imagery_tiles.size() << " imagery tiles to generate." << log.endl;
-        std::transform(imagery_tiles.begin(), imagery_tiles.end(), std::back_inserter(imagery_tileinfos), [](const cognitics::cdb::Tile& tile) { return cognitics::cdb::TileInfoForTile(tile); });
-        std::for_each(imagery_tileinfos.begin(), imagery_tileinfos.end(), [](cognitics::cdb::TileInfo& ti) { ti.dataset = 4; });
+        for(auto& tile : imagery_tiles)
+        {
+            auto ti = cognitics::cdb::TileInfoForTile(tile);
+            ti.dataset = 4;
+            ti.selector1 = params.cs1;
+            ti.selector2 = params.cs2;
+            imagery_tileinfos.insert(ti);
+        }
+        log << "Identified " << imagery_tileinfos.size() << " imagery tiles to generate." << log.endl;
     }
 
     auto elevation_tiles = std::vector<cognitics::cdb::Tile>();
-    auto elevation_tileinfos = std::vector<cognitics::cdb::TileInfo>();
+    auto elevation_tileinfos = std::set<cognitics::cdb::TileInfo>();
     if (elevation_enabled)
     {
         log << ccl::LINFO << "Gathering information on " << elevation_filenames.size() << " elevation file(s)..." << log.endl;
@@ -248,11 +267,15 @@ bool cdb_inject(cdb_inject_parameters& params)
             auto raster_tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)0), target_lod);
             elevation_tiles.insert(elevation_tiles.end(), raster_tiles.begin(), raster_tiles.end());
         }
-        std::sort(elevation_tiles.begin(), elevation_tiles.end());
-        elevation_tiles.erase(std::unique(elevation_tiles.begin(), elevation_tiles.end()), elevation_tiles.end());
+        for(auto& tile : elevation_tiles)
+        {
+            auto ti = cognitics::cdb::TileInfoForTile(tile);
+            ti.dataset = 1;
+            ti.selector1 = params.cs1;
+            ti.selector2 = params.cs2;
+            elevation_tileinfos.insert(ti);
+        }
         log << "Identified " << elevation_tiles.size() << " elevation tiles to generate." << log.endl;
-        std::transform(elevation_tiles.begin(), elevation_tiles.end(), std::back_inserter(elevation_tileinfos), [](const cognitics::cdb::Tile& tile) { return cognitics::cdb::TileInfoForTile(tile); });
-        std::for_each(elevation_tileinfos.begin(), elevation_tileinfos.end(), [](cognitics::cdb::TileInfo& ti) { ti.dataset = 1; });
     }
 
     if (params.dry_run || params.count_tiles)
@@ -300,7 +323,7 @@ bool cdb_inject(cdb_inject_parameters& params)
     }
 
     if (!cognitics::cdb::IsCDB(params.cdb))
-        cognitics::cdb::MakeCDB(params.cdb);
+        cognitics::cdb::MakeCDB(params.cdb, params.previous_cdb);
     JobProgressReporter jobReporter;
     CDBTileJobThreadDataManager cdbTileJobThreadDataManager;
     ccl::JobManager jobManager(params.workers, NULL, &cdbTileJobThreadDataManager);
@@ -310,16 +333,12 @@ bool cdb_inject(cdb_inject_parameters& params)
         GDALRasterSampler sampler;
         for(auto ti : imagery_tileinfos)
         {
-            double tile_north, tile_south, tile_east, tile_west;
-            std::tie(tile_north, tile_south, tile_east, tile_west) = cognitics::cdb::NSEWBoundsForTileInfo(ti);
-            auto coords = cognitics::cdb::CoordinatesRange(tile_west, tile_east, tile_south, tile_north);
-            auto tiles = cognitics::cdb::generate_tiles(coords, cognitics::cdb::Dataset((uint16_t)ti.dataset), ti.lod - 1);
-            auto coverage_tiles = cognitics::cdb::CoverageTilesForTiles(params.cdb, tiles);
-            for(auto ctile : coverage_tiles)
+            auto parent_ti = cognitics::cdb::ParentTileInfo(ti);
+            auto coverage_tileinfos = cognitics::cdb::CoverageTileInfosForTileInfo(params.cdb, parent_ti);
+            for(auto ctile : coverage_tileinfos)
             {
                 auto cdb = ctile.first;
-                auto tile = ctile.second;
-                auto tile_info = cognitics::cdb::TileInfoForTile(tile);
+                auto tile_info = ctile.second;
                 auto tile_filepath = cognitics::cdb::FilePathForTileInfo(tile_info);
                 auto tile_filename = cognitics::cdb::FileNameForTileInfo(tile_info);
                 auto filename = cdb + "/Tiles/" + tile_filepath + "/" + tile_filename;
@@ -379,7 +398,7 @@ bool cdb_inject(cdb_inject_parameters& params)
             auto cdbTileJob = new CDBTileJob(&jobManager, params.cdb, std::ref(sampler), ti, jobReporter, true);
             jobManager.submitJob(cdbTileJob);
         }
-        jobReporter.setTotalJobCount(imagery_tileinfos.size());
+        jobReporter.setTotalJobCount(elevation_tileinfos.size());
         jobManager.waitForCompletion();
         /*
         {

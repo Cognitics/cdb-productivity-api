@@ -12,7 +12,7 @@
 #include "ip/pngwrapper.h"
 #include "sfa/BSP.h"
 #include "rapidxml/rapidxml.hpp"
-#include "quickobj.h"
+#include "scenegraphobj/quickobj.h"
 
 using namespace rapidxml;
 /*
