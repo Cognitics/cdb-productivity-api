@@ -406,7 +406,7 @@ std::vector<ccl::AttributeContainer> AttributesForDBF(const std::string& filenam
     return result;
 }
 
-bool WriteAttributesToDBF(const std::string& filename, std::vector<ccl::AttributeContainer>& attribute_containers)
+bool WriteAttributesToDBF(const std::string& filename, const std::vector<ccl::AttributeContainer>& attribute_containers)
 {
     auto features = std::vector<sfa::Feature*>();
     for(auto& attr : attribute_containers)
