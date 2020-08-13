@@ -1029,6 +1029,40 @@ set (LM2OBJ_SOURCES ./lmbundle2obj/lmbundle2obj.cpp)
 
 #endif(UNIX)
 
+SET(OBJ_EXT_SOURCES ./nn-pre/nn-pre.cpp
+                    ./nn-pre/nn-pre.h
+		    ./nn-pre/nn-meshrender.cpp
+                    ./nn-pre/nn-MeshRender.h)
+
+add_executable(nn-pre ${OBJ_EXT_SOURCES})
+if(WIN32)
+    target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/gdal-cdb/${CMAKE_BUILD_TYPE}/lib/gdal_i.lib")
+    target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippi.lib")
+    target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ipps.lib")
+    target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/ipp2019/lib/intel64_win/ippcore.lib")
+    target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/lpng154/lib/libpng15.lib")
+    target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/jpeg-8c/lib/jpg8-c.lib")
+    target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/glew/release/lib/glew32.lib")
+    #target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/fbxsdk/lib/vs2015/x64/${CMAKE_BUILD_TYPE}/libfbxsdk.lib")
+    target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/glut/lib/freeglut.lib")
+    target_link_libraries(nn-pre "opengl32.lib")
+    
+endif(WIN32)
+if(UNIX)
+    target_link_libraries(nn-pre ${CMAKE_DL_LIBS})
+    target_link_libraries(nn-pre "pthread")
+    target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/linux_x64/lib/libgdal.so")
+    target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippi.a")
+    target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libipps.a")
+    target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/ipp2019_linux_x64/lib/intel64/libippcore.a")
+    target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/linux_x64/lib/libpng15.so")
+    target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/linux_x64/lib/libjpeg.so")
+    #target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/fbxsdk/lib/vs2015/x64/${CMAKE_BUILD_TYPE}/libfbxsdk.lib")
+    target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/glew/linux_x64/lib/libGLEW.a")
+    target_link_libraries(nn-pre "${THIRD_PARTY_DIR}/glut/linux_x64/lib/libglut.so")
+
+endif(UNIX)
+
 SET(OBJ_EXT_SOURCES ./obj-enu/obj-enu.cpp
                     ./obj-enu/obj-enu.h)
 
