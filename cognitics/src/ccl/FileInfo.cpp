@@ -130,6 +130,7 @@ namespace ccl
                     ret.push_back(file);
                 }
             }while(_findnext( hFile, &c_file ) == 0 );
+            _findclose(hFile);
 #else
             DIR *dp = opendir(basedir.c_str());
             if(dp)
@@ -181,6 +182,7 @@ namespace ccl
                 ret.push_back(file.getFileName());
             }
         } while (_findnext(hFile, &c_file) == 0);
+        _findclose(hFile);
 #else
         DIR *dp = opendir(basepath.c_str());
         if (dp)
