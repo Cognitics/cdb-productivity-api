@@ -1779,7 +1779,7 @@ void InjectGSModels(const std::string& cdb, const TileInfo& tileinfo, const std:
         feature->attributes.setAttribute("MODL", modl_base);
         feature->attributes.setAttribute("MLOD", tileinfo.lod);
         if(!feature->attributes.hasAttribute("CNAM"))
-			feature->attributes.setAttribute("CNAM", "");
+			feature->attributes.setAttribute("CNAM", std::string(""));
     }
 
     //mz_bool mz_zip_add_mem_to_archive_file_in_place(const char *pZip_filename, const char *pArchive_name, const void *pBuf, size_t buf_size, const void *pComment, mz_uint16 comment_size, mz_uint level_and_flags);
