@@ -218,10 +218,20 @@ bool cdb_inject(cdb_inject_parameters& params)
     if (imagery_enabled)
     {
         log << ccl::LINFO << "Gathering information on " << imagery_filenames.size() << " imagery file(s)..." << log.endl;
+        // Keep track of files that aren't actually images and remove them from the list.
+        // We're doing this here to avoid opening the file and checking the metadata twice, which makes a big difference
+        // in a large import.
+        auto bad_imagery_filenames = std::vector<std::string>();
         for (auto filename : imagery_filenames)
         {
             log << ccl::LINFO << "Reading metadata for " << filename << log.endl;
             auto raster_info = cognitics::cdb::ReadRasterInfo(filename);
+            if (raster_info.BandCount < 3)
+            {
+                log << ccl::LWARNING << "Warning: " << filename << " ignored as an imagery file because it only has " << raster_info.BandCount << " raster bands." << log.endl;
+                bad_imagery_filenames.push_back(filename);
+                continue;
+            }
             raster_info_by_filename[filename] = raster_info;
             auto pixel_size = std::min<double>(std::abs(raster_info.PixelSizeX), std::abs(raster_info.PixelSizeY));
             auto target_lod = cognitics::cdb::LodForPixelSize(pixel_size);
@@ -244,16 +254,32 @@ bool cdb_inject(cdb_inject_parameters& params)
             imagery_tileinfos.insert(ti);
         }
         log << "Identified " << imagery_tileinfos.size() << " imagery tiles to generate." << log.endl;
+        
+        // Remove any files that weren't valid.
+        for (auto badfilename : bad_imagery_filenames)
+        {
+            auto iter = std::find(imagery_filenames.begin(), imagery_filenames.end(), badfilename);
+            if (iter != imagery_filenames.end())
+                imagery_filenames.erase(iter);
+        }
+        
     }
-
+    
     auto elevation_tiles = std::vector<cognitics::cdb::Tile>();
     auto elevation_tileinfos = std::set<cognitics::cdb::TileInfo>();
+    auto bad_elevation_filenames = std::vector<std::string>();
     if (elevation_enabled)
     {
         log << ccl::LINFO << "Gathering information on " << elevation_filenames.size() << " elevation file(s)..." << log.endl;
         for (auto filename : elevation_filenames)
         {
             auto raster_info = cognitics::cdb::ReadRasterInfo(filename);
+            if (raster_info.BandCount != 1)
+            {
+                log << ccl::LWARNING << "Warning: " << filename << " ignored as an elevation file because it has " << raster_info.BandCount << " raster bands." << log.endl;
+                bad_elevation_filenames.push_back(filename);
+                continue;
+            }
             raster_info_by_filename[filename] = raster_info;
             auto pixel_size = std::min<double>(std::abs(raster_info.PixelSizeX), std::abs(raster_info.PixelSizeY));
             auto target_lod = cognitics::cdb::LodForPixelSize(pixel_size);
@@ -276,6 +302,13 @@ bool cdb_inject(cdb_inject_parameters& params)
             elevation_tileinfos.insert(ti);
         }
         log << "Identified " << elevation_tiles.size() << " elevation tiles to generate." << log.endl;
+        // Remove any files that weren't valid.
+        for (auto badfilename : bad_elevation_filenames)
+        {
+            auto iter = std::find(elevation_filenames.begin(), elevation_filenames.end(), badfilename);
+            if (iter != elevation_filenames.end())
+                elevation_filenames.erase(iter);
+        }
     }
 
     if (params.dry_run || params.count_tiles)

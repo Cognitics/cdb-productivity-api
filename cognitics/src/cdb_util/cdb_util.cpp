@@ -677,7 +677,7 @@ RasterInfo ReadRasterInfo(const std::string& filename)
     }
     if(ds == nullptr)
         return info;
-
+    info.BandCount = ds->GetRasterCount();
     info.Width = ds->GetRasterXSize();
     info.Height = ds->GetRasterYSize();
     auto geotransform = std::array<double, 6>();

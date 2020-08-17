@@ -671,6 +671,9 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, u_char 
         {
             gdalsampler::CachedRasterBlockPtr block = *iter++;
             gdalsampler::CacheManager::getInstance()->PageBlock(block);
+            // Don't do anything crazy if the source block doesn't match the expected type.
+            if (block->r == nullptr || block->g == nullptr || block->b == nullptr)
+                continue;
             u_char *interleavedbuf = new u_char[block->xsize*block->ysize*3];
             block->GetInterleavedPixels(interleavedbuf);
 
@@ -801,6 +804,9 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, float *
         {
             gdalsampler::CachedRasterBlockPtr block = *iter++;
             gdalsampler::CacheManager::getInstance()->PageBlock(block);
+            // Don't do anything crazy if the source block doesn't match the expected type.
+            if (block->elev == nullptr)
+                continue;
 
             IppiRect srcroi = { 0, 0, block->xsize, block->ysize };
             IppiRect dstroi = { 0, 0, window.width, window.height };

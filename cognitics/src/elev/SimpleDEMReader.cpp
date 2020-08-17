@@ -148,7 +148,8 @@ namespace elev {
         }
 
         double geotransform[6];
-        if (gdal_dataset->GetGeoTransform(geotransform) != CE_None)
+        err = gdal_dataset->GetGeoTransform(geotransform);
+        if (err != CE_None)
         {
             GDALClose((GDALDatasetH)gdal_dataset);
             gdal_dataset = NULL;
@@ -224,7 +225,7 @@ namespace elev {
     }
     int SimpleDEMReader::getScaledWidth() const
     {
-        return ceil(getHeight() * scaleFactor);
+        return ceil(getWidth() * scaleFactor);
     }
     int SimpleDEMReader::getScaledHeight() const
     {

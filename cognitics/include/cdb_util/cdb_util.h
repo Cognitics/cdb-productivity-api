@@ -92,6 +92,7 @@ struct RasterInfo
     double West { 0 };
     double North { 0 };
     double East { 0 };
+    int BandCount { 0 };
 };
 
 struct NSEW

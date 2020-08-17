@@ -272,7 +272,7 @@ namespace ccl
 #ifdef WIN32
             return 0==_mkdir(dir.c_str());
 #else
-            return 0==mkdir(dir.c_str(),S_IRWXU);
+            return 0==mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IRWXO);
 #endif
         }
         bool ret = true;
@@ -356,6 +356,33 @@ namespace ccl
         fclose(file);
         return flen;
     }
+
+  bool copyFilesRecursive(const std::string &srcDir, const std::string &destDir, const std::vector<std::string>& extensions)
+  {
+      std::vector<FileInfo> files = FileInfo::getAllFiles(srcDir, "*.*", true);
+      for (auto&& fi : files)
+      {
+          std::string relativeFilename = fi.getFileName().substr(srcDir.length());
+          
+          if (relativeFilename.empty())
+          {
+              continue;
+          }
+          
+          if (std::find(extensions.begin(), extensions.end(), fi.getSuffix()) == extensions.end())
+          {
+              continue;
+          }
+
+          std::string destFilePath = ccl::joinPaths(destDir, relativeFilename);
+          if (!copyFile(fi.getFileName(), destFilePath))
+          {
+              return false;
+          }
+      }
+
+      return true;
+  }
 
   // Helper function to parse a table name after a GeoPackage filename
   // Returns true if a table name was detected after the .gpkg: string
