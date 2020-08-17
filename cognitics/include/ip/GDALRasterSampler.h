@@ -46,6 +46,20 @@ class GDALRasterSampler
     bool BuildBSP(bool rebuild);
     gdalsampler::GDALRasterFileList GetFilesInAOI(gdalsampler::Quad &aoi);
 
+    void CopyNonNoDataPixels(float *src, float *dest, int len)
+    {
+        for (int i = 0; i < len; i++)
+        {
+            // This avoids copying no-data values, which are typically -32767.
+            // IPP tends to sample to values like -32767.002, which causes problems.
+            // Yes, we could check for a range around -32767, but nothing should
+            // be this low anyway.
+            if (src[i] > -30000)
+                dest[i] = src[i];
+        }
+
+    }
+
     void CopyNonBlackPixels(u_char *src, u_char *dest, int len)
     {
         for(int i=0;i<len;i++)

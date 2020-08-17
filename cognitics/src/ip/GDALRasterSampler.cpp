@@ -764,7 +764,7 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, float *
     }
 
     int scratchlen = window.width * window.height;
-    //float *scratch = new float[scratchlen];
+    float *scratch = new float[scratchlen];
     
     gdalsampler::CachedRasterBlockList blocks;
     gdalsampler::Quad aoi;
@@ -845,12 +845,14 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, float *
                 IppiSize srcNumPix = {block->xsize,block->ysize};
                 
                 // Now use the coeff to warp the source on to the dest.
-                istatus=WarpPerspective_32f_C1R(block->elev, srcNumPix, srcStep, buf, destNumPix, destStep, coeff, ippCubic);
+                istatus=WarpPerspective_32f_C1R(block->elev, srcNumPix, srcStep, scratch, destNumPix, destStep, coeff, ippCubic);
                 if(istatus!=ippStsNoErr)
                 {
                     printf("WarpPerspective_32f_C1R returned %d\n", istatus);
                 }
-            }            
+
+                CopyNonNoDataPixels(scratch, buf, scratchlen);
+            }
         }
 
         if(blocks.size()>0)
@@ -858,7 +860,7 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, float *
             ret = true;
         }
     }
-    
+    delete[] scratch;
 #else
     throw std::runtime_error("Attempt to call SampleIPP when IPP support was not compiled in!.");
 #endif
