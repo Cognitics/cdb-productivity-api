@@ -763,8 +763,10 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, float *
         BuildBSP(false);
     }
 
+
     int scratchlen = window.width * window.height;
     float *scratch = new float[scratchlen];
+    memset(scratch,0,sizeof(float)*scratchlen);
     
     gdalsampler::CachedRasterBlockList blocks;
     gdalsampler::Quad aoi;

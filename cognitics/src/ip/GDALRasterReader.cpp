@@ -633,10 +633,16 @@ namespace gdalsampler
     CachedRasterBlock::~CachedRasterBlock()
     {
         //printf("~CachedRasterBlock() for %s\n",m_filename.c_str());
-        delete[] r;
-        delete[] g;
-        delete[] b;
-        delete[] elev;
+        if(r)
+            delete[] r;
+        if(g)
+            delete[] g;
+        if(b)
+            delete[] b;
+        if (elev)
+            delete[] elev;
+        r = g = b = NULL;
+        elev = NULL;
 
     }
 
@@ -1125,10 +1131,18 @@ namespace gdalsampler
     {
         m_ready = false;
         age = 0;
-        delete[] r;
-        delete[] g;
-        delete[] b;
+        m_ready = false;
+        age = 0;
+        if(r)
+            delete[] r;
+        if(g)
+            delete[] g;
+        if(b)
+            delete[] b;
+        if (elev)
+            delete[] elev;
         r = g = b = NULL;
+        elev = NULL;
         m_file->DeReference();
         return true;
     }
