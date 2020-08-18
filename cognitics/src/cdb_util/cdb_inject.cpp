@@ -129,8 +129,7 @@ public:
             log << fn << " EXCEPTION: " << e.what() << log.endl;
         }
 
-        //log << "Finished " << cognitics::cdb::FileNameForTileInfo(tileinfo) << log.endl;
-
+        //log << "Finished " << cognitics::cdb::FileNameForTileInfo(tileinfo) << log.endl;        
         return 0;
     }
 };
@@ -262,7 +261,7 @@ bool cdb_inject(cdb_inject_parameters& params)
             if (iter != imagery_filenames.end())
                 imagery_filenames.erase(iter);
         }
-        
+        gdalsampler::CacheManager::getInstance()->Unload();
     }
     
     auto elevation_tiles = std::vector<cognitics::cdb::Tile>();
