@@ -26,6 +26,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <algorithm>
+#include <boost/lexical_cast.hpp>
 
 #pragma warning ( push )
 #pragma warning ( disable : 4251 )        // C4251: 'GDALColorTable::aoEntries' : class 'std::vector<_Ty>' needs to have dll-interface to be used by clients of class 'GDALColorTable'
@@ -223,7 +224,6 @@ int main(int argc, char **argv)
   //	putenv("GDAL_DATA=./gdal-data");
 
 	std::string visitor_center_location = argv[1];
-	// C:\Users\mkrentz\Development\cdb_mesh\cdb-productivity-api\cognitics\build\data
 
 	auto building_polygons = geometryListFromPolygonJson(visitor_center_location + "Polygons.json");
 	auto mesh_offsets = readOffsetXYZ(visitor_center_location + "output.xyz");
@@ -252,52 +252,6 @@ int main(int argc, char **argv)
 	logger << logger.endl;
 
 	
-	/*
-	logger << mesh_obj.materialMap.size() << logger.endl;
-	for (auto str_mat_pair : mesh_obj.materialMap)
-	{
-		auto file_path = str_mat_pair.first;
-		auto& obj_mtl = str_mat_pair.second;
-		auto img_info = ip::ImageInfo();
-		
-		auto img_buffer = ccl::binary();
-	
-
-		ip::GetJPGImagePixels(obj_mtl.textureFile, img_info, img_buffer);
-		
-		auto width = img_info.width;
-		auto height = img_info.height;
-
-		auto r = new unsigned char[width * height / 3]();
-		auto g = new unsigned char[width * height / 3]();
-		auto b = new unsigned char[width * height / 3]();
-
-		if (img_info.interleaved)
-		{
-			for (int pixel_idx = 0, pixel_count = width * height / 3; pixel_idx < pixel_count; ++pixel_idx)
-			{
-				r[pixel_idx] = img_buffer.at((pixel_idx * 3));
-				g[pixel_idx] = img_buffer.at((pixel_idx * 3) + 1);
-				b[pixel_idx] = img_buffer.at((pixel_idx * 3) + 2);
-			}
-		} 
-		else
-		{
-			for (int pixel_idx = 0, pixel_count = width * height; pixel_idx < pixel_count; ++pixel_idx)
-			{
-				r[pixel_idx] = img_buffer.at(pixel_idx);
-				g[pixel_idx] = img_buffer.at(pixel_idx + pixel_count / 3);
-				b[pixel_idx] = img_buffer.at(pixel_idx + (pixel_count / 3) * 2);
-			}
-		}
-		auto extension_pos = obj_mtl.textureFile.find_last_of('.');
-		std::string output_rgb_path = obj_mtl.textureFile.substr(0, extension_pos) + ".rgb";
-		const std::string output_path = output_rgb_path;
-		ip::WriteRGB(output_rgb_path, r, g, b, width, height);
-
-		mesh_obj.materialMap[file_path].textureFile = output_rgb_path;
-	}
-	*/
 	auto exportable_meshes = initializeExportableMeshesVector(building_polygons, mesh_obj);
 
 	auto flatten_indices = std::list<uint32_t>();
@@ -336,8 +290,6 @@ int main(int argc, char **argv)
 	{
 		logger << logger.endl;
 		logger << "\t--- READING NEW SUBMESH ---" << logger.endl;
-
-		// auto collection_to_mesh = meshIdxToSubmeshIdx(mesh_obj, mesh);
 
 		for (int polygon_idx = 0, polygon_count = building_polygons.size(); polygon_idx < polygon_count; ++polygon_idx)
 		{
@@ -525,7 +477,10 @@ int main(int argc, char **argv)
 	auto exportable_mesh_collection_filenames = std::vector<std::string>(exportable_meshes.size());
 	for (int i = 0; i < exportable_meshes.size(); ++i)
 	{
-		std::string filename = "output_" + std::to_string(i);
+		ccl::uuid uuid = cognitics::uuid::random_generator<ccl::uuid>()();
+		std::string uuidstr = boost::lexical_cast<std::string>(uuid);
+
+		std::string filename = uuidstr + std::to_string(i);
 		logger << "\tWriting " + filename << logger.endl;
 
 		auto& mesh = exportable_meshes.at(i);
@@ -593,66 +548,6 @@ int main(int argc, char **argv)
 	logger << "Finished outputting meshes to OBJ files..." << logger.endl;
 
 	
-
-/*	
-	auto etp_convert = Cognitics::CoordinateSystems::EllipsoidTangentPlane(mesh_srs.geoOrigin.X(), mesh_srs.geoOrigin.Y(), mesh_srs.geoOrigin.Z());
-	cts::CS_CoordinateSystem *wgs84;
-	auto coordinate_system_factory = cts::CS_CoordinateSystemFactory();
-	wgs84 = coordinate_system_factory.createFromWKT("WGS84");
-
-	for (int exportable_mesh_idx = 0, mesh_collection_count = exportable_meshes.size(); exportable_mesh_idx < mesh_collection_count; ++exportable_mesh_idx)
-	{
-
-		auto base_filename = exportable_mesh_collection_filenames[exportable_mesh_idx];
-		auto featureFilePath(base_filename + ".shp");
-		auto featureFile = sfa::FileRegistry::instance()->getFile(featureFilePath);
-		if (!featureFile->create(featureFilePath))
-		{
-			logger << "Unable to create " << featureFilePath << ", file may already exist." << logger.endl;
-			return EXIT_FAILURE;
-		}
-
-
-		auto pointLayer = featureFile->addLayer("points", sfa::wkbPointZ, wgs84);
-		sfa::Feature feature;
-
-		auto origin_point = exportable_mesh_collection_origins[exportable_mesh_idx];
-		double lat;
-		double lon;
-		double alt;
-		etp_convert.LocalToGeodetic(origin_point.X(), origin_point.Y(), origin_point.Z(), lat, lon, alt);
-		sfa::Point *point_for_shp = new sfa::Point(lat, lon, alt); // this malloced point gets delted by feature
-		feature.geometry = point_for_shp; 
-		feature.setAttribute("AO1", 0);
-		feature.setAttribute("FACC", "AL013");
-		feature.setAttribute("FSC", 0);
-		feature.setAttribute("MODL", base_filename + ".flt");
-		pointLayer->addFeature(&feature);
-	}
-
-	std::string base_filename = "Original_Mesh_Flattened";
-	auto featureFilePath(base_filename + ".shp");
-	auto featureFile = sfa::FileRegistry::instance()->getFile(featureFilePath);
-	if (!featureFile->create(featureFilePath))
-	{
-		logger << "Unable to create " << featureFilePath << ", file may already exist." << logger.endl;
-		return EXIT_FAILURE;
-	}
-
-	auto pointLayer = featureFile->addLayer("points", sfa::wkbPointZ, wgs84);
-	sfa::Feature feature;
-	auto origin_point = mesh_srs.geoOrigin;
-	sfa::Point *point_for_shp = new sfa::Point(origin_point.X(), origin_point.Y(), origin_point.Z()); // this malloced point gets delted by feature
-	feature.geometry = point_for_shp;
-	feature.setAttribute("AO1", 0);
-	feature.setAttribute("FACC", "AL013");
-	feature.setAttribute("FSC", 0);
-	feature.setAttribute("MODL", base_filename + ".flt");
-	pointLayer->addFeature(&feature);
-
-	logger << "test" << logger.endl;
-*/
-
 #ifndef WIN32
     char *gdal_data_var = getenv("GDAL_DATA");
     if(gdal_data_var==NULL)
