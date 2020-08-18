@@ -119,7 +119,6 @@ int main(int argc, char **argv)
 	printf("This microservices assumes that for each separate mesh there exists:\n- an mtl file\n- texture(s)\n- an xyz file\n- an obj file,\n- a prj file\n");
 
 	std::string visitor_center_location = argv[2];
-	// C:\Users\mkrentz\Development\cdb_mesh\cdb-productivity-api\cognitics\build\data
 
 	auto fileread = ccl::FileInfo();
 	std::string arg_val = argv[1];
