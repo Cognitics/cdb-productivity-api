@@ -473,6 +473,11 @@ int main(int argc, char **argv)
 	output_sfa_file->beginUpdating();
 	sfa::Layer *output_layer_point = output_sfa_file->addLayer("points", sfa::wkbPointZ);
 
+	logger << "Rewriting PRJ file" << logger.endl;
+	std::ofstream ofs(visitor_center_location + "output.prj", std::ofstream::trunc);
+	ofs << "GEOGCS[\"GCS_WGS_1984\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]";
+	ofs.close();
+ 
 	logger << "Outputting cut meshes to OBJ files..." << logger.endl;
 	auto exportable_mesh_collection_filenames = std::vector<std::string>(exportable_meshes.size());
 	for (int i = 0; i < exportable_meshes.size(); ++i)
