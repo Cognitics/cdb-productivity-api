@@ -104,7 +104,7 @@ OGRSpatialReference *LoadProjectionFromPRJ(const std::string &filename)
 void printUsage()
 {
 	std::cout << "Usage:" << std::endl;
-	std::cout << "obj-flt </path/to/obj-file> </path/to/shp-file> </path/to/output_directory>" << std::endl;
+	std::cout << "obj-flt </path/to/obj-file> </path/to/shp-file>" << std::endl;
 }
 
 std::pair<double,double> originFromObj(std::string obj_path)
@@ -143,11 +143,11 @@ int main(int argc, char **argv)
 {
     // cognitics::ArgumentParser args;
 
-	if (argc < 4) {
+	if (argc < 3) {
 		printUsage();
 		return EXIT_FAILURE;
 	}
-	if (argc > 4) {
+	if (argc > 3) {
 		printUsage();
 		return EXIT_FAILURE;
 	}
@@ -155,7 +155,6 @@ int main(int argc, char **argv)
 	std::string slash = "/";
 	std::string input_obj = argv[1];
 	std::string shapefile_path = argv[2];
-	std::string output_directory = argv[3];
 	std::string filename_no_extension;
 	std::string input_directory;
 
@@ -194,18 +193,10 @@ int main(int argc, char **argv)
 		shapefile_path = shapefile_path + extension;
 	}
 
-
-	output_directory = output_directory[output_directory.length() - 1] == '/' ? output_directory : output_directory + slash;
-
-	std::cout << input_obj << std::endl;
-	std::cout << filename_no_extension << std::endl;
-	std::cout << shapefile_path << std::endl;
-	std::cout << output_directory << std::endl;
-	std::cout << input_directory << std::endl;
-
-	auto origin = originFromObj(input_obj);
-    std::cout << "Latitude: " << std::setprecision(10) << origin.first << std::endl;
-	std::cout << "Longitude: " << std::setprecision(10) << origin.second << std::endl;
+	// UNCOMMENT THIS TO SEE THAT originFromObj WORKS, TODO: use this as origin when writing to flt... Returns <latitude, longitude>
+	// auto origin = originFromObj(input_obj);
+    // std::cout << "Latitude: " << std::setprecision(10) << origin.first << std::endl;
+	// std::cout << "Longitude: " << std::setprecision(10) << origin.second << std::endl;
 
 	std::string lat_lon_wkt = "GEOGCS[\"GCS_WGS_1984\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]";
 	sfa::Point offset; // no offset provided from OBJ for now -- will make this and the wkt more portable in the future by looking for file in given directory
@@ -217,107 +208,43 @@ int main(int argc, char **argv)
 	mesh_srs.srsWKT = lat_lon_wkt;
 	mesh_srs.offsetPt = offset;
 
-	auto global_mesh_collection = cognitics::QuickObj(input_obj, mesh_srs, input_directory);
+	// return EXIT_SUCCESS;
 
-	return EXIT_SUCCESS;
+	InitOGR();
+	std::string shapeFilename = shapefile_path;
+	sfa::File *output_sfa_file = sfa::FileRegistry::instance()->getFile(shapeFilename);
+	if (!output_sfa_file->open(shapeFilename, true))
+	{
+		if (!output_sfa_file || !output_sfa_file->create(shapeFilename))
+		{
+			logger << ccl::LERR << "failed to open " << shapeFilename << "." << logger.endl;
+			return -1;
+		}
+	}
+	output_sfa_file->beginUpdating();
+	sfa::Layer *output_layer_point = output_sfa_file->addLayer("points", sfa::wkbPointZ);
+
+
+	std::ofstream ofs(input_directory + filename_no_extension + ".prj", std::ofstream::trunc);
+	ofs << lat_lon_wkt;
+	ofs.close();
+
+	auto qo = cognitics::QuickObj(input_obj, mesh_srs, input_directory);
+	qo.expandCoordinates();
+	//Translate to the centroid and get the origin in lat/lon
+	sfa::Point geoOrigin = qo.findCenterAndReOrigin();
+	cognitics::QuickObj2Flt qo_flt;
+	qo_flt.convertTextures(&qo, input_directory);
+	qo_flt.convert(&qo, input_directory + filename_no_extension + ".flt");
+
+	//Now, write a shapefile with the point feature and the attribute of the filename.
+	sfa::Feature instanceFeature;
+	instanceFeature.setAttribute("MODL", filename_no_extension + ".flt");
+	instanceFeature.setAttribute("FACC", "AL015");
+	instanceFeature.setAttribute("FSC", 0);
+	instanceFeature.setAttribute("A01", 0);
+	instanceFeature.geometry = geoOrigin.copy();
+	sfa::Feature *new_feature = output_layer_point->addFeature(&instanceFeature);
+	delete new_feature;
+	output_sfa_file->commitUpdates();
 }
-
-	// InitOGR();
-	// std::string shapeFilename = visitor_center_location + "output.shp";
-	// sfa::File *output_sfa_file = sfa::FileRegistry::instance()->getFile(shapeFilename);
-	// if (!output_sfa_file->open(shapeFilename, true))
-	// {
-	// 	if (!output_sfa_file || !output_sfa_file->create(shapeFilename))
-	// 	{
-	// 		logger << ccl::LERR << "failed to open " << shapeFilename << "." << logger.endl;
-	// 		return -1;
-	// 	}
-	// }
-	// output_sfa_file->beginUpdating();
-	// sfa::Layer *output_layer_point = output_sfa_file->addLayer("points", sfa::wkbPointZ);
-
-	// logger << "Rewriting PRJ file" << logger.endl;
-	// std::ofstream ofs(visitor_center_location + "output.prj", std::ofstream::trunc);
-	// ofs << "GEOGCS[\"GCS_WGS_1984\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]";
-	// ofs.close();
- 
-	// logger << "Outputting cut meshes to OBJ files..." << logger.endl;
-	// auto exportable_mesh_collection_filenames = std::vector<std::string>(exportable_meshes.size());
-	// for (int i = 0; i < exportable_meshes.size(); ++i)
-	// {
-	// 	ccl::uuid uuid = cognitics::uuid::random_generator<ccl::uuid>()();
-	// 	std::string uuidstr = boost::lexical_cast<std::string>(uuid);
-
-	// 	std::string filename = uuidstr + std::to_string(i);
-	// 	logger << "\tWriting " + filename << logger.endl;
-
-	// 	auto& mesh = exportable_meshes.at(i);
-	// 	mesh.materialMap = mesh_obj.materialMap;
-	// 	mesh.exportObj(visitor_center_location + filename); // OBJ
-
-	// 	ObjSrs srs;
-	// 	OGRSpatialReference *srf = LoadProjectionFromPRJ(visitor_center_location + "output.prj");
-	// 	char *pszSRS_WKT = NULL;
-	// 	srf->exportToWkt(&pszSRS_WKT);
-	// 	if (pszSRS_WKT)
-	// 		srs.srsWKT = std::string(pszSRS_WKT);
-	// 	else
-	// 		srs.srsWKT = std::string("ENU");
-	// 	srs.offsetPt = readOffsetXYZ(visitor_center_location + "output.xyz");
-	// 	cognitics::QuickObj qo(visitor_center_location + filename + ".obj", srs, visitor_center_location, true);
-
-	// 	qo.expandCoordinates();
-	// 	//Translate to the centroid and get the origin in lat/lon
-	// 	sfa::Point geoOrigin = qo.findCenterAndReOrigin();
-	// 	cognitics::QuickObj2Flt qo_flt;
-	// 	qo_flt.convertTextures(&qo, visitor_center_location);
-	// 	qo_flt.convert(&qo, visitor_center_location + filename + ".flt");
-
-	// 	//Now, write a shapefile with the point feature and the attribute of the filename.
-	// 	sfa::Feature instanceFeature;
-	// 	instanceFeature.setAttribute("MODL", filename + ".flt");
-	// 	instanceFeature.setAttribute("FACC", "AL015");
-	// 	instanceFeature.setAttribute("FSC", 0);
-	// 	instanceFeature.setAttribute("A01", 0);
-	// 	instanceFeature.geometry = geoOrigin.copy();
-	// 	sfa::Feature *new_feature = output_layer_point->addFeature(&instanceFeature);
-	// 	delete new_feature;
-	// 	output_sfa_file->commitUpdates();
-
-	// 	logger << "\tFinished writing " + filename << logger.endl;
-	// 	logger.endl;
-	// }
-
-	
-// #ifndef WIN32
-//     char *gdal_data_var = getenv("GDAL_DATA");
-//     if(gdal_data_var==NULL)
-//     {        
-//         putenv("GDAL_DATA=/usr/local/share/gdal");
-//     }
-//     char *gdal_plugins_var = getenv("GDAL_DRIVER_PATH");
-//     if(gdal_plugins_var==NULL)
-//     {        
-//         putenv("GDAL_DRIVER_PATH=/usr/local/bin/gdalplugins");
-//     }
-// #else
-//     size_t requiredSize;
-//     getenv_s(&requiredSize, NULL, 0, "GDAL_DATA");
-//     if (requiredSize == 0)
-//     {
-//         ccl::FileInfo fi(argv[0]);
-//         int bufSize = 1024;
-//         char *envBuffer = new char[bufSize];
-//         std::string dataDir = ccl::joinPaths(fi.getDirName(), "gdal-data");
-//         sprintf_s(envBuffer, bufSize, "GDAL_DATA=%s", dataDir.c_str());
-//         _putenv(envBuffer);        
-//     }
-// #endif
-//     logger.init("main");
-//     logger << ccl::LINFO;
-//     GDALAllRegister();
-//     ccl::Log::instance()->attach(ccl::LogObserverSP(new ccl::LogStream(ccl::LDEBUG)));
-
-
-//     return EXIT_SUCCESS;
-// }
