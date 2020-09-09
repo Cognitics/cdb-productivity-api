@@ -142,6 +142,8 @@ OGRSpatialReference *LoadProjectionFromPRJ(const std::string &filename)
 std::vector<uint32_t> buildSolutionVertexArray(cognitics::QuickSubMesh &mesh, const std::vector<uint32_t>& resulting_indices)
 {
 	logger << "--- Building triangle-index association vector..." << logger.endl;
+	std::cout << "--- Building triangle-index association vector..." << std::endl;
+
 	auto ret_vertex_array = std::vector<uint32_t>();
 	for (int i = 0, c = mesh.vertIdxs.size() / 3; i < c; ++i)
 	{
@@ -163,12 +165,14 @@ std::vector<uint32_t> buildSolutionVertexArray(cognitics::QuickSubMesh &mesh, co
 	}
 
 	logger << "\t- Finished building triangle-index association vector..." << logger.endl;
+	std::cout << "\t- Finished building triangle-index association vector..." << std::endl;
 	return ret_vertex_array;
 }
 
 std::vector<cognitics::QuickObj> initializeExportableMeshesVector(std::vector<sfa::Geometry *> &building_polygons,cognitics::QuickObj &mesh_obj)
 {
 	logger << "--- Initializing exportable mesh vector..." << logger.endl;
+	std::cout << "--- Initializing exportable mesh vector..." << std::endl;
 	std::vector<cognitics::QuickObj> exportable_meshes = std::vector<cognitics::QuickObj>();
 	for (sfa::Geometry *shape : building_polygons)
 	{
@@ -176,12 +180,14 @@ std::vector<cognitics::QuickObj> initializeExportableMeshesVector(std::vector<sf
 		exportable_meshes.push_back(exportable_mesh);
 	}
 	logger << "\tFinished initializing exportable mesh vector..." << logger.endl;
+	std::cout << "\tFinished initializing exportable mesh vector..." << std::endl;
 	return exportable_meshes;
 }
 
 void buildVertIndicesToIndexMap(cognitics::QuickObj &mesh_obj, std::map<uint32_t, std::list<int>> &map)
 {
 	logger << "--- Mapping vert indices to UV indices..." << logger.endl;
+	std::cout << "--- Mapping vert indices to UV indices..." << std::endl;
 	auto size = mesh_obj.vertIdxs.size();
 	for (int i = 0; i < size; ++i)
 	{
@@ -195,6 +201,7 @@ void buildVertIndicesToIndexMap(cognitics::QuickObj &mesh_obj, std::map<uint32_t
 		_direct_reference.push_back(i);
 	}
 	logger << "\tFinished mapping vert indices to UV indices..." << logger.endl;
+	std::cout << "\tFinished mapping vert indices to UV indices..." << std::endl;
 }
 
 void flatten_verts(cognitics::QuickObj &mesh_obj, std::vector<uint32_t> &to_flatten, float min_z)
@@ -224,6 +231,8 @@ int main(int argc, char **argv)
   //	putenv("GDAL_DATA=./gdal-data");
 
 	std::string visitor_center_location = argv[1];
+	visitor_center_location = visitor_center_location[visitor_center_location.length() - 1] == '/' ? visitor_center_location : visitor_center_location + "/";
+	std::cout << visitor_center_location << std::endl;
 
 	auto building_polygons = geometryListFromPolygonJson(visitor_center_location + "Polygons.json");
 	auto mesh_offsets = readOffsetXYZ(visitor_center_location + "output.xyz");
@@ -251,21 +260,29 @@ int main(int argc, char **argv)
 	logger << std::to_string(mesh_obj.subMeshes.size()) + " Submeshes to parse" << logger.endl;
 	logger << logger.endl;
 
+	std::cout << "Origin Discovered, ready for in-place transformations..." << std::endl;
+	std::cout << std::to_string(building_polygons.size()) + " Polygons found" << std::endl;
+	std::cout << std::to_string(mesh_obj.subMeshes.size()) + " Submeshes to parse" << std::endl;
+	std::cout << std::endl;
+
 	
 	auto exportable_meshes = initializeExportableMeshesVector(building_polygons, mesh_obj);
 
 	auto flatten_indices = std::list<uint32_t>();
 
 	logger << "--- Preparing exportable meshes for cutting..." << logger.endl;
+	std::cout << "--- Preparing exportable meshes for cutting..." << std::endl;
 	for (int i = 0; i < building_polygons.size(); ++i)
 	{
 		cognitics::QuickObj &mesh = exportable_meshes.at(i);
 		mesh.materialFilename = mesh_obj.materialFilename;
 	}
 	logger << "\tFinished preparing exportable meshes for cutting..." << logger.endl;
+	std::cout << "\tFinished preparing exportable meshes for cutting..." << std::endl;
 
 
 	logger << "--- Performing mesh cutting operations..." << logger.endl;
+	std::cout << "--- Performing mesh cutting operations..." << std::endl;
 
 	auto points = std::vector<sfa::Point>();
 	points.reserve(mesh_obj.verts.size());
@@ -290,6 +307,8 @@ int main(int argc, char **argv)
 	{
 		logger << logger.endl;
 		logger << "\t--- READING NEW SUBMESH ---" << logger.endl;
+		std::cout << std::endl;
+		std::cout << "\t--- READING NEW SUBMESH ---" << std::endl;
 
 		for (int polygon_idx = 0, polygon_count = building_polygons.size(); polygon_idx < polygon_count; ++polygon_idx)
 		{
@@ -297,6 +316,7 @@ int main(int argc, char **argv)
 			if (building_polygon == NULL)
 			{
 				logger << "We need you to ensure that the json passed contains a polygon." << logger.endl;
+				std::cout << "We need you to ensure that the json passed contains a polygon." << std::endl;
 				return EXIT_FAILURE;
 			}
 
@@ -307,6 +327,7 @@ int main(int argc, char **argv)
 			if (resulting_geometries.empty())
 			{
 				logger << "\t!-- Nothing to cut within the bounds given." << logger.endl;
+				std::cout << "\t!-- Nothing to cut within the bounds given." << std::endl;
 				continue;
 			}
 
@@ -314,12 +335,9 @@ int main(int argc, char **argv)
 			for (auto resulting_geometry : resulting_geometries)
 				resulting_index_set.insert(index_by_point[resulting_geometry]);
 			
-			logger << resulting_index_set.size() << logger.endl;
-
 			auto new_mesh = cognitics::QuickSubMesh();
 			new_mesh.materialName = mesh.materialName;
 			
-
 			for (int i = 0, c = mesh.vertIdxs.size() / 3; i < c; ++i)
 			{
 				int t_a = mesh.vertIdxs[i * 3];
@@ -340,6 +358,9 @@ int main(int argc, char **argv)
 				new_mesh.uvIdxs.push_back(mesh.uvIdxs[i * 3]);
 				new_mesh.uvIdxs.push_back(mesh.uvIdxs[i * 3 + 1]);
 				new_mesh.uvIdxs.push_back(mesh.uvIdxs[i * 3 + 2]);
+				// new_mesh.normIdxs.push_back(mesh.normIdxs[i * 3]);
+				// new_mesh.normIdxs.push_back(mesh.normIdxs[i * 3 + 1]);
+				// new_mesh.normIdxs.push_back(mesh.normIdxs[i * 3 + 2]);
 			}
 
 			auto &new_mesh_collection = exportable_meshes.at(polygon_idx);
@@ -351,7 +372,7 @@ int main(int argc, char **argv)
 
 	}
 	logger << "Finished mesh cutting operations..." << logger.endl;
-
+	std::cout << "Finished mesh cutting operations..." << std::endl;
 
 	for (auto& exportable_mesh : exportable_meshes)
 	{
@@ -415,6 +436,37 @@ int main(int argc, char **argv)
 		}
 	}
 
+	// for (auto& exportable_mesh : exportable_meshes)
+	// {
+	// 	auto referenced_norm_idxs = std::vector<uint32_t>();
+	// 	for (auto& exportable_submesh : exportable_mesh.subMeshes)
+	// 		referenced_norm_idxs.insert(referenced_norm_idxs.end(), exportable_submesh.normIdxs.begin(), exportable_submesh.normIdxs.end());
+	// 	std::sort(referenced_norm_idxs.begin(), referenced_norm_idxs.end());
+	// 	auto trim_location = std::unique(referenced_norm_idxs.begin(), referenced_norm_idxs.end());
+	// 	referenced_norm_idxs.erase(trim_location, referenced_norm_idxs.end());
+
+	// 	exportable_mesh.norms.push_back(mesh_obj.norms[0]);
+	// 	auto norm_reference_map = std::map<uint32_t, uint32_t>();
+	// 	for (int i = 0, c = referenced_norm_idxs.size(); i < c; ++i)
+	// 	{
+	// 		auto referenced_index = referenced_norm_idxs[i];
+	// 		exportable_mesh.norms.push_back(mesh_obj.norms[referenced_index]);
+	// 		norm_reference_map[referenced_index] = i + 1;
+	// 	}
+
+	// 	for (auto& exportable_submesh : exportable_mesh.subMeshes)
+	// 	{
+	// 		auto old_idxs = exportable_submesh.normIdxs;
+	// 		exportable_submesh.normIdxs.clear();
+	// 		for (int i = 0, c = old_idxs.size(); i < c; ++i)
+	// 		{
+	// 			auto old_idx = old_idxs[i];
+	// 			auto new_idx = norm_reference_map[old_idx];
+	// 			exportable_submesh.normIdxs.push_back(new_idx);
+	// 		}
+	// 	}
+	// }
+
 	for (int building_to_flatten_idx = 0, c = exportable_meshes.size(); building_to_flatten_idx < c; ++building_to_flatten_idx)
 	{
 		float min = 99999.99999;
@@ -474,11 +526,13 @@ int main(int argc, char **argv)
 	sfa::Layer *output_layer_point = output_sfa_file->addLayer("points", sfa::wkbPointZ);
 
 	logger << "Rewriting PRJ file" << logger.endl;
+	std::cout << "Rewriting PRJ file" << std::endl;
 	std::ofstream ofs(visitor_center_location + "output.prj", std::ofstream::trunc);
 	ofs << "GEOGCS[\"GCS_WGS_1984\",DATUM[\"D_WGS_1984\",SPHEROID[\"WGS_1984\",6378137,298.257223563]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]]";
 	ofs.close();
  
 	logger << "Outputting cut meshes to OBJ files..." << logger.endl;
+	std::cout << "Outputting cut meshes to OBJ files..." << std::endl;
 	auto exportable_mesh_collection_filenames = std::vector<std::string>(exportable_meshes.size());
 	for (int i = 0; i < exportable_meshes.size(); ++i)
 	{
@@ -487,6 +541,7 @@ int main(int argc, char **argv)
 
 		std::string filename = uuidstr + std::to_string(i);
 		logger << "\tWriting " + filename << logger.endl;
+		std::cout <<  "\tWriting " + filename << std::endl;
 
 		auto& mesh = exportable_meshes.at(i);
 		mesh.materialMap = mesh_obj.materialMap;
@@ -523,34 +578,37 @@ int main(int argc, char **argv)
 
 		logger << "\tFinished writing " + filename << logger.endl;
 		logger.endl;
+		std::cout <<  "\tFinished writing " + filename << std::endl;
+		std::cout << std::endl;
 	}
 
-	std::string filename = "Original_Mesh_Flattened";
-	mesh_obj.exportObj(visitor_center_location + filename);
+	// std::string filename = "Original_Mesh_Flattened";
+	// mesh_obj.exportObj(visitor_center_location + filename);
 	
-	ObjSrs srs;
-	OGRSpatialReference *srf = LoadProjectionFromPRJ(visitor_center_location + "output.prj");
-	char *pszSRS_WKT = NULL;
-	srf->exportToWkt(&pszSRS_WKT);
-	if (pszSRS_WKT)
-		srs.srsWKT = std::string(pszSRS_WKT);
-	else
-		srs.srsWKT = std::string("ENU");
-	srs.offsetPt = readOffsetXYZ(visitor_center_location + "output.xyz");
-	cognitics::QuickObj qo(visitor_center_location + filename + ".obj", srs, visitor_center_location, true);
+	// ObjSrs srs;
+	// OGRSpatialReference *srf = LoadProjectionFromPRJ(visitor_center_location + "output.prj");
+	// char *pszSRS_WKT = NULL;
+	// srf->exportToWkt(&pszSRS_WKT);
+	// if (pszSRS_WKT)
+	// 	srs.srsWKT = std::string(pszSRS_WKT);
+	// else
+	// 	srs.srsWKT = std::string("ENU");
+	// srs.offsetPt = readOffsetXYZ(visitor_center_location + "output.xyz");
+	// cognitics::QuickObj qo(visitor_center_location + filename + ".obj", srs, visitor_center_location, true);
 
-	qo.expandCoordinates();
-	//Translate to the centroid and get the origin in lat/lon
-	sfa::Point geoOrigin = qo.findCenterAndReOrigin();
-	cognitics::QuickObj2Flt qo_flt;
-	qo_flt.convertTextures(&qo, visitor_center_location);
-	qo_flt.convert(&qo, visitor_center_location + filename + ".flt");
-	//Now, write a shapefile with the point feature and the attribute of the filename.
+	// qo.expandCoordinates();
+	// //Translate to the centroid and get the origin in lat/lon
+	// sfa::Point geoOrigin = qo.findCenterAndReOrigin();
+	// cognitics::QuickObj2Flt qo_flt;
+	// qo_flt.convertTextures(&qo, visitor_center_location);
+	// qo_flt.convert(&qo, visitor_center_location + filename + ".flt");
+	// //Now, write a shapefile with the point feature and the attribute of the filename.
 	InitOGR();	
 	sfa::FileRegistry::instance()->destroyFile(output_sfa_file);
 
 
 	logger << "Finished outputting meshes to OBJ files..." << logger.endl;
+	std::cout <<  "Finished outputting meshes to OBJ files..." << std::endl;
 
 	
 #ifndef WIN32
