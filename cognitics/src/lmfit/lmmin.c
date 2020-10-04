@@ -256,8 +256,8 @@ void lmmin(const int n, double* x, const int m, const void* data,
     }
 
     /***  The outer loop: compute gradient, then descend.  ***/
-
-    for (int outer = 0;; ++outer) {
+    int outer = 0;
+    for (outer = 0;; ++outer) {
 
         /** Calculate the Jacobian. **/
         for (j = 0; j < n; j++) {
