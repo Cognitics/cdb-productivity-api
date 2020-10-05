@@ -71,9 +71,7 @@ set(COGCORE_HEADERS
     ./include/Version.h
     ./include/ccl/ccl.h
     ./include/ccl/FileInfo.h
-    ./include/ccl/Value.h
     ./include/ccl/AttributeContainer.h
-    ./include/ccl/Key.h
     ./include/ccl/VariantException.h
     ./include/ccl/ScopedTimer.h
     ./include/ccl/ccltime.h
@@ -87,12 +85,10 @@ set(COGCORE_HEADERS
     ./include/ccl/LogBuffer.h
     ./include/ccl/attributes.h
     ./include/ccl/uri.h
-    ./include/ccl/Expression.h
     ./include/ccl/sem.h
     ./include/ccl/LSBitField.h
     ./include/ccl/BigEndian.h
     ./include/ccl/inspection.h
-    ./include/ccl/Op.h
     ./include/ccl/binary.h
     ./include/ccl/datetime.h
     ./include/ccl/BitField.h
@@ -104,7 +100,6 @@ set(COGCORE_HEADERS
     ./include/ccl/date.h
     ./include/ccl/Variant.h
     ./include/ccl/MSBitField.h
-    ./include/ccl/Action.h
     ./include/ccl/StringUtils.h
     ./include/ccl/mutex.h
     ./include/ccl/Runnable.h
@@ -553,9 +548,7 @@ set(COGCORE_SOURCES
     ./src/ccl/AttributeContainer.cpp
     ./src/ccl/time.cpp
     ./src/ccl/LogBuffer.cpp
-    ./src/ccl/Action.cpp
     ./src/ccl/config.cpp
-    ./src/ccl/Key.cpp
     ./src/ccl/Endian.cpp
     ./src/ccl/ScopedTimer.cpp
     ./src/ccl/Log.cpp
@@ -573,9 +566,7 @@ set(COGCORE_SOURCES
     ./src/ccl/${COGCORE_OS}/Timer.cpp
     ./src/ccl/ObjLog.cpp
     ./src/ccl/datetime.cpp
-    ./src/ccl/Op.cpp
     ./src/ccl/uuid.cpp
-    ./src/ccl/Value.cpp
     ./src/ccl/date.cpp
     ./src/ccl/LogStream.cpp
     ./src/ccl/binary.cpp
@@ -583,7 +574,6 @@ set(COGCORE_SOURCES
     ./src/ccl/object.cpp
     ./src/ccl/inspection.cpp
     ./src/ccl/FileInfo.cpp
-    ./src/ccl/Expression.cpp
     ./src/ccl/JobManager.cpp
     ./src/ccl/Number.cpp
     ./src/ccl/Variant.cpp
