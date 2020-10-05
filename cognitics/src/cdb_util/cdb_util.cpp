@@ -23,7 +23,7 @@
 #if _WIN32
 #include <filesystem>
 namespace std { namespace filesystem = std::experimental::filesystem; }
-#elif __GNUC__ && (__GNUC__ < 8)
+#elif __cplusplus < 201703L
 #include <experimental/filesystem>
 namespace std { namespace filesystem = std::experimental::filesystem; }
 #else
