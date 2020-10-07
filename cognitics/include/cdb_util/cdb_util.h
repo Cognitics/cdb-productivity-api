@@ -238,5 +238,7 @@ std::vector<TileInfo> GenerateTileInfos(int lod, const NSEW& nsew);
 
 void BuildMinMaxElevation(const std::string& cdb, int lod_offset = 4);
 
+std::map<std::string, std::string> Defaults(const std::string& cdb);
+
 }
 }

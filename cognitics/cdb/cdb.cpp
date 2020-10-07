@@ -994,6 +994,15 @@ int main_validate(size_t arg_start)
     return EXIT_SUCCESS;
 }
 
+int main_defaults(size_t arg_start)
+{
+    auto defaults = cognitics::cdb::Defaults(cdb);
+    std::cout << "Defaults.xml:\n";
+    for(auto&& def : defaults)
+        std::cout << "  " << def.first << " = " << def.second << "\n";
+    return EXIT_SUCCESS;
+}
+
 int main(int argc, char** argv)
 {
     std::cout << "## CDB Productivity Suite " << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_RELEASE << " (" << BUILDTS << ")" << "\n";
@@ -1044,6 +1053,8 @@ int main(int argc, char** argv)
         result = main_sample(command_argi);
     else if(command == "validate")
         result = main_validate(command_argi);
+    else if(command == "defaults")
+        result = main_defaults(command_argi);
     else
         return usage("Invalid command: " + command);
 

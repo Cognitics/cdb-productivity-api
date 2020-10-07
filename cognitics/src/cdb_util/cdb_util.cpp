@@ -2323,6 +2323,44 @@ void BuildMinMaxElevation(const std::string& cdb, int lod_offset)
     }
 }
 
+std::map<std::string, std::string> Defaults(const std::string& cdb)
+{
+    auto result = std::map<std::string, std::string>();
+    auto defaults_xml = cdb + "/Metadata/Defaults.xml";
+    tinyxml2::XMLDocument doc;
+    if(doc.LoadFile(defaults_xml.c_str()) != tinyxml2::XML_SUCCESS)
+    {
+        std::cerr << doc.ErrorStr() << "\n";
+        return { };
+    }
+    auto default_value_table = doc.FirstChildElement("Default_Value_Table");
+    if(default_value_table == nullptr)
+        return { };
+    for(auto default_value = default_value_table->FirstChildElement("Default_Value");
+        default_value != nullptr;
+        default_value = default_value->NextSiblingElement("Default_Value")
+        )
+    {
+        auto name_element = default_value->FirstChildElement("Name");
+        if(name_element == nullptr)
+            continue;
+        auto value_element = default_value->FirstChildElement("Value");
+        if(value_element == nullptr)
+            continue;
+        auto name = name_element->GetText();
+        if(name == nullptr)
+            continue;
+        auto value = value_element->GetText();
+        if(value == nullptr)
+            continue;
+        result[name] = value;
+    }
+    return result;
+}
+
+
+
+
 
 }
 }
