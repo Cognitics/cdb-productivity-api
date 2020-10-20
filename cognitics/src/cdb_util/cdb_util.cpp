@@ -26,6 +26,9 @@ namespace std { namespace filesystem = std::experimental::filesystem; }
 #elif __cplusplus < 201703L
 #include <experimental/filesystem>
 namespace std { namespace filesystem = std::experimental::filesystem; }
+#elif __GNUC__ && (__GNUC__ < 8)
+#include <experimental/filesystem>
+namespace std { namespace filesystem = std::experimental::filesystem; }
 #else
 #include <filesystem>
 #endif
