@@ -1026,7 +1026,7 @@ bool BuildElevationTileFromSampler(const std::string& cdb, GDALRasterSampler& sa
     if(floats.empty())
     {
         floats.resize(dim * dim);
-        std::fill(floats.begin(), floats.end(), -32767.0f);
+        std::fill(floats.begin(), floats.end(), 0);
     }
 
     BuildElevationTileFloatsFromSampler(sampler, tileinfo, floats);
@@ -1051,7 +1051,7 @@ bool BuildElevationTileFromSampler2(const std::string& cdb, elev::Elevation_DSM&
     {
         auto dimension = TileDimensionForLod(tileinfo.lod);
         floats.resize(dimension * dimension);
-        std::fill(floats.begin(), floats.end(), -32767.0f);
+        std::fill(floats.begin(), floats.end(), 0);
     }
 
     BuildElevationTileFloatsFromSampler2(sampler, tileinfo, floats);

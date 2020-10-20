@@ -73,8 +73,44 @@ public:
 
 class CDBTileJobThreadDataManager : public ccl::ThreadDataManager
 {
+private:
+    gdalsampler::tl_ptr<elev::Elevation_DSM> _tl_sampler;
+
 public:
-    virtual void onThreadFinished(void) {}
+    bool useIPP { false };
+    std::vector<std::string> elevation_filenames;
+    std::vector<std::string> elevation_filepaths;
+	
+    virtual void onThreadFinished()
+    {
+        deleteSampler();
+    }
+
+	elev::Elevation_DSM *getSampler()
+	{
+		if(_tl_sampler.get() == NULL)
+		{
+			elev::DataSourceManager *dsm = new elev::DataSourceManager(50 * 1024 * 1024);
+            for(auto&& elevation_filename : elevation_filenames)
+				dsm->AddFile_Raster_GDAL(elevation_filename);
+            for(auto&& elevation_filepath : elevation_filepaths)
+				dsm->AddDirectory_Raster_GDAL(elevation_filepath);
+			dsm->generateBSP();
+			_tl_sampler.set(new elev::Elevation_DSM(dsm, elev::ELEVATION_BILINEAR));
+		}
+		return _tl_sampler.get();
+	}
+
+    void deleteSampler()
+	{
+		if(_tl_sampler.get() != NULL)
+		{
+			delete _tl_sampler.get()->dsm;
+			delete _tl_sampler.get();
+			_tl_sampler.set(NULL);
+		}
+	}
+
 };
 
 class CDBTileJob : public ccl::Job
@@ -94,6 +130,8 @@ protected:
     }
 
 public:
+    CDBTileJobThreadDataManager* data_manager { nullptr };
+
     virtual ~CDBTileJob() {}
 
     CDBTileJob(ccl::JobManager *manager,
@@ -116,7 +154,15 @@ public:
         {
             if (isElevation)
             {
-                cognitics::cdb::BuildElevationTileFromSampler(cdb, sampler, tileinfo);
+                if(data_manager->useIPP)
+                {
+                    cognitics::cdb::BuildElevationTileFromSampler(cdb, sampler, tileinfo);
+                }
+                else
+                {
+                    auto dsm = data_manager->getSampler();
+                    cognitics::cdb::BuildElevationTileFromSampler2(cdb, *dsm, tileinfo);
+                }
             }
             else
             {
@@ -389,6 +435,7 @@ bool cdb_inject(cdb_inject_parameters& params)
         for (auto&& ti : imagery_tileinfos)
         {
             auto cdbTileJob = new CDBTileJob(&jobManager, params.cdb, std::ref(sampler), ti, jobReporter, false);
+            cdbTileJob->data_manager = &cdbTileJobThreadDataManager;
             jobManager.submitJob(cdbTileJob);
         }
         jobReporter.setTotalJobCount(imagery_tileinfos.size());
@@ -428,6 +475,8 @@ bool cdb_inject(cdb_inject_parameters& params)
         for (auto&& ti : elevation_tileinfos)
         {
             auto cdbTileJob = new CDBTileJob(&jobManager, params.cdb, std::ref(sampler), ti, jobReporter, true);
+            cdbTileJob->data_manager = &cdbTileJobThreadDataManager;
+            cdbTileJob->data_manager->elevation_filenames = elevation_filenames;
             jobManager.submitJob(cdbTileJob);
         }
         jobReporter.setTotalJobCount(elevation_tileinfos.size());
