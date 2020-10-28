@@ -644,6 +644,7 @@ bool BuildElevationTileFloatsFromSampler2(elev::Elevation_DSM& sampler, const Ti
     double spacing_x = (extents.east - extents.west) / extents.width;
     double spacing_y = (extents.north - extents.south) / extents.height;
     auto point = sfa::Point();
+    bool hit = false;
     for(int y = 0; y < extents.height; ++y)
     {
         point.setY(extents.south + (y * spacing_y));
@@ -651,10 +652,13 @@ bool BuildElevationTileFloatsFromSampler2(elev::Elevation_DSM& sampler, const Ti
         {
             point.setX(extents.west + (x * spacing_x));
             if(sampler.Get(&point))
+            {
                 floats[(y * extents.width) + x] = point.Z();
+                hit = true;
+            }
         }
     }
-    return true;
+    return hit;
 }
 
 RasterInfo ReadRasterInfo(const std::string& filename)
@@ -1057,7 +1061,8 @@ bool BuildElevationTileFromSampler2(const std::string& cdb, elev::Elevation_DSM&
         std::fill(floats.begin(), floats.end(), 0);
     }
 
-    BuildElevationTileFloatsFromSampler2(sampler, tileinfo, floats);
+    if(!BuildElevationTileFloatsFromSampler2(sampler, tileinfo, floats))
+        return true;
     auto dim = TileDimensionForLod(tileinfo.lod);
     floats = FlippedVertically(floats, dim, dim, 1);
     auto info = RasterInfoFromTileInfo(tileinfo);

@@ -54,7 +54,7 @@ class GDALRasterSampler
             // IPP tends to sample to values like -32767.002, which causes problems.
             // Yes, we could check for a range around -32767, but nothing should
             // be this low anyway.
-            if (src[i] > -30000)
+            if (src[i] > -10000)
                 dest[i] = src[i];
         }
 

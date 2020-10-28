@@ -77,7 +77,7 @@ private:
     gdalsampler::tl_ptr<elev::Elevation_DSM> _tl_sampler;
 
 public:
-    bool useIPP { false };
+    bool useIPP { true };
     std::vector<std::string> elevation_filenames;
     std::vector<std::string> elevation_filepaths;
 	
