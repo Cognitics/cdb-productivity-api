@@ -848,7 +848,8 @@ bool GDALRasterSampler::SampleIPP(const gdalsampler::GeoExtents &window, float *
                 
                 // Now use the coeff to warp the source on to the dest.
                 //istatus=WarpPerspective_32f_C1R(block->elev, srcNumPix, srcStep, scratch, destNumPix, destStep, coeff, ippCubic);
-                istatus=WarpPerspective_32f_C1R(block->elev, srcNumPix, srcStep, scratch, destNumPix, destStep, coeff, ippLinear);
+                //istatus=WarpPerspective_32f_C1R(block->elev, srcNumPix, srcStep, scratch, destNumPix, destStep, coeff, ippLinear);
+                istatus=WarpPerspective_32f_C1R(block->elev, srcNumPix, srcStep, scratch, destNumPix, destStep, coeff, ippNearest);
                 if(istatus!=ippStsNoErr)
                 {
                     printf("WarpPerspective_32f_C1R returned %d\n", istatus);
