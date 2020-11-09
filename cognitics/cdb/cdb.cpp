@@ -72,6 +72,7 @@ int usage_inject(const std::string& error = "")
     std::cout << "        Imagery 003 001-012\n";
     std::cout << "        Imagery 004 001-004\n";
     std::cout << "        Elevation 001 001\n";
+    std::cout << "        Elevation 100 001\n";
     std::cout << "        GSFeature 001 001\n";
     std::cout << "        GSFeature 001 003\n";
     std::cout << "        GSFeature 001 005\n";
@@ -351,6 +352,11 @@ int main_inject(size_t arg_start)
         return usage_inject("Insert not supported for component: " + cognitics::cdb::DatasetName(dataset) + " " + std::to_string(cs1) + " " + std::to_string(cs2));
 
     if((dataset == 1) && (cs1 == 1) && (cs2 == 1))  // Elevation, PrimaryTerrainElevation
+    {
+        params.elevation = sources;
+        return cognitics::cdb::cdb_inject(params) ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
+    if((dataset == 1) && (cs1 == 100) && (cs2 == 1))  // Elevation, SubordinateBathymetry
     {
         params.elevation = sources;
         return cognitics::cdb::cdb_inject(params) ? EXIT_SUCCESS : EXIT_FAILURE;
