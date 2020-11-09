@@ -1003,8 +1003,12 @@ int main_defaults(size_t arg_start)
     return EXIT_SUCCESS;
 }
 
+int ab();
+
 int main(int argc, char** argv)
 {
+    //return ab();
+
     std::cout << "## CDB Productivity Suite " << VERSION_MAJOR << "." << VERSION_MINOR << "." << VERSION_RELEASE << " (" << BUILDTS << ")" << "\n";
 
     cognitics::gdal::init(argv[0]);
@@ -1063,5 +1067,43 @@ int main(int argc, char** argv)
     ccl::Log::instance()->write(ccl::LINFO, "runtime: " + std::to_string(std::chrono::duration<double>(ts_stop - ts_start).count()) +  "s");
     return result;
 }
+
+
+void ab_make_elevation();
+
+int ab()
+{
+    ab_make_elevation();
+
+    return EXIT_SUCCESS;
+}
+
+void ab_make_elevation()
+{
+    double north = 12.9;
+    double south = 12.1;
+    double east = 44.9;
+    double west = 44.1;
+    int width = 1000;
+    int height = 1000;
+    double data_value = 1000.0;
+    int nodata_start_row = 345;
+    int nodata_end_row = 678;
+
+    auto raster_info = cognitics::cdb::RasterInfo();
+    raster_info.OriginX = west;
+    raster_info.OriginY = north;
+    raster_info.PixelSizeX = (east - west) / (width + 1);
+    raster_info.PixelSizeY = (south - north) / (height + 1);
+    raster_info.Width = width;
+    raster_info.Height = height;
+
+    auto data = std::vector<float>(width * height);
+    std::fill(data.begin(), data.end(), data_value);
+    std::fill(data.begin() + (nodata_start_row * width), data.begin() + (nodata_end_row * width), -32767.0);
+
+    cognitics::cdb::WriteFloatsToTIF("elev_interp_test.tif", raster_info, data, true);
+}
+
 
 
