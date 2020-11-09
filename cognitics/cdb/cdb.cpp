@@ -135,12 +135,13 @@ int usage_lod(const std::string& error = "")
     std::cout << "    Command Options:\n";
     std::cout << "        -workers <#>           number of worker threads (default: 8)\n";
     std::cout << "    Supported Components:\n";
+    std::cout << "        Elevation 001 001\n";
+    std::cout << "        Elevation 100 001\n";
     std::cout << "        Imagery 001 001\n";
     std::cout << "        Imagery 003 001-012\n";
     std::cout << "        Imagery 004 001-004\n";
     std::cout << "        Imagery 003 000 (does 1-12)\n";
     std::cout << "        Imagery 004 000 (does 1-4)\n";
-    std::cout << "        Elevation 001 001\n";
     return error.empty() ? EXIT_SUCCESS : EXIT_FAILURE;
 }
 
@@ -553,6 +554,8 @@ int main_lod(size_t arg_start)
         }
     }
     if((dataset == 1) && (cs1 == 1) && (cs2 == 1))  // Elevation, PrimaryTerrainElevation
+        return cognitics::cdb::cdb_lod(cdb, dataset, cs1, cs2, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
+    if((dataset == 1) && (cs1 == 100) && (cs2 == 1))  // Elevation, SubordinateBathymetry
         return cognitics::cdb::cdb_lod(cdb, dataset, cs1, cs2, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
     else if((dataset == 4) && (cs1 == 1) && (cs2 == 1))  // Imagery, YearlyVstiRepresentation
         return cognitics::cdb::cdb_lod(cdb, dataset, cs1, cs2, workers) ? EXIT_SUCCESS : EXIT_FAILURE;
