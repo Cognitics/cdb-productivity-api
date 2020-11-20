@@ -228,6 +228,9 @@ bool cdb_inject(cdb_inject_parameters& params)
             std::transform(tif_files.begin(), tif_files.end(), std::back_inserter(imagery_filenames), [](const ccl::FileInfo& fi) { return fi.getFileName(); });
             auto jp2_files = ccl::FileInfo::getAllFiles(imagery_param, "*.jp2");
             std::transform(jp2_files.begin(), jp2_files.end(), std::back_inserter(imagery_filenames), [](const ccl::FileInfo& fi) { return fi.getFileName(); });
+            auto sid_files = ccl::FileInfo::getAllFiles(imagery_param, "*.sid");
+            for(auto&& sid_file : sid_files)
+                imagery_filenames.push_back(sid_file.getFileName());
         }
         else
         {
