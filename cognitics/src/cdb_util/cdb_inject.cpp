@@ -274,12 +274,14 @@ bool cdb_inject(cdb_inject_parameters& params)
         {
             log << ccl::LINFO << "Reading metadata for " << filename << log.endl;
             auto raster_info = cognitics::cdb::ReadRasterInfo(filename);
+            /*
             if (raster_info.BandCount < 3)
             {
                 log << ccl::LWARNING << "Warning: " << filename << " ignored as an imagery file because it only has " << raster_info.BandCount << " raster bands." << log.endl;
                 bad_imagery_filenames.push_back(filename);
                 continue;
             }
+            */
             raster_info_by_filename[filename] = raster_info;
             auto pixel_size = std::min<double>(std::abs(raster_info.PixelSizeX), std::abs(raster_info.PixelSizeY));
             auto target_lod = cognitics::cdb::LodForPixelSize(pixel_size);
