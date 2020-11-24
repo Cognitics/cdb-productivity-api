@@ -224,11 +224,11 @@ bool cdb_inject(cdb_inject_parameters& params)
         }
         if (std::filesystem::is_directory(imagery_param))
         {
-            auto tif_files = ccl::FileInfo::getAllFiles(imagery_param, "*.tif");
+            auto tif_files = ccl::FileInfo::getAllFiles(imagery_param, "*.tif", true);
             std::transform(tif_files.begin(), tif_files.end(), std::back_inserter(imagery_filenames), [](const ccl::FileInfo& fi) { return fi.getFileName(); });
-            auto jp2_files = ccl::FileInfo::getAllFiles(imagery_param, "*.jp2");
+            auto jp2_files = ccl::FileInfo::getAllFiles(imagery_param, "*.jp2", true);
             std::transform(jp2_files.begin(), jp2_files.end(), std::back_inserter(imagery_filenames), [](const ccl::FileInfo& fi) { return fi.getFileName(); });
-            auto sid_files = ccl::FileInfo::getAllFiles(imagery_param, "*.sid");
+            auto sid_files = ccl::FileInfo::getAllFiles(imagery_param, "*.sid", true);
             for(auto&& sid_file : sid_files)
                 imagery_filenames.push_back(sid_file.getFileName());
         }
