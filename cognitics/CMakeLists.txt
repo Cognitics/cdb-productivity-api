@@ -469,6 +469,9 @@ set(COGCORE_HEADERS
     ./include/ip/jpgwrapper.h
     ./include/ip/SkipList.h
     ./include/ip/rgb.h
+    ./include/ip/rpf.h
+    ./include/ip/RPFBlock.h
+    ./include/ip/CIBBlock.h
     ./include/ogr/File.h
     ./include/ogr/Feature.h
     ./include/ogr/OGRLayer.h
@@ -875,6 +878,9 @@ set(COGCORE_SOURCES
     ./src/ip/rgb.cpp
     ./src/ip/GDALRasterSampler.cpp
     ./src/ip/ip.cpp
+    ./src/ip/rpf.cpp
+    ./src/ip/RPFBlock.cpp
+    ./src/ip/CIBBlock.cpp
     ./src/ogr/OGRLayer.cpp
     ./src/ogr/File.cpp
     ./src/ogr/Field.cpp
