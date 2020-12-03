@@ -249,7 +249,7 @@ bool cdb_inject(cdb_inject_parameters& params)
         }
         if (std::filesystem::is_directory(elevation_param))
         {
-            auto tif_files = ccl::FileInfo::getAllFiles(elevation_param, "*.tif");
+            auto tif_files = ccl::FileInfo::getAllFiles(elevation_param, "*.tif", true);
             std::transform(tif_files.begin(), tif_files.end(), std::back_inserter(elevation_filenames), [](const ccl::FileInfo& fi) { return fi.getFileName(); });
         }
         else
