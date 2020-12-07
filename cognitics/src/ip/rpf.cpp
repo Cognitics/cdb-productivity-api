@@ -62,7 +62,6 @@ namespace ip {
 		{
 			int buffer_len;
 			u_char *buffer;
-			nitf_header *nitf;
 
 			fseek(in, 0, SEEK_END);
 			tocLen = ftell(in);
@@ -80,12 +79,37 @@ namespace ip {
 			// Read the whole file into memory.
 			int bytes_read = fread(buffer, 1, buffer_len, in);
 			fclose(in);
-			int currentPos = 0;
-			nitf = (nitf_header *)buffer;
-			int nitf_header_len = GetField(nitf->HL, 6);
-			currentPos += sizeof(nitf_header);//nitf_header_len;
 
-			int numi = GetField(nitf->NUMI, 3);
+			int currentPos = 0;
+			currentPos += 9;	// FHDR
+			currentPos += 2;	// CLEVEL
+			currentPos += 4;	// STYPE
+			currentPos += 10;	// OSTAID
+			currentPos += 14;	// FDT
+			currentPos += 80;	// FTITLE
+			currentPos += 1;	// FSCLAS
+			currentPos += 40;	// FSCODE
+			currentPos += 40;	// FSCTLH
+			currentPos += 40;	// FSREL
+			currentPos += 20;	// FSCAUT
+			currentPos += 20;	// FSCTLN
+
+			u_char* fsdwng = &buffer[currentPos];
+			currentPos += 6;    // FSDWNG
+			// if FSDWNG is 999998, the 40-char FSDEVT field follows
+			if(memcmp((char*)fsdwng, "999998", 6) == 0)
+				currentPos += 40;  // FSDEVT
+
+			currentPos += 5;	// FSCOP
+			currentPos += 5;	// FSCPYS
+			currentPos += 1;	// ENCRYP
+			currentPos += 27;	// ONAME
+			currentPos += 18;	// OPHONE
+			currentPos += 12;	// FL
+			currentPos += 6;	// HL
+
+			int numi = GetField((char*)&buffer[currentPos], 3);
+			currentPos += 3;
 			for (int i = 0; i<numi; i++)
 			{
 				currentPos += 16;
@@ -153,16 +177,20 @@ namespace ip {
 			p = &buffer[currentPos];
 			int udhdl = GetField((char *)p, 5);
 			currentPos += 5;
-			//UDHOFL = 3 bytes
-			p = &buffer[currentPos];
-			int udofl = GetField((char *)p, 3);
-			currentPos += 3;
+			if(udhdl > 0)
+			{
+				//UDHOFL = 3 bytes
+				p = &buffer[currentPos];
+				int udofl = GetField((char *)p, 3);
+				currentPos += 3;
+			}
 
 			//UDHD = * bytes
 			p = &buffer[currentPos];
 			//Here is the RPFHDR
 			rpf_tre *rpftre = (rpf_tre *)p;
-			currentPos += (udhdl - 3);// We subtract 3 because we already accounted for UDHOFL
+			if(udhdl > 0)
+				currentPos += (udhdl - 3);// We subtract 3 because we already accounted for UDHOFL
 
 			//XHDL = 5 bytes
 			p = &buffer[currentPos];
