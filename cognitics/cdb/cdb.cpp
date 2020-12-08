@@ -1078,13 +1078,12 @@ int main(int argc, char** argv)
 }
 
 
-void ab_make_elevation();
-
-int ab()
+void ab_test_dirsearch()
 {
-    ab_make_elevation();
-
-    return EXIT_SUCCESS;
+    //auto files = cognitics::cdb::ImageryFilesForPath("/mnt/c/data/FortStory");
+    auto files = cognitics::cdb::ImageryFilesForPath("/mnt/c/data");
+    for(auto f : files)
+        std::cout << "    " << f << "\n";
 }
 
 void ab_make_elevation()
@@ -1112,6 +1111,15 @@ void ab_make_elevation()
     std::fill(data.begin() + (nodata_start_row * width), data.begin() + (nodata_end_row * width), -32767.0);
 
     cognitics::cdb::WriteFloatsToTIF("elev_interp_test.tif", raster_info, data, true);
+}
+
+int ab()
+{
+    ab_test_dirsearch();
+
+    //ab_make_elevation();
+
+    return EXIT_SUCCESS;
 }
 
 

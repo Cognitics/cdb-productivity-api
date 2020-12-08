@@ -32,6 +32,8 @@ DEALINGS IN THE SOFTWARE.
 #include "ogr_spatialref.h"
 #pragma warning ( pop )
 
+#include <ip/CIBBlock.h>
+
 #include <float.h>
 #include <iostream>
 #include <vector>
@@ -721,6 +723,7 @@ namespace gdalsampler
         }
         bool IsValid() { return _isValid; }
         GDALRasterFile(OGRSpatialReference dest, std::string filename);
+        GDALRasterFile(OGRSpatialReference destSRS, const std::string &filename, const ip::CIBBlock &block);
         ~GDALRasterFile();
 
 

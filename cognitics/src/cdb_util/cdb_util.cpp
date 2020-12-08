@@ -33,6 +33,16 @@ namespace std { namespace filesystem = std::experimental::filesystem; }
 #include <filesystem>
 #endif
 
+#ifdef WIN32
+#include <io.h>
+#include <direct.h>
+#include <Windows.h>
+#else
+#include <sys/types.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#endif
+
 namespace cognitics {
 namespace cdb {
 
@@ -2364,6 +2374,100 @@ std::map<std::string, std::string> Defaults(const std::string& cdb)
         result[name] = value;
     }
     return result;
+}
+
+bool HasImagerySuffix(const std::string& filename)
+{
+    auto fileinfo = ccl::FileInfo(filename);
+    auto suffix = fileinfo.getSuffix();
+    if(suffix == "tif")
+        return true;
+    if(suffix == "jp2")
+        return true;
+    if(suffix == "sid")
+        return true;
+    return false;
+}
+
+std::vector<std::string> ImageryFilesForPath(const std::string& path)
+{
+    auto result = std::vector<std::string>();
+    auto frontier = std::vector<std::string>();
+    frontier.push_back(path);
+    while(!frontier.empty())
+    {
+        auto frontier_entry = frontier.back();
+        frontier.pop_back();
+        std::cout << frontier_entry << "\n";
+#ifdef WIN32
+#else
+        DIR* directory_stream = opendir(frontier_entry.c_str());
+        if(directory_stream)
+        {
+            dirent *directory_entry { nullptr };
+            while((directory_entry = readdir(directory_stream)) != nullptr)
+            {
+                if(strcmp(directory_entry->d_name, ".") == 0)
+                    continue;
+                if(strcmp(directory_entry->d_name, "..") == 0)
+                    continue;
+                auto filename = ccl::joinPaths(frontier_entry, directory_entry->d_name);
+                if(directory_entry->d_type == DT_DIR)
+                {
+                    auto tocfile = ccl::joinPaths(filename, "A.TOC");
+                    if(ccl::fileExists(tocfile))
+                        result.emplace_back(tocfile);
+                    else
+                        frontier.emplace_back(filename);
+                }
+                else
+                {
+                    if(HasImagerySuffix(filename))
+                        result.emplace_back(filename);
+                }
+
+            }
+            closedir(directory_stream);
+        }
+#endif
+    }
+
+    return result;
+
+/*
+#ifdef WIN32
+            struct _finddata_t c_file;
+            intptr_t hFile;
+
+            if ((hFile = _findfirst(searchPath.getFileName().c_str(), &c_file)) == -1L)
+            {
+                return ret;
+            }
+            do
+            {
+                if (c_file.attrib & _A_SUBDIR)
+                {
+                    if (subdir_search)
+                    {
+                        if (strcmpi(c_file.name, "..") != 0 &&
+                            strcmpi(c_file.name, ".") != 0)
+                        {
+                            directory_frontier.push_back(ccl::joinPaths(basedir, c_file.name));
+                        }
+                    }
+                }
+                else
+                {
+                    FileInfo file(basedir, c_file.name);
+                    ret.push_back(file);
+                }
+            }while(_findnext( hFile, &c_file ) == 0 );
+            _findclose(hFile);
+
+*/
+
+
+
 }
 
 

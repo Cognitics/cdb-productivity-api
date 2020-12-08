@@ -387,6 +387,72 @@ namespace gdalsampler
         return true;
     }
 
+	GDALRasterFile::GDALRasterFile(OGRSpatialReference destSRS, const std::string &filename, const ip::CIBBlock &block)
+		: _filename(filename)
+	{
+		isRPF = true;
+		xformset = NULL;
+		referenceCount = 0;
+		references = 0;
+		log.init("GDALRasterFile");
+		log << ccl::LINFO;
+
+		_fileWidth = block.m_width;
+		_fileHeight = block.m_height;
+		_top = block.m_RPFNorth;
+		_left = block.m_RPFWest;
+		_bottom = block.m_RPFSouth;
+		_right = block.m_RPFEast;
+
+		_origEWConst = block.GetDegreesPerEastWestPixel();
+		//North-south units are top down so we negate it.
+		_origNSConst = -block.GetDegreesPerNorthSouthPixel();
+		adfTransform4 = 0;
+		adfTransform2 = 0;
+		_determinate = (_origEWConst * _origNSConst - adfTransform2 * adfTransform4);
+		poDataset = NULL;
+
+
+		OGRSpatialReference geoSRS;
+		geoSRS.SetWellKnownGeogCS("WGS84");
+
+		char geowkt[8192];
+		char *pszGEOSRS_WKT = NULL;
+		
+		geoSRS.exportToWkt(&pszGEOSRS_WKT);
+		strcpy(geowkt, pszGEOSRS_WKT);
+		CPLFree(pszGEOSRS_WKT);
+		
+		char *pszSRS_WKT = NULL;
+		destSRS.exportToWkt(&pszSRS_WKT);
+		std::string filesrswkt(geowkt);
+		std::string destsrswkt(pszSRS_WKT);
+	
+		xformset = TransformCache::getInstance()->getTransforms(filesrswkt, destsrswkt);
+
+		CPLFree(pszSRS_WKT);
+
+		Quad localCoverage;
+		PixelToLocalPoint(0, 0, localCoverage.ul);
+		PixelToLocalPoint(0, _fileWidth, localCoverage.ur);
+		PixelToLocalPoint(_fileHeight, _fileWidth, localCoverage.lr);
+		PixelToLocalPoint(_fileHeight, 0, localCoverage.ll);
+		SetGeoCoverage(localCoverage);
+		// get the geo center
+		double orig_lat = (_coverage.ll.Y() + _coverage.ul.Y()) / 2;
+		double orig_lon = (_coverage.ll.X() + _coverage.lr.X()) / 2;
+		cts::FlatEarthProjection flatEarthProjection(orig_lat, orig_lon);
+		double widthm = flatEarthProjection.convertGeoToLocalX(_coverage.lr.X()) - flatEarthProjection.convertGeoToLocalX(_coverage.ll.X());
+		double heightm = flatEarthProjection.convertGeoToLocalX(_coverage.ul.Y()) - flatEarthProjection.convertGeoToLocalX(_coverage.ll.Y());
+
+		double resX = widthm / _fileWidth;
+		double resY = heightm / _fileHeight;
+		x_resolution = resX;
+		y_resolution = resY;
+		resolution = resX * resY;
+		_isValid = true;
+	}
+
     
     GDALRasterFile::GDALRasterFile(OGRSpatialReference destSRS, std::string filename)
         : _filename(filename)
