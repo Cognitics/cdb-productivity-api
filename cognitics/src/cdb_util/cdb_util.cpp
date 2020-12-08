@@ -2400,6 +2400,31 @@ std::vector<std::string> ImageryFilesForPath(const std::string& path)
         frontier.pop_back();
         std::cout << frontier_entry << "\n";
 #ifdef WIN32
+        std::string find_path = ccl::joinPaths(path, "*");
+        WIN32_FIND_DATA find_data;
+        HANDLE find_handle = FindFirstFile(find_path.c_str(), &find_data);
+		do
+		{
+			if(strcmp(find_data.cFileName, ".") == 0)
+				continue;
+			if(strcmp(find_data.cFileName, "..") == 0)
+				continue;
+			auto filename = ccl::joinPaths(frontier_entry, find_data.cFileName);
+			if(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+            {
+                auto tocfile = ccl::joinPaths(filename, "A.TOC");
+				if (ccl::fileExists(tocfile))
+					result.emplace_back(tocfile);
+				else
+					frontier.emplace_back(ccl::joinPaths(filename, "*"));
+			}
+			else
+			{
+				if (HasImagerySuffix(filename))
+					result.emplace_back(filename);
+			}
+		} while (FindNextFile(find_handle, &find_data) != 0);
+		FindClose(find_handle);
 #else
         DIR* directory_stream = opendir(frontier_entry.c_str());
         if(directory_stream)
@@ -2431,43 +2456,7 @@ std::vector<std::string> ImageryFilesForPath(const std::string& path)
         }
 #endif
     }
-
     return result;
-
-/*
-#ifdef WIN32
-            struct _finddata_t c_file;
-            intptr_t hFile;
-
-            if ((hFile = _findfirst(searchPath.getFileName().c_str(), &c_file)) == -1L)
-            {
-                return ret;
-            }
-            do
-            {
-                if (c_file.attrib & _A_SUBDIR)
-                {
-                    if (subdir_search)
-                    {
-                        if (strcmpi(c_file.name, "..") != 0 &&
-                            strcmpi(c_file.name, ".") != 0)
-                        {
-                            directory_frontier.push_back(ccl::joinPaths(basedir, c_file.name));
-                        }
-                    }
-                }
-                else
-                {
-                    FileInfo file(basedir, c_file.name);
-                    ret.push_back(file);
-                }
-            }while(_findnext( hFile, &c_file ) == 0 );
-            _findclose(hFile);
-
-*/
-
-
-
 }
 
 
