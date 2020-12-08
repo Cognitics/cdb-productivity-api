@@ -333,7 +333,10 @@ namespace ip {
 			p = &buffer[currentPos];
 			*/
 
-			delete buffer;
+			delete[] frame_file_idx_rec;
+			delete[] boundary_rect_records;
+			delete[] locations;
+			delete[] buffer;
 		}
 
 		return ret;
