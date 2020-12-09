@@ -103,7 +103,7 @@ namespace ccl
     int Job::arbitrary_counter = 0;
     ccl::mutex Job::arbitrary_counter_mutex;
 
-    Job::Job(JobManager *manager, Job *owner) : task_count(0), manager(manager), owner(owner)
+    Job::Job(JobManager *manager, Job *owner) : manager(manager), owner(owner), task_count(0)
     {
         log.init("Job", this);
         VERBOSE_JOB_LOG
