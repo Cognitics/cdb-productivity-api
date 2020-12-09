@@ -240,7 +240,5 @@ void BuildMinMaxElevation(const std::string& cdb, int lod_offset = 4);
 
 std::map<std::string, std::string> Defaults(const std::string& cdb);
 
-std::vector<std::string> ImageryFilesForPath(const std::string& path);
-
 }
 }

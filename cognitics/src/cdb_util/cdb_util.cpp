@@ -33,16 +33,6 @@ namespace std { namespace filesystem = std::experimental::filesystem; }
 #include <filesystem>
 #endif
 
-#ifdef WIN32
-#include <io.h>
-#include <direct.h>
-#include <Windows.h>
-#else
-#include <sys/types.h>
-#include <dirent.h>
-#include <sys/stat.h>
-#endif
-
 namespace cognitics {
 namespace cdb {
 
@@ -2372,89 +2362,6 @@ std::map<std::string, std::string> Defaults(const std::string& cdb)
         if(value == nullptr)
             continue;
         result[name] = value;
-    }
-    return result;
-}
-
-bool HasImagerySuffix(const std::string& filename)
-{
-    auto fileinfo = ccl::FileInfo(filename);
-    auto suffix = fileinfo.getSuffix();
-    if(suffix == "tif")
-        return true;
-    if(suffix == "jp2")
-        return true;
-    if(suffix == "sid")
-        return true;
-    return false;
-}
-
-std::vector<std::string> ImageryFilesForPath(const std::string& path)
-{
-    auto result = std::vector<std::string>();
-    auto frontier = std::vector<std::string>();
-    frontier.push_back(path);
-    while(!frontier.empty())
-    {
-        auto frontier_entry = frontier.back();
-        frontier.pop_back();
-        std::cout << frontier_entry << "\n";
-#ifdef WIN32
-        std::string find_path = ccl::joinPaths(path, "*");
-        WIN32_FIND_DATA find_data;
-        HANDLE find_handle = FindFirstFile(find_path.c_str(), &find_data);
-		do
-		{
-			if(strcmp(find_data.cFileName, ".") == 0)
-				continue;
-			if(strcmp(find_data.cFileName, "..") == 0)
-				continue;
-			auto filename = ccl::joinPaths(frontier_entry, find_data.cFileName);
-			if(find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
-            {
-                auto tocfile = ccl::joinPaths(filename, "A.TOC");
-				if (ccl::fileExists(tocfile))
-					result.emplace_back(tocfile);
-				else
-					frontier.emplace_back(ccl::joinPaths(filename, "*"));
-			}
-			else
-			{
-				if (HasImagerySuffix(filename))
-					result.emplace_back(filename);
-			}
-		} while (FindNextFile(find_handle, &find_data) != 0);
-		FindClose(find_handle);
-#else
-        DIR* directory_stream = opendir(frontier_entry.c_str());
-        if(directory_stream)
-        {
-            dirent *directory_entry { nullptr };
-            while((directory_entry = readdir(directory_stream)) != nullptr)
-            {
-                if(strcmp(directory_entry->d_name, ".") == 0)
-                    continue;
-                if(strcmp(directory_entry->d_name, "..") == 0)
-                    continue;
-                auto filename = ccl::joinPaths(frontier_entry, directory_entry->d_name);
-                if(directory_entry->d_type == DT_DIR)
-                {
-                    auto tocfile = ccl::joinPaths(filename, "A.TOC");
-                    if(ccl::fileExists(tocfile))
-                        result.emplace_back(tocfile);
-                    else
-                        frontier.emplace_back(filename);
-                }
-                else
-                {
-                    if(HasImagerySuffix(filename))
-                        result.emplace_back(filename);
-                }
-
-            }
-            closedir(directory_stream);
-        }
-#endif
     }
     return result;
 }

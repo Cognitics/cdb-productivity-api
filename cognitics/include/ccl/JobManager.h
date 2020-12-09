@@ -62,16 +62,15 @@ namespace ccl
         friend class JobManager;
         friend class JobWorker;
 
+    private:
+        int task_count;
+        ccl::mutex task_count_mutex;
+
     protected:
+        ccl::ObjLog log;
         JobManager *manager;
         Job *owner;
 
-    private:
-        ccl::mutex task_count_mutex;
-        ccl::ObjLog log;
-        int task_count;
-
-    protected:
         // debugging tool
         static int arbitrary_counter;
         static ccl::mutex arbitrary_counter_mutex;

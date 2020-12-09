@@ -53,8 +53,8 @@ if(UNIX)
 endif(UNIX)
 
 if(WIN32)
-    set(CMAKE_CXX_FLAGS_DEBUG "/MP /Od /EHsc /RTC1 /MDd /W3 /nologo /c /Zi /errorReport:prompt -DCOG_DEBUG -DDEBUG=1")
-    set(CMAKE_CXX_FLAGS_RELEASE "/DEBUG /MP /O2 /FD /EHsc /MD /W3 /nologo /c /Zi /errorReport:prompt -DCOG_RELEASE -DNDEBUG")
+    set(CMAKE_CXX_FLAGS_DEBUG "/MP /Od /EHsc /RTC1 /MDd /W3 /nologo /c /Zi /TP /errorReport:prompt -DCOG_DEBUG -DDEBUG=1")
+    set(CMAKE_CXX_FLAGS_RELEASE "/DEBUG /MP /O2 /FD /EHsc /MD /W3 /nologo /c /Zi /TP /errorReport:prompt -DCOG_RELEASE -DNDEBUG")
 endif(WIN32)
 
 message("THIRD_PARTY_DIR: ${THIRD_PARTY_DIR}")
@@ -469,9 +469,6 @@ set(COGCORE_HEADERS
     ./include/ip/jpgwrapper.h
     ./include/ip/SkipList.h
     ./include/ip/rgb.h
-    ./include/ip/rpf.h
-    ./include/ip/RPFBlock.h
-    ./include/ip/CIBBlock.h
     ./include/ogr/File.h
     ./include/ogr/Feature.h
     ./include/ogr/OGRLayer.h
@@ -878,9 +875,6 @@ set(COGCORE_SOURCES
     ./src/ip/rgb.cpp
     ./src/ip/GDALRasterSampler.cpp
     ./src/ip/ip.cpp
-    ./src/ip/rpf.cpp
-    ./src/ip/RPFBlock.cpp
-    ./src/ip/CIBBlock.cpp
     ./src/ogr/OGRLayer.cpp
     ./src/ogr/File.cpp
     ./src/ogr/Field.cpp

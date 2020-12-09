@@ -5,8 +5,6 @@
 
 #include <cdb_tile/Tile.h>
 
-#include <ip/rpf.h>
-
 #include <ccl/ObjLog.h>
 #include <ccl/LogStream.h>
 #include <ccl/ArgumentParser.h>
@@ -226,27 +224,13 @@ bool cdb_inject(cdb_inject_parameters& params)
         }
         if (std::filesystem::is_directory(imagery_param))
         {
-            auto filenames = ImageryFilesForPath(imagery_param);
-            for(auto fn : filenames)
-            {
-                if(ccl::FileInfo(fn).getBaseName() == "A.TOC")
-                {
-                    auto toc_filenames = ip::getFileListFromTOC(fn);
-                    for(auto toc_filename : toc_filenames)
-                        imagery_filenames.push_back(toc_filename);
-                    continue;
-                }
-                imagery_filenames.push_back(fn);
-            }
-            //imagery_filenames.resize(4);        // TODO: TESTING
-
-            //auto tif_files = ccl::FileInfo::getAllFiles(imagery_param, "*.tif", true);
-            //std::transform(tif_files.begin(), tif_files.end(), std::back_inserter(imagery_filenames), [](const ccl::FileInfo& fi) { return fi.getFileName(); });
-            //auto jp2_files = ccl::FileInfo::getAllFiles(imagery_param, "*.jp2", true);
-            //std::transform(jp2_files.begin(), jp2_files.end(), std::back_inserter(imagery_filenames), [](const ccl::FileInfo& fi) { return fi.getFileName(); });
-            //auto sid_files = ccl::FileInfo::getAllFiles(imagery_param, "*.sid", true);
-            //for(auto&& sid_file : sid_files)
-                //imagery_filenames.push_back(sid_file.getFileName());
+            auto tif_files = ccl::FileInfo::getAllFiles(imagery_param, "*.tif", true);
+            std::transform(tif_files.begin(), tif_files.end(), std::back_inserter(imagery_filenames), [](const ccl::FileInfo& fi) { return fi.getFileName(); });
+            auto jp2_files = ccl::FileInfo::getAllFiles(imagery_param, "*.jp2", true);
+            std::transform(jp2_files.begin(), jp2_files.end(), std::back_inserter(imagery_filenames), [](const ccl::FileInfo& fi) { return fi.getFileName(); });
+            auto sid_files = ccl::FileInfo::getAllFiles(imagery_param, "*.sid", true);
+            for(auto&& sid_file : sid_files)
+                imagery_filenames.push_back(sid_file.getFileName());
         }
         else
         {
@@ -254,9 +238,6 @@ bool cdb_inject(cdb_inject_parameters& params)
         }
     }
     bool imagery_enabled = !imagery_filenames.empty();
-
-//    for(auto f : imagery_filenames)
-//        std::cout << f << "\n";
 
     auto elevation_filenames = std::vector<std::string>();
     for (auto elevation_param : params.elevation)
@@ -268,7 +249,7 @@ bool cdb_inject(cdb_inject_parameters& params)
         }
         if (std::filesystem::is_directory(elevation_param))
         {
-            auto tif_files = ccl::FileInfo::getAllFiles(elevation_param, "*.tif", true);
+            auto tif_files = ccl::FileInfo::getAllFiles(elevation_param, "*.tif");
             std::transform(tif_files.begin(), tif_files.end(), std::back_inserter(elevation_filenames), [](const ccl::FileInfo& fi) { return fi.getFileName(); });
         }
         else
