@@ -136,7 +136,7 @@ namespace sfa {
         int n = 0;
         for (int i = 0; i < num; i++)
         {
-            if ( (P[n]->p.Y() > P[i]->p.Y()) || (P[n]->p.Y() == P[i]->p.Y() && P[n]->p.X() < P[i]->p.X()) )
+            if ( (P[n]->p.Y() > P[i]->p.Y()) || (P[n]->p.Y() == P[i]->p.Y() && P[n]->p.X() > P[i]->p.X()) )
                 n = i;
         }
 
